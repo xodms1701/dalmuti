@@ -1,158 +1,164 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-
-interface RoomState {
-    inviteCode: string;
-    playerCount: number;
-    maxPlayers: number;
-    minPlayers: number;
-    canStartGame: boolean;
-    players: Array<{
-        socketId: string;
-        name: string;
-    }>;
-}
-
-interface GameState {
-    players: string[];
-    currentPlayer: string;
-    lastPlayedCards: Array<{ number: number; count: number }> | null;
-    gameStarted: boolean;
-    isRevolution: boolean;
-}
-
-interface PlayerHand {
-    cards: Array<{ number: number; count: number }>;
-}
+import { useCallback, useEffect, useState, useRef } from "react";
+import { socketClient } from "../socket/socket";
+import { useGameStore } from "../store/gameStore";
 
 export const useSocket = () => {
-    const socketRef = useRef<Socket | null>(null);
-    const [socketId, setSocketId] = useState<string>('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [socketId, setSocketId] = useState<string | null>(null);
+  const { setGame } = useGameStore();
+  const isConnecting = useRef(false);
 
-    useEffect(() => {
-        // 소켓 연결
-        socketRef.current = io('http://localhost:3001');
+  useEffect(() => {
+    if (isConnecting.current) {
+      console.log("[Socket] 이미 연결 시도 중입니다.");
+      return;
+    }
 
-        socketRef.current.on('connect', () => {
-            setSocketId(socketRef.current?.id || '');
-        });
+    if (socketClient.socketId) {
+      console.log(
+        "[Socket] 이미 연결되어 있습니다. Socket ID:",
+        socketClient.socketId
+      );
+      setIsConnected(true);
+      setSocketId(socketClient.socketId);
+      return;
+    }
 
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
-            }
-        };
-    }, []);
+    console.log("[Socket] 소켓 연결을 시도합니다...");
+    isConnecting.current = true;
+    socketClient.connect();
 
-    const createRoom = useCallback((playerName: string): Promise<{ success: boolean; inviteCode?: string; roomState?: RoomState; error?: string }> => {
-        return new Promise((resolve) => {
-            if (!socketRef.current) {
-                resolve({ success: false, error: '소켓 연결이 없습니다.' });
-                return;
-            }
-
-            socketRef.current.emit('createRoom', playerName, (response: any) => {
-                resolve(response);
-            });
-        });
-    }, []);
-
-    const joinRoom = useCallback((inviteCode: string, playerName: string): Promise<{ success: boolean; roomState?: RoomState; error?: string }> => {
-        return new Promise((resolve) => {
-            if (!socketRef.current) {
-                resolve({ success: false, error: '소켓 연결이 없습니다.' });
-                return;
-            }
-
-            socketRef.current.emit('joinRoom', inviteCode, playerName, (response: any) => {
-                resolve(response);
-            });
-        });
-    }, []);
-
-    const startGame = useCallback((inviteCode: string): Promise<{ success: boolean; gameState?: GameState; error?: string }> => {
-        return new Promise((resolve) => {
-            if (!socketRef.current) {
-                resolve({ success: false, error: '소켓 연결이 없습니다.' });
-                return;
-            }
-
-            socketRef.current.emit('startGame', inviteCode, (response: any) => {
-                resolve(response);
-            });
-        });
-    }, []);
-
-    const playCards = useCallback((inviteCode: string, cards: Array<{ number: number; count: number }>): Promise<{ success: boolean; gameState?: GameState; error?: string }> => {
-        return new Promise((resolve) => {
-            if (!socketRef.current) {
-                resolve({ success: false, error: '소켓 연결이 없습니다.' });
-                return;
-            }
-
-            socketRef.current.emit('playCards', inviteCode, cards, (response: any) => {
-                resolve(response);
-            });
-        });
-    }, []);
-
-    const onRoomStateChanged = useCallback((callback: (roomState: RoomState) => void) => {
-        if (!socketRef.current) return;
-
-        socketRef.current.on('roomStateChanged', callback);
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.off('roomStateChanged', callback);
-            }
-        };
-    }, []);
-
-    const onGameStarted = useCallback((callback: (gameState: GameState) => void) => {
-        if (!socketRef.current) return;
-
-        socketRef.current.on('gameStarted', callback);
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.off('gameStarted', callback);
-            }
-        };
-    }, []);
-
-    const onGameStateChanged = useCallback((callback: (gameState: GameState) => void) => {
-        if (!socketRef.current) return;
-
-        socketRef.current.on('gameStateChanged', callback);
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.off('gameStateChanged', callback);
-            }
-        };
-    }, []);
-
-    const onPlayerHand = useCallback((callback: (hand: PlayerHand) => void) => {
-        if (!socketRef.current) return;
-
-        socketRef.current.on('playerHand', callback);
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.off('playerHand', callback);
-            }
-        };
-    }, []);
-
-    return {
-        socketId,
-        createRoom,
-        joinRoom,
-        startGame,
-        playCards,
-        onRoomStateChanged,
-        onGameStarted,
-        onGameStateChanged,
-        onPlayerHand
+    const handleGameUpdate = (game: any) => {
+      console.log("[Socket] 게임 상태 업데이트:", game);
+      setGame(game);
     };
-}; 
+
+    const handleConnect = () => {
+      console.log("[Socket] 소켓 연결 성공! Socket ID:", socketClient.socketId);
+      setIsConnected(true);
+      setSocketId(socketClient.socketId || null);
+      isConnecting.current = false;
+    };
+
+    const handleError = (error: string) => {
+      console.error("[Socket] 소켓 에러 발생:", error);
+      isConnecting.current = false;
+    };
+
+    socketClient.onGameUpdate(handleGameUpdate);
+    socketClient.onConnect(handleConnect);
+    socketClient.onError(handleError);
+
+    return () => {
+      console.log("[Socket] 소켓 연결을 정리합니다...");
+      socketClient.offGameUpdate();
+      socketClient.offConnect();
+      socketClient.offError();
+      socketClient.disconnect();
+      isConnecting.current = false;
+    };
+  }, [setGame]);
+
+  const createRoom = useCallback(
+    async (nickname: string) => {
+      console.log("[Socket] 방 생성 시도 - 닉네임:", nickname);
+      if (!socketId) {
+        console.error("[Socket] 소켓이 연결되지 않았습니다.");
+        return { success: false, error: "소켓이 연결되지 않았습니다." };
+      }
+
+      try {
+        const response = await socketClient.createRoom(nickname);
+        console.log("[Socket] 방 생성 응답:", response);
+        return { ...response };
+      } catch (error) {
+        console.error("[Socket] 방 생성 중 에러 발생:", error);
+        return { success: false, error: (error as Error).message };
+      }
+    },
+    [socketId]
+  );
+
+  const joinRoom = useCallback(
+    async (roomId: string, nickname: string) => {
+      console.log(
+        "[Socket] 방 참가 시도 - 방 ID:",
+        roomId,
+        "닉네임:",
+        nickname
+      );
+      if (!socketId) {
+        console.error("[Socket] 소켓이 연결되지 않았습니다.");
+        return { success: false, error: "소켓이 연결되지 않았습니다." };
+      }
+
+      try {
+        const response = await socketClient.joinRoom(roomId, nickname);
+        console.log("[Socket] 방 참가 응답:", response);
+        return { success: true, ...response };
+      } catch (error) {
+        console.error("[Socket] 방 참가 중 에러 발생:", error);
+        return { success: false, error: (error as Error).message };
+      }
+    },
+    [socketId]
+  );
+
+  const ready = useCallback(
+    async (roomId: string, playerId: string) => {
+      if (!socketId) {
+        return { success: false, error: "소켓이 연결되지 않았습니다." };
+      }
+
+      try {
+        await socketClient.ready(roomId, playerId);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    },
+    [socketId]
+  );
+
+  const startGame = useCallback(
+    async (roomId: string) => {
+      if (!socketId) {
+        return { success: false, error: "소켓이 연결되지 않았습니다." };
+      }
+
+      try {
+        await socketClient.startGame(roomId);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    },
+    [socketId]
+  );
+
+  const getGameState = useCallback(
+    async (roomId: string) => {
+      if (!socketId) {
+        return { success: false, error: "소켓이 연결되지 않았습니다." };
+      }
+
+      try {
+        const gameState = await socketClient.getGameState(roomId);
+        return { success: true, gameState };
+      } catch (error) {
+        return { success: false, error: (error as Error).message };
+      }
+    },
+    [socketId]
+  );
+
+  return {
+    isConnected,
+    socketId,
+    createRoom,
+    joinRoom,
+    ready,
+    startGame,
+    getGameState,
+  };
+};

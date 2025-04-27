@@ -1,25 +1,37 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { store } from './store';
-import Lobby from './components/Lobby';
-import Room from './components/Room';
-import Game from './components/Game';
-import CreateRoom from './components/CreateRoom';
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SocketProvider, useSocketContext } from "./contexts/SocketContext";
+import Lobby from "./pages/Lobby";
+import Room from "./pages/Room";
+import RoleSelection from "./pages/RoleSelection";
+import SelectCardDeck from "./pages/SelectCardDeck";
+import Play from "./pages/Play";
+const AppContent: React.FC = () => {
+  const { connect } = useSocketContext();
+
+  useEffect(() => {
+    connect();
+  }, [connect]);
+
+  return (
+    <Routes>
+      <Route path="/" element={<Lobby />} />
+      <Route path="/room" element={<Room />} />
+      <Route path="/role-selection" element={<RoleSelection />} />
+      <Route path="/select-card-deck" element={<SelectCardDeck />} />
+      <Route path="/play" element={<Play />} />
+    </Routes>
+  );
+};
 
 const App: React.FC = () => {
-    return (
-        <Provider store={store}>
-            <Router>
-                <Routes>
-                    <Route path="/" element={<Lobby />} />
-                    <Route path="/create" element={<CreateRoom />} />
-                    <Route path="/room" element={<Room />} />
-                    <Route path="/game" element={<Game />} />
-                </Routes>
-            </Router>
-        </Provider>
-    );
+  return (
+    <Router>
+      <SocketProvider>
+        <AppContent />
+      </SocketProvider>
+    </Router>
+  );
 };
 
 export default App;

@@ -152,14 +152,27 @@ export default class GameManager {
 
     // 마지막 플레이와 비교하여 유효한 카드인지 확인
     if (game.lastPlay && game.lastPlay.cards.length > 0) {
+      // 1. 장수 체크
+      if (cards.length !== game.lastPlay.cards.length) {
+        return game;
+      }
+      // 2. 랭크 체크 (기존대로)
       const lastCard = game.lastPlay.cards[0];
-      if (cards[0].rank > lastCard.rank) {
+      if (cards[0].rank >= lastCard.rank) {
         return game;
       }
     }
 
     // 카드를 플레이
-    const playedCards = cardIndices.map((index) => player.cards.splice(index, 1)[0]);
+    const playedCards: Card[] = [];
+    for (const card of cards) {
+      const idx = player.cards.findIndex((c) => c.rank === card.rank && c.isJoker === card.isJoker);
+      if (idx !== -1) {
+        playedCards.push(player.cards.splice(idx, 1)[0]);
+      }
+    }
+    // 카드를 낸 플레이어는 반드시 isPassed를 false로 초기화
+    player.isPassed = false;
     game.lastPlay = {
       playerId,
       cards: playedCards,
@@ -182,13 +195,28 @@ export default class GameManager {
       } else {
         // 다음 턴으로 넘어감
         const currentPlayerIndex = game.players.findIndex((p) => p.id === playerId);
-        const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+        let nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+
+        // 카드가 있는 플레이어를 찾을 때까지 다음 플레이어로 이동
+        while (game.players[nextPlayerIndex].cards.length === 0) {
+          nextPlayerIndex = (nextPlayerIndex + 1) % game.players.length;
+          // 모든 플레이어가 카드를 다 썼다면 루프 탈출
+          if (nextPlayerIndex === currentPlayerIndex) break;
+        }
         game.currentTurn = game.players[nextPlayerIndex].id;
       }
     } else {
       // 다음 턴으로 넘어감
       const currentPlayerIndex = game.players.findIndex((p) => p.id === playerId);
-      const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+      let nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+
+      // 카드가 있는 플레이어를 찾을 때까지 다음 플레이어로 이동
+      while (game.players[nextPlayerIndex].cards.length === 0) {
+        nextPlayerIndex = (nextPlayerIndex + 1) % game.players.length;
+        // 모든 플레이어가 카드를 다 썼다면 루프 탈출
+        if (nextPlayerIndex === currentPlayerIndex) break;
+      }
+
       game.currentTurn = game.players[nextPlayerIndex].id;
     }
 
@@ -219,8 +247,50 @@ export default class GameManager {
       return false;
     }
 
+    // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인
+    const otherPlayersAllPassed = game.players
+      .filter((p) => p.id !== playerId)
+      .every((p) => p.isPassed);
+
+    if (otherPlayersAllPassed) {
+      return false; // 다른 플레이어들이 모두 패스했다면 패스 불가능
+    }
+
     currentPlayer.isPassed = true;
-    this.setNextTurn(game);
+
+    // 순위 순서대로 정렬된 플레이어 목록
+    const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+    // 현재 플레이어의 인덱스 찾기
+    const currentIndex = sortedPlayers.findIndex((p) => p.id === playerId);
+
+    // 다음 플레이어 찾기 (카드가 있는 플레이어 중에서)
+    let nextIndex = (currentIndex + 1) % sortedPlayers.length;
+    while (sortedPlayers[nextIndex].cards.length === 0) {
+      nextIndex = (nextIndex + 1) % sortedPlayers.length;
+      // 모든 플레이어가 카드를 다 썼다면 루프 탈출
+      if (nextIndex === currentIndex) break;
+    }
+
+    // lastPlay가 있을 때만, lastPlay.playerId를 제외한 모든 플레이어가 패스했을 때 라운드 넘김
+    let allPassed = false;
+    if (game.lastPlay && game.lastPlay.playerId) {
+      allPassed = game.players
+        .filter((p) => p.id !== game.lastPlay!.playerId)
+        .every((p) => p.isPassed);
+    }
+
+    if (allPassed && game.lastPlay && game.lastPlay.playerId) {
+      // 새로운 라운드 시작
+      const prevLastPlayerId = game.lastPlay.playerId;
+      game.round++;
+      game.lastPlay = undefined;
+      game.players.forEach((p) => (p.isPassed = false));
+      // 마지막으로 카드를 낸 플레이어부터 시작
+      game.currentTurn = prevLastPlayerId;
+    } else {
+      game.currentTurn = sortedPlayers[nextIndex].id;
+    }
 
     await this.db.updateGame(roomId, {
       players: game.players,
@@ -247,7 +317,7 @@ export default class GameManager {
     }
 
     const player = game.players.find((p) => p.id === playerId);
-    if (!player) {
+    if (!player || player.role !== null) {
       return false;
     }
 
@@ -508,29 +578,6 @@ export default class GameManager {
     for (let i = game.deck.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [game.deck[i], game.deck[j]] = [game.deck[j], game.deck[i]];
-    }
-  }
-
-  private setNextTurn(game: Game): void {
-    const currentIndex = game.players.findIndex((p) => p.id === game.currentTurn);
-    let nextIndex = (currentIndex + 1) % game.players.length;
-
-    let loopCount = 0;
-    while (game.players[nextIndex].isPassed && loopCount < game.players.length) {
-      nextIndex = (nextIndex + 1) % game.players.length;
-      loopCount++;
-    }
-
-    const lastPlayerId = game.lastPlay?.playerId;
-    const allPassed = game.players.filter((p) => p.id !== lastPlayerId).every((p) => p.isPassed);
-
-    if (allPassed) {
-      game.round++;
-      game.lastPlay = undefined;
-      game.players.forEach((p) => (p.isPassed = false));
-      game.currentTurn = lastPlayerId || game.players[0].id;
-    } else {
-      game.currentTurn = game.players[nextIndex].id;
     }
   }
 }

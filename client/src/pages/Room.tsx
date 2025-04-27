@@ -1,152 +1,167 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useSocket } from '../hooks/useSocket';
-import styled from 'styled-components';
-
-interface RoomState {
-    inviteCode: string;
-    playerCount: number;
-    maxPlayers: number;
-    minPlayers: number;
-    canStartGame: boolean;
-    players: Array<{
-        socketId: string;
-        name: string;
-    }>;
-}
-
-interface GameState {
-    players: string[];
-    currentPlayer: string;
-    lastPlayedCards: any[] | null;
-    gameStarted: boolean;
-}
+import React from "react";
+import { useSocketContext } from "../contexts/SocketContext";
+import { useGameStore } from "../store/gameStore";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem;
-    background-color: #f0f0f0;
-    min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  min-height: 100vh;
+  background-color: #f5f5f5;
 `;
 
 const RoomInfo = styled.div`
-    background-color: white;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-    text-align: center;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+`;
+
+const RoomTitle = styled.h1`
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1rem;
+`;
+
+const RoomCode = styled.div`
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 1rem;
 `;
 
 const PlayerList = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    width: 100%;
-    max-width: 800px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 800px;
 `;
 
-const PlayerCard = styled.div<{ isCurrentPlayer: boolean }>`
-    background-color: white;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border: ${props => props.isCurrentPlayer ? '2px solid #4CAF50' : 'none'};
+const PlayerCard = styled.div<{ $isHost: boolean; $isReady: boolean }>`
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid
+    ${({ $isHost, $isReady }) =>
+      $isHost ? "#4a90e2" : $isReady ? "#4caf50" : "#ddd"};
 `;
 
-const Button = styled.button`
-    padding: 0.5rem 1rem;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-    margin-top: 1rem;
-    &:hover {
-        background-color: #45a049;
-    }
-    &:disabled {
-        background-color: #cccccc;
-        cursor: not-allowed;
-    }
+const PlayerName = styled.div`
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+`;
+
+const PlayerStatus = styled.div`
+  font-size: 0.9rem;
+  color: #666;
+`;
+
+const ButtonContainer = styled.div`
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+`;
+
+const Button = styled.button<{ disabled?: boolean }>`
+  padding: 0.75rem 1.5rem;
+  background-color: ${({ disabled }) => (disabled ? "#ccc" : "#4a90e2")};
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: ${({ disabled }) => (disabled ? "#ccc" : "#357abd")};
+  }
 `;
 
 const Room: React.FC = () => {
-    const { inviteCode } = useParams<{ inviteCode: string }>();
-    const navigate = useNavigate();
-    const { startGame, onRoomStateChanged, onGameStarted } = useSocket();
-    const [roomState, setRoomState] = useState<RoomState | null>(null);
-    const [gameState, setGameState] = useState<GameState | null>(null);
-    const [error, setError] = useState('');
+  const { socketId, ready, startGame } = useSocketContext();
+  const { game } = useGameStore();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!inviteCode) return;
+  const isHost = game?.ownerId === socketId;
 
-        const unsubscribeRoom = onRoomStateChanged((state: RoomState) => {
-            setRoomState(state);
-        });
-
-        const unsubscribeGame = onGameStarted((state: GameState) => {
-            setGameState(state);
-            if (state.gameStarted) {
-                navigate(`/game/${inviteCode}`);
-            }
-        });
-
-        return () => {
-            if (unsubscribeRoom) unsubscribeRoom();
-            if (unsubscribeGame) unsubscribeGame();
-        };
-    }, [inviteCode, onRoomStateChanged, onGameStarted, navigate]);
-
-    const handleStartGame = async () => {
-        if (!inviteCode) return;
-
-        const response = await startGame(inviteCode);
-        if (!response.success) {
-            setError(response.error || '게임 시작에 실패했습니다.');
-        }
-    };
-
-    if (!roomState) {
-        return <Container>로딩 중...</Container>;
+  const handleReady = async () => {
+    if (!socketId || !game?.roomId) return;
+    const response = await ready(game.roomId, socketId);
+    if (!response.success) {
+      alert(response.error || "준비 중 오류가 발생했습니다.");
     }
+  };
 
-    return (
-        <Container>
-            <RoomInfo>
-                <h2>방 코드: {roomState.inviteCode}</h2>
-                <p>현재 인원: {roomState.playerCount} / {roomState.maxPlayers}</p>
-                <p>최소 인원: {roomState.minPlayers}</p>
-            </RoomInfo>
+  const handleStartGame = async () => {
+    if (!game?.roomId) return;
+    const response = await startGame(game.roomId);
+    if (!response.success) {
+      alert(response.error || "게임 시작 중 오류가 발생했습니다.");
+    }
+  };
 
-            <PlayerList>
-                {roomState.players.map((player) => (
-                    <PlayerCard
-                        key={player.socketId}
-                        isCurrentPlayer={gameState?.currentPlayer === player.socketId}
-                    >
-                        <h3>{player.name}</h3>
-                        {gameState?.currentPlayer === player.socketId && <p>현재 턴</p>}
-                    </PlayerCard>
-                ))}
-            </PlayerList>
+  React.useEffect(() => {
+    if (game?.phase === "roleSelection") {
+      navigate("/role-selection");
+    }
+  }, [game?.phase, navigate]);
 
-            {!gameState && (
-                <Button
-                    onClick={handleStartGame}
-                    disabled={!roomState.canStartGame}
-                >
-                    게임 시작
-                </Button>
-            )}
+  if (!game) {
+    return <Container>로딩 중...</Container>;
+  }
 
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-        </Container>
-    );
+  const currentPlayer = game.players.find((p) => p.id === socketId);
+  const canStartGame =
+    isHost &&
+    game.players.length >= 4 &&
+    game.players.length <= 8 &&
+    game.players.every((player) => player.isReady);
+
+  return (
+    <Container>
+      <RoomInfo>
+        <RoomTitle>게임 준비 방</RoomTitle>
+        <RoomCode>방 코드: {game.roomId}</RoomCode>
+      </RoomInfo>
+
+      <PlayerList>
+        {game.players.map((player) => (
+          <PlayerCard
+            key={player.id}
+            $isHost={player.id === game.ownerId}
+            $isReady={player.isReady}
+          >
+            <PlayerName>
+              {player.nickname + (player.id === socketId ? " (나)" : "")}
+              {player.id === game.ownerId && " 👑"}
+            </PlayerName>
+            <PlayerStatus>
+              {player.isReady ? "준비 완료" : "준비 중"}
+            </PlayerStatus>
+          </PlayerCard>
+        ))}
+      </PlayerList>
+
+      <ButtonContainer>
+        {currentPlayer && !currentPlayer.isReady && (
+          <Button onClick={handleReady}>준비하기</Button>
+        )}
+        {isHost && (
+          <Button onClick={handleStartGame} disabled={!canStartGame}>
+            게임 시작
+          </Button>
+        )}
+      </ButtonContainer>
+    </Container>
+  );
 };
 
-export default Room; 
+export default Room;
