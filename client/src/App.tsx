@@ -6,6 +6,8 @@ import Room from "./pages/Room";
 import RoleSelection from "./pages/RoleSelection";
 import SelectCardDeck from "./pages/SelectCardDeck";
 import Play from "./pages/Play";
+import VotePage from "./pages/VotePage";
+
 const AppContent: React.FC = () => {
   const { connect } = useSocketContext();
 
@@ -20,6 +22,7 @@ const AppContent: React.FC = () => {
       <Route path="/role-selection" element={<RoleSelection />} />
       <Route path="/select-card-deck" element={<SelectCardDeck />} />
       <Route path="/play" element={<Play />} />
+      <Route path="/vote" element={<VotePage />} />
     </Routes>
   );
 };

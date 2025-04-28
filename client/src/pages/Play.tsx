@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   display: flex;
@@ -114,6 +115,13 @@ const PlayPage: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, playCard, pass } = useSocketContext();
   const [selectedIdxs, setSelectedIdxs] = useState<number[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (game?.isVoting) {
+      navigate("/vote");
+    }
+  }, [game?.isVoting, navigate]);
 
   if (!game) return <Container>로딩 중...</Container>;
 

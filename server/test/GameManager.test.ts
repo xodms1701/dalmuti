@@ -303,6 +303,57 @@ describe('GameManager', () => {
       const game = await gameManager.createGame(ownerId, 'Owner');
       await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
       await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, selectableDecks 설정
+      const updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'cardSelection';
+        updatedGame.currentTurn = ownerId;
+        updatedGame.players[0].rank = 1; // player1
+        updatedGame.players[1].rank = 2; // player2
+        updatedGame.players[2].rank = 3; // player3
+        updatedGame.players[3].rank = 4; // player4
+        updatedGame.players[0].cards = [];
+        updatedGame.players[1].cards = [];
+        updatedGame.players[2].cards = [];
+        updatedGame.players[3].cards = [];
+        updatedGame.selectableDecks = [
+          {
+            cards: [
+              { isJoker: true, rank: 13 },
+              { isJoker: true, rank: 13 },
+            ],
+            isSelected: false,
+            selectedBy: undefined,
+          },
+          { cards: [{ isJoker: false, rank: 1 }], isSelected: false, selectedBy: undefined },
+          { cards: [{ isJoker: false, rank: 2 }], isSelected: false, selectedBy: undefined },
+          { cards: [{ isJoker: false, rank: 3 }], isSelected: false, selectedBy: undefined },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 1등이 조커 2장 덱을 선택
+      await gameManager.selectDeck(game!.roomId, ownerId, 0);
+      await gameManager.selectDeck(game!.roomId, 'player2', 1);
+      await gameManager.selectDeck(game!.roomId, 'player3', 2);
+      await gameManager.selectDeck(game!.roomId, 'player4', 3);
+
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.currentTurn).toBe(ownerId);
+      expect(resultGame?.players.find((p) => p.id === 'player1')?.rank).toBe(1);
+      expect(resultGame?.players.find((p) => p.id === 'player2')?.rank).toBe(2);
+      expect(resultGame?.players.find((p) => p.id === 'player3')?.rank).toBe(3);
+      expect(resultGame?.players.find((p) => p.id === 'player4')?.rank).toBe(4);
+    });
+
+    it('2등이 조커 2장을 가지면 rank가 1등이 되어야 한다', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
 
       // 강제로 phase, rank, selectableDecks 설정
       const updatedGame = await mockDb.getGame(game!.roomId);
@@ -316,6 +367,7 @@ describe('GameManager', () => {
         updatedGame.players[1].cards = [];
         updatedGame.players[2].cards = [];
         updatedGame.selectableDecks = [
+          { cards: [{ isJoker: false, rank: 9 }], isSelected: false, selectedBy: undefined },
           {
             cards: [
               { isJoker: true, rank: 13 },
@@ -324,19 +376,211 @@ describe('GameManager', () => {
             isSelected: false,
             selectedBy: undefined,
           },
-          { cards: [{ isJoker: false, rank: 0 }], isSelected: false, selectedBy: undefined },
-          { cards: [{ isJoker: false, rank: 0 }], isSelected: false, selectedBy: undefined },
+          { cards: [{ isJoker: false, rank: 7 }], isSelected: false, selectedBy: undefined },
         ];
         await mockDb.updateGame(game!.roomId, updatedGame);
       }
 
-      // 1등이 조커 2장 덱을 선택
-      await gameManager.selectDeck(game!.roomId, ownerId, 0);
+      // 2등이 조커 2장 덱을 선택
+      await gameManager.selectDeck(game!.roomId, 'player1', 0);
+      await gameManager.selectDeck(game!.roomId, 'player2', 1);
+      await gameManager.selectDeck(game!.roomId, 'player3', 2);
 
       const resultGame = await mockDb.getGame(game!.roomId);
-      expect(resultGame?.players.find((p) => p.id === 'player1')?.rank).toBe(1);
-      expect(resultGame?.players.find((p) => p.id === 'player2')?.rank).toBe(2);
-      expect(resultGame?.players.find((p) => p.id === 'player3')?.rank).toBe(3);
+      expect(resultGame?.currentTurn).toBe('player2');
+      expect(resultGame?.players.find((p) => p.id === 'player2')?.rank).toBe(1); // player2가 1등이 됨
+      expect(resultGame?.players.find((p) => p.id === 'player3')?.rank).toBe(2); // player3이 2등이 됨
+      expect(resultGame?.players.find((p) => p.id === 'player1')?.rank).toBe(3); // player1이 3등이 됨
+    });
+
+    it('3등이 조커 2장을 가지면 rank가 1등이 되어야 한다', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+
+      // 강제로 phase, rank, selectableDecks 설정
+      const updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'cardSelection';
+        updatedGame.currentTurn = ownerId;
+        updatedGame.players[0].rank = 1; // player1
+        updatedGame.players[1].rank = 2; // player2
+        updatedGame.players[2].rank = 3; // player3
+        updatedGame.players[0].cards = [];
+        updatedGame.players[1].cards = [];
+        updatedGame.players[2].cards = [];
+        updatedGame.selectableDecks = [
+          { cards: [{ isJoker: false, rank: 1 }], isSelected: false, selectedBy: undefined },
+          { cards: [{ isJoker: false, rank: 2 }], isSelected: false, selectedBy: undefined },
+          {
+            cards: [
+              { isJoker: true, rank: 13 },
+              { isJoker: true, rank: 13 },
+            ],
+            isSelected: false,
+            selectedBy: undefined,
+          },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 3등이 조커 2장 덱을 선택
+      await gameManager.selectDeck(game!.roomId, 'player1', 0);
+      await gameManager.selectDeck(game!.roomId, 'player2', 1);
+      await gameManager.selectDeck(game!.roomId, 'player3', 2);
+
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.currentTurn).toBe('player3');
+      expect(resultGame?.players.find((p) => p.id === 'player3')?.rank).toBe(1); // player3이 1등이 됨
+      expect(resultGame?.players.find((p) => p.id === 'player1')?.rank).toBe(2); // player1이 2등이 됨
+      expect(resultGame?.players.find((p) => p.id === 'player2')?.rank).toBe(3); // player2이 3등이 됨
+    });
+  });
+
+  describe('passTurn', () => {
+    it('모든 플레이어가 패스했을 때 라운드가 변경되어야 합니다', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, cards 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.lastPlay = undefined;
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1; // player1
+        updatedGame.players[1].rank = 2; // player2
+        updatedGame.players[2].rank = 3; // player3
+        updatedGame.players[3].rank = 4; // player4
+        updatedGame.players[0].cards = [{ rank: 1, isJoker: false }]; // player1은 카드 1장
+        updatedGame.players[1].cards = [{ rank: 2, isJoker: false }]; // player2는 카드 1장
+        updatedGame.players[2].cards = [{ rank: 3, isJoker: false }]; // player3는 카드 1장
+        updatedGame.players[3].cards = [{ rank: 4, isJoker: false }]; // player4는 카드 1장
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // player1이 카드를 낸다
+      updatedGame = await gameManager.playCard(game!.roomId, 'player1', [
+        { rank: 1, isJoker: false },
+      ]);
+      expect(updatedGame?.lastPlay?.playerId).toBe('player1');
+      expect(updatedGame?.lastPlay?.cards).toEqual([{ rank: 1, isJoker: false }]);
+      expect(updatedGame?.currentTurn).toBe('player2');
+      expect(updatedGame?.finishedPlayers).toEqual(['player1']);
+
+      // player2,3,4가 패스한다
+      await gameManager.passTurn(game!.roomId, 'player2');
+      await gameManager.passTurn(game!.roomId, 'player3');
+      await gameManager.passTurn(game!.roomId, 'player4');
+
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.round).toBe(2); // 라운드가 변경되어야 함
+      expect(resultGame?.lastPlay).toBeUndefined(); // lastPlay가 초기화되어야 함
+      expect(resultGame?.players[0].isPassed).toBe(false); // player1의 isPassed가 false로 초기화되어야 함
+      expect(resultGame?.currentTurn).toBe('player2');
+    });
+
+    it('모든 플레이어가 패스했을 때 마지막으로 카드를 낸 플레이어의 턴이 건너뛰어지지 않아야 함', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, cards 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.lastPlay = undefined;
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1; // player1
+        updatedGame.players[1].rank = 2; // player2
+        updatedGame.players[2].rank = 3; // player3
+        updatedGame.players[3].rank = 4; // player4
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+        ]; // player1은 카드 1장
+        updatedGame.players[1].cards = [{ rank: 2, isJoker: false }]; // player2는 카드 1장
+        updatedGame.players[2].cards = [{ rank: 3, isJoker: false }]; // player3는 카드 1장
+        updatedGame.players[3].cards = [{ rank: 4, isJoker: false }]; // player4는 카드 1장
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // player1이 카드를 낸다
+      updatedGame = await gameManager.playCard(game!.roomId, 'player1', [
+        { rank: 1, isJoker: false },
+      ]);
+      expect(updatedGame?.lastPlay?.playerId).toBe('player1');
+      expect(updatedGame?.lastPlay?.cards).toEqual([{ rank: 1, isJoker: false }]);
+      expect(updatedGame?.currentTurn).toBe('player2');
+
+      // player2,3,4가 패스한다
+      await gameManager.passTurn(game!.roomId, 'player2');
+      await gameManager.passTurn(game!.roomId, 'player3');
+      await gameManager.passTurn(game!.roomId, 'player4');
+
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.round).toBe(2); // 라운드가 변경되어야 함
+      expect(resultGame?.lastPlay).toBeUndefined(); // lastPlay가 초기화되어야 함
+      expect(resultGame?.players[0].isPassed).toBe(false); // player1의 isPassed가 false로 초기화되어야 함
+      expect(resultGame?.currentTurn).toBe('player1'); // 마지막으로 카드를 낸 player1이 다음 턴이 되어야 함
+    });
+
+    it('모든 플레이어가 패스했을 때 마지막으로 카드를 낸 플레이어가 카드가 없으면 다음 플레이어로 넘어가야 함', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, cards 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.lastPlay = undefined;
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1; // player1
+        updatedGame.players[1].rank = 2; // player2
+        updatedGame.players[2].rank = 3; // player3
+        updatedGame.players[3].rank = 4; // player4
+        updatedGame.players[0].cards = [{ rank: 1, isJoker: false }]; // player1은 카드 1장
+        updatedGame.players[1].cards = [{ rank: 2, isJoker: false }]; // player2는 카드 1장
+        updatedGame.players[2].cards = [{ rank: 3, isJoker: false }]; // player3는 카드 1장
+        updatedGame.players[3].cards = [{ rank: 4, isJoker: false }]; // player4는 카드 1장
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // player1이 마지막 카드를 내고 게임 완료
+      updatedGame = await gameManager.playCard(game!.roomId, 'player1', [
+        { rank: 1, isJoker: false },
+      ]);
+      expect(updatedGame?.lastPlay?.playerId).toBe('player1');
+      expect(updatedGame?.lastPlay?.cards).toEqual([{ rank: 1, isJoker: false }]);
+      expect(updatedGame?.currentTurn).toBe('player2');
+      expect(updatedGame?.finishedPlayers).toEqual(['player1']);
+
+      // player2,3,4가 패스한다
+      await gameManager.passTurn(game!.roomId, 'player2');
+      await gameManager.passTurn(game!.roomId, 'player3');
+      await gameManager.passTurn(game!.roomId, 'player4');
+
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.round).toBe(2); // 라운드가 변경되어야 함
+      expect(resultGame?.lastPlay).toBeUndefined(); // lastPlay가 초기화되어야 함
+      expect(resultGame?.players[0].isPassed).toBe(false); // player1의 isPassed가 false로 초기화되어야 함
+      expect(resultGame?.currentTurn).toBe('player2'); // player1은 카드가 없으므로 player2가 다음 턴이 되어야 함
     });
   });
 });
