@@ -44,7 +44,6 @@ interface SocketContextType {
   ) => Promise<{ success: boolean; error?: string; data?: any }>;
   vote: (
     roomId: string,
-    playerId: string,
     vote: boolean
   ) => Promise<{ success: boolean; error?: string; data?: any }>;
   getGameState: (
@@ -206,9 +205,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const vote = async (roomId: string, playerId: string, vote: boolean) => {
+  const vote = async (roomId: string, vote: boolean) => {
     try {
-      await socketClient.vote(roomId, playerId, vote);
+      await socketClient.vote(roomId, vote);
       return { success: true, data: undefined };
     } catch (error) {
       return {

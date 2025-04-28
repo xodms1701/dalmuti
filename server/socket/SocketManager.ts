@@ -291,11 +291,11 @@ export default class SocketManager {
       socket.on(
         SocketEvent.VOTE,
         async (
-          { roomId, playerId, vote }: { roomId: string; playerId: string; vote: boolean },
+          { roomId, vote }: { roomId: string; playerId: string; vote: boolean },
           callback?: (response: { success: boolean; data?: any; error?: string }) => void
         ) => {
           try {
-            const game = await this.gameManager.vote(roomId, playerId, vote);
+            const game = await this.gameManager.vote(roomId, socket.id, vote);
             if (!game) {
               if (typeof callback === 'function')
                 callback({ success: false, error: '투표할 수 없는 상태입니다.' });
@@ -308,7 +308,7 @@ export default class SocketManager {
             if (allVoted) {
               if (game.phase === 'gameEnd') {
                 this.io.to(roomId).emit(SocketEvent.GAME_ENDED);
-              } else if (game.nextGameVotes[playerId]) {
+              } else if (game.nextGameVotes[socket.id]) {
                 const newGame = await this.gameManager.createGame(
                   game.ownerId,
                   game.players[0].nickname

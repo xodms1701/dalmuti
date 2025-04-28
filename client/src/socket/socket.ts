@@ -234,10 +234,9 @@ class SocketClient {
     });
   }
 
-  vote(roomId: string, playerId: string, vote: boolean): Promise<void> {
+  vote(roomId: string, vote: boolean): Promise<void> {
     return this.emitWithAck<void>(SocketEvent.VOTE, {
       roomId: roomId,
-      playerId,
       vote,
     });
   }

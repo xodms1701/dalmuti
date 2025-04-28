@@ -48,7 +48,7 @@ const VotePage: React.FC = () => {
   React.useEffect(() => {
     // 투표가 끝나면(phase가 gameEnd가 아니거나 isVoting이 false) 로비로 이동
     if (!game?.isVoting) {
-      navigate("/lobby");
+      navigate("/rank-confirmation");
     }
   }, [game?.isVoting, navigate]);
 
@@ -62,13 +62,13 @@ const VotePage: React.FC = () => {
       <p>다시 한 번 플레이하시겠습니까?</p>
       <div>
         <Button
-          onClick={() => socketId && vote(game.roomId, socketId, true)}
+          onClick={() => socketId && vote(game.roomId, true)}
           disabled={myVote === true || !socketId}
         >
           예
         </Button>
         <Button
-          onClick={() => socketId && vote(game.roomId, socketId, false)}
+          onClick={() => socketId && vote(game.roomId, false)}
           disabled={myVote === false || !socketId}
         >
           아니오

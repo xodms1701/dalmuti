@@ -586,19 +586,46 @@ export default class GameManager {
     // 모든 플레이어가 투표했는지 확인
     const allVoted = game.players.every((p) => game.votes[p.id] !== undefined);
     if (allVoted) {
-      // 투표 결과에 따라 다음 게임 시작 여부 결정
-      const nextGameVotes = Object.values(game.votes).filter((v) => v).length;
-      const majority = Math.ceil(game.players.length / 2);
+      // 모든 플레이어가 찬성했는지 확인
+      const allAgreed = Object.values(game.votes).every((v) => v);
 
-      if (nextGameVotes >= majority) {
-        // 다음 게임 시작
-        const newGame = await this.createGame(game.ownerId, game.players[0].nickname);
-        if (newGame) {
-          game.nextGameVotes[playerId] = true;
-          await this.db.updateGame(roomId, {
-            nextGameVotes: game.nextGameVotes,
-          });
-        }
+      if (allAgreed) {
+        // finishedPlayers 순서대로 계급 재배정
+        game.finishedPlayers.forEach((playerId, index) => {
+          const player = game.players.find((p) => p.id === playerId);
+          if (player) {
+            player.rank = index + 1;
+          }
+        });
+
+        // 게임 상태 초기화
+        game.phase = 'roleSelectionComplete';
+        game.currentTurn = null;
+        game.lastPlay = undefined;
+        game.deck = [];
+        game.round = 1;
+        game.roleSelectionDeck = this.initializeRoleSelectionDeck();
+        game.selectableDecks = [];
+        game.isVoting = false;
+        game.votes = {};
+        game.finishedPlayers = [];
+
+        // 덱 초기화
+        this.initializeDeck(game);
+
+        await this.db.updateGame(roomId, {
+          players: game.players,
+          phase: game.phase,
+          currentTurn: game.currentTurn,
+          lastPlay: game.lastPlay,
+          deck: game.deck,
+          round: game.round,
+          roleSelectionDeck: game.roleSelectionDeck,
+          selectableDecks: game.selectableDecks,
+          isVoting: game.isVoting,
+          votes: game.votes,
+          finishedPlayers: game.finishedPlayers,
+        });
       } else {
         // 게임 종료
         game.phase = 'gameEnd';
