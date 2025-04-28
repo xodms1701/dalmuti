@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
-import { GamePhase, Role, RoleSelectionCard } from "../types";
+import { RoleSelectionCard } from "../types";
 import { useNavigate } from "react-router-dom";
 import RoleCard from "../components/RoleCard";
 import styled from "styled-components";
@@ -36,10 +36,39 @@ const Info = styled.div`
   margin-bottom: 1.5rem;
 `;
 
+const shuffleArray = (array: RoleSelectionCard[]) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
 const RoleSelection: React.FC = () => {
   const { socketId, selectRole, dealCards } = useSocketContext();
   const { game } = useGameStore();
   const navigate = useNavigate();
+  const [shuffledCards, setShuffledCards] = useState<RoleSelectionCard[]>([]);
+
+  useEffect(() => {
+    if (game?.roleSelectionDeck) {
+      setShuffledCards(shuffleArray(game.roleSelectionDeck));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (game?.roleSelectionDeck) {
+      setShuffledCards((prevCards) =>
+        prevCards.map((card) => {
+          const updatedCard = game.roleSelectionDeck.find(
+            (c) => c.number === card.number
+          );
+          return updatedCard || card;
+        })
+      );
+    }
+  }, [game?.roleSelectionDeck]);
 
   const handleSelect = async (roleNumber: number) => {
     if (!game?.roomId || !socketId) return;
@@ -62,17 +91,15 @@ const RoleSelection: React.FC = () => {
       <Title>역할을 선택하세요</Title>
       <Info>아래 카드 중 하나를 클릭해 역할을 선택하세요.</Info>
       <CardList>
-        {(game?.roleSelectionDeck || []).map(
-          (role: RoleSelectionCard, idx: number) => (
-            <RoleCard
-              key={role.number}
-              number={role.number}
-              flipped={role.isSelected}
-              disabled={role.isSelected}
-              onClick={() => handleSelect(role.number)}
-            />
-          )
-        )}
+        {shuffledCards.map((role: RoleSelectionCard) => (
+          <RoleCard
+            key={role.number}
+            number={role.number}
+            flipped={role.isSelected}
+            disabled={role.isSelected}
+            onClick={() => handleSelect(role.number)}
+          />
+        ))}
       </CardList>
       {game?.ownerId === socketId &&
         game?.phase === "roleSelectionComplete" && (

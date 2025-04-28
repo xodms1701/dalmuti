@@ -127,6 +127,16 @@ const PlayPage: React.FC = () => {
 
   const me = game.players.find((p) => p.id === socketId);
 
+  // 정렬된 카드 목록
+  const sortedCards =
+    me?.cards
+      ?.map((card, idx) => ({ card, idx }))
+      .sort((a, b) => {
+        if (a.card.isJoker && !b.card.isJoker) return 1;
+        if (!a.card.isJoker && b.card.isJoker) return -1;
+        return a.card.rank - b.card.rank;
+      }) || [];
+
   const toggleCard = (idx: number) => {
     setSelectedIdxs((prev) =>
       prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
@@ -135,7 +145,7 @@ const PlayPage: React.FC = () => {
 
   const handlePlayCard = async () => {
     if (!me || selectedIdxs.length === 0 || !game?.roomId || !socketId) return;
-    const cardsToPlay = selectedIdxs.map((idx) => me.cards[idx]);
+    const cardsToPlay = selectedIdxs.map((idx) => sortedCards[idx].card);
     await playCard(game.roomId, socketId, cardsToPlay);
     setSelectedIdxs([]);
   };
@@ -190,7 +200,7 @@ const PlayPage: React.FC = () => {
         <b>내 카드:</b>
       </Info>
       <CardList>
-        {me?.cards.map((card, idx) => (
+        {sortedCards.map(({ card }, idx) => (
           <Card
             key={idx}
             selected={selectedIdxs.includes(idx)}
