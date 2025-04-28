@@ -46,7 +46,10 @@ const VotePage: React.FC = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    // 투표가 끝나면(phase가 gameEnd가 아니거나 isVoting이 false) 로비로 이동
+    if (game?.phase === "gameEnd") {
+      navigate("/");
+    }
+
     if (!game?.isVoting) {
       navigate("/rank-confirmation");
     }
