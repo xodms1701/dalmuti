@@ -244,6 +244,7 @@ export default class GameManager {
       round: game.round,
       phase: game.phase,
       finishedPlayers: game.finishedPlayers,
+      isVoting: game.isVoting,
     });
 
     return game;
