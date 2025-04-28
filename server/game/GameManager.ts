@@ -188,7 +188,6 @@ export default class GameManager {
       // 모든 플레이어의 카드가 소진되었는지 확인
       if (game.finishedPlayers.length === game.players.length) {
         // 모든 플레이어의 카드가 소진되었으므로 게임 종료
-        game.phase = 'gameEnd';
         game.isVoting = true;
         game.votes = {};
         game.nextGameVotes = {};
@@ -201,7 +200,6 @@ export default class GameManager {
           // 마지막 한 명도 자동으로 완료 처리
           const lastPlayer = notFinished[0];
           game.finishedPlayers.push(lastPlayer.id);
-          game.phase = 'gameEnd';
           game.isVoting = true;
           game.votes = {};
           game.nextGameVotes = {};
@@ -415,7 +413,8 @@ export default class GameManager {
       return false;
     }
 
-    // 덱 섞기
+    // 덱 초기화 및 섞기
+    this.initializeDeck(game);
     this.shuffleDeck(game);
 
     // 플레이어 수에 맞게 각 플레이어가 선택할 수 있는 덱 생성
@@ -447,6 +446,15 @@ export default class GameManager {
         const cardIndex = playerCount * cardsPerPlayer + i;
         game.selectableDecks[i].cards.push(game.deck[cardIndex]);
       }
+    }
+
+    // 모든 카드 배분이 끝난 후 한 번에 정렬
+    for (const deck of game.selectableDecks) {
+      deck.cards.sort((a, b) => {
+        if (a.isJoker && !b.isJoker) return 1;
+        if (!a.isJoker && b.isJoker) return -1;
+        return a.rank - b.rank;
+      });
     }
 
     // rank가 낮을수록 높은 순위이므로 오름차순 정렬

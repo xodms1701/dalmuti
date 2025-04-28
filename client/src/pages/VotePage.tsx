@@ -50,7 +50,7 @@ const VotePage: React.FC = () => {
     if (!game?.isVoting) {
       navigate("/rank-confirmation");
     }
-  }, [game?.isVoting, navigate]);
+  }, [game?.isVoting, game?.phase, navigate]);
 
   if (!game?.isVoting) return null;
 

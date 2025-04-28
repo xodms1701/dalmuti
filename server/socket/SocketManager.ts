@@ -291,7 +291,7 @@ export default class SocketManager {
       socket.on(
         SocketEvent.VOTE,
         async (
-          { roomId, vote }: { roomId: string; playerId: string; vote: boolean },
+          { roomId, vote }: { roomId: string; vote: boolean },
           callback?: (response: { success: boolean; data?: any; error?: string }) => void
         ) => {
           try {
@@ -304,22 +304,7 @@ export default class SocketManager {
 
             if (typeof callback === 'function') callback({ success: true });
 
-            const allVoted = game.players.every((p) => game.votes[p.id] !== undefined);
-            if (allVoted) {
-              if (game.phase === 'gameEnd') {
-                this.io.to(roomId).emit(SocketEvent.GAME_ENDED);
-              } else if (game.nextGameVotes[socket.id]) {
-                const newGame = await this.gameManager.createGame(
-                  game.ownerId,
-                  game.players[0].nickname
-                );
-                if (newGame) {
-                  this.io.to(roomId).emit(SocketEvent.NEXT_GAME_STARTED, newGame);
-                }
-              }
-            } else {
-              this.emitGameState(roomId);
-            }
+            this.emitGameState(roomId);
           } catch (error) {
             if (typeof callback === 'function')
               callback({

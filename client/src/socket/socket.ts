@@ -1,9 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import { Card, Game } from "../types";
 import { SocketEvent } from "./events";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 class SocketClient {
   private socket: Socket | null = null;
@@ -17,7 +14,9 @@ class SocketClient {
   private nextGameStartedCallback: ((game: Game) => void) | null = null;
   private connectCallback: (() => void) | null = null;
 
-  connect(url: string = process.env.API_URL || "http://localhost:3000") {
+  connect(
+    url: string = process.env.REACT_APP_API_URL || "http://localhost:3000"
+  ) {
     console.log("[Socket] 서버 URL:", url);
 
     if (this.socket?.connected) {
