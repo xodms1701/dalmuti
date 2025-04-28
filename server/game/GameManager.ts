@@ -656,10 +656,18 @@ export default class GameManager {
   }
 
   private initializeRoleSelectionDeck(): RoleSelectionCard[] {
-    return Array.from({ length: 13 }, (_, i) => ({
-      number: i + 1,
-      isSelected: false,
-    }));
+    const deck: RoleSelectionCard[] = [];
+    for (let i = 1; i <= 13; i++) {
+      deck.push({ number: i, isSelected: false });
+    }
+
+    // Fisher-Yates 셔플 알고리즘으로 카드 섞기
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    return deck;
   }
 
   private shuffleDeck(game: Game): void {
