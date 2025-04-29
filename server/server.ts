@@ -26,5 +26,19 @@ const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
 const gameManager = new GameManager(db);
 new SocketManager(io, gameManager);
 
-// Vercel에서는 이 부분을 제거하고 app을 export
+const PORT = process.env.PORT || 3000;
+
+// 로컬 환경에서만 서버 시작
+if (process.env.NODE_ENV !== 'production') {
+  httpServer.listen(
+    {
+      port: PORT,
+      host: '0.0.0.0',
+    },
+    () => {
+      console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+    }
+  );
+}
+
 export default app;
