@@ -15,10 +15,11 @@ const io = new Server(httpServer, {
     origin: '*',
     methods: ['GET', 'POST'],
   },
+  path: '/socket.io',
 });
 
 // GET 요청 핸들러 추가
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({ message: 'dalmuti' });
 });
 

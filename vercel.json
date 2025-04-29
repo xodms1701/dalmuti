@@ -18,8 +18,12 @@
   ],
   "routes": [
     {
+      "src": "/socket.io/(.*)",
+      "dest": "/server/server.ts"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "server/server.ts"
+      "dest": "/server/server.ts"
     },
     {
       "src": "/static/css/(.*)",
@@ -54,7 +58,7 @@
       "dest": "/client/robots.txt"
     },
     {
-      "src": "/(.*)",
+      "src": "/((?!api|socket.io/).*)",
       "dest": "/client/index.html"
     }
   ]

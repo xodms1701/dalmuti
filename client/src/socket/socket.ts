@@ -28,6 +28,7 @@ class SocketClient {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      path: "/socket.io",
     });
 
     // 연결 이벤트를 먼저 등록
