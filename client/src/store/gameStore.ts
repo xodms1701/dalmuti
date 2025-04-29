@@ -38,7 +38,6 @@ export const useGameStore = create<GameStore>((set) => ({
     set((state) => {
       const newState = { ...state, game };
       if (state.userId) {
-        const currentPlayer = game.players.find((p) => p.id === state.userId);
         newState.ui = {
           ...state.ui,
           isMyTurn: game.currentTurn === state.userId,
