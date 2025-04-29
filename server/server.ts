@@ -28,17 +28,12 @@ new SocketManager(io, gameManager);
 
 const PORT = process.env.PORT || 3000;
 
-// 로컬 환경에서만 서버 시작
-if (process.env.NODE_ENV !== 'production') {
-  httpServer.listen(
-    {
-      port: PORT,
-      host: '0.0.0.0',
-    },
-    () => {
-      console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
-    }
-  );
-}
-
-export default app;
+httpServer.listen(
+  {
+    port: PORT,
+    host: '0.0.0.0',
+  },
+  () => {
+    console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+  }
+);
