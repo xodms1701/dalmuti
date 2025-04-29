@@ -8,9 +8,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "jest"],
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    "types": ["node", "jest"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
