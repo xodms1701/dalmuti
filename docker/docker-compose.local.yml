@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: dalmuti-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: dalmuti123
+    volumes:
+      - mongodb_data:/data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: dalmuti-mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: dalmuti123
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: dalmuti123
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:
+
+networks:
+  default:
+    name: dalmuti-local-network
