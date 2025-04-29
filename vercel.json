@@ -22,8 +22,40 @@
       "dest": "server/server.ts"
     },
     {
+      "src": "/static/css/(.*)",
+      "dest": "/client/static/css/$1"
+    },
+    {
+      "src": "/static/js/(.*)",
+      "dest": "/client/static/js/$1"
+    },
+    {
+      "src": "/asset-manifest.json",
+      "dest": "/client/asset-manifest.json"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/client/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/client/manifest.json"
+    },
+    {
+      "src": "/logo192.png",
+      "dest": "/client/logo192.png"
+    },
+    {
+      "src": "/logo512.png",
+      "dest": "/client/logo512.png"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/client/robots.txt"
+    },
+    {
       "src": "/(.*)",
-      "dest": "client/build/$1"
+      "dest": "/client/index.html"
     }
   ]
 }
