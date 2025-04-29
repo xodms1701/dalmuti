@@ -7,24 +7,9 @@
       "config": {
         "distDir": "build"
       }
-    },
-    {
-      "src": "server/server.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["server/dist/**"]
-      }
     }
   ],
   "routes": [
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "/server/server.ts"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/server/server.ts"
-    },
     {
       "src": "/static/css/(.*)",
       "dest": "/client/static/css/$1"
@@ -58,7 +43,7 @@
       "dest": "/client/robots.txt"
     },
     {
-      "src": "/((?!api|socket.io/).*)",
+      "src": "/(.*)",
       "dest": "/client/index.html"
     }
   ]
