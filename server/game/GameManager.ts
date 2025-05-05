@@ -163,6 +163,18 @@ export default class GameManager {
       }
     }
 
+    // 3. 같은 숫자의 카드만 낼 수 있는지 체크
+    if (cards.length > 1) {
+      const firstNonJokerCard = cards.find((card) => !card.isJoker);
+      if (firstNonJokerCard) {
+        const firstCardRank = firstNonJokerCard.rank;
+        const hasDifferentRank = cards.some((card) => !card.isJoker && card.rank !== firstCardRank);
+        if (hasDifferentRank) {
+          return game;
+        }
+      }
+    }
+
     // 카드를 플레이
     const playedCards: Card[] = [];
     for (const card of cards) {

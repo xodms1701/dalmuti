@@ -156,6 +156,73 @@ describe('GameManager', () => {
       expect(updatedGame).not.toBeNull();
       expect(updatedGame?.lastPlay).toBeUndefined();
     });
+
+    it('다른 숫자의 카드를 한꺼번에 낼 수 없어야 합니다', async () => {
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player1', 'Player1');
+      await gameManager.startGame(game!.roomId);
+
+      // 강제로 phase와 cards 설정
+      const updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+          { rank: 3, isJoker: false },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 다른 숫자의 카드를 한꺼번에 내려고 시도
+      const resultGame = await gameManager.playCard(game!.roomId, ownerId, [
+        { rank: 1, isJoker: false },
+        { rank: 2, isJoker: false },
+      ]);
+
+      expect(resultGame).not.toBeNull();
+      expect(resultGame?.lastPlay).toBeUndefined();
+    });
+
+    it('같은 숫자의 카드와 조커는 한꺼번에 낼 수 있어야 합니다', async () => {
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      await gameManager.joinGame(game!.roomId, 'player1', 'Player1');
+      await gameManager.startGame(game!.roomId);
+
+      // 강제로 phase와 cards 설정
+      const updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = ownerId;
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+          { rank: 2, isJoker: false },
+          { rank: 13, isJoker: true },
+        ];
+        updatedGame.players[1].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 4, isJoker: false },
+          { rank: 4, isJoker: false },
+          { rank: 13, isJoker: true },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 같은 숫자의 카드와 조커를 한꺼번에 내려고 시도
+      const resultGame = await gameManager.playCard(game!.roomId, ownerId, [
+        { rank: 2, isJoker: false },
+        { rank: 2, isJoker: false },
+        { rank: 13, isJoker: true },
+      ]);
+
+      expect(resultGame).not.toBeNull();
+      expect(resultGame?.lastPlay).not.toBeUndefined();
+      expect(resultGame?.lastPlay?.playerId).toBe(ownerId);
+      expect(resultGame?.lastPlay?.cards).toHaveLength(3);
+    });
   });
 
   describe('selectRole', () => {
