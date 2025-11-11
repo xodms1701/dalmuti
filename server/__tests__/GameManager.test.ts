@@ -134,7 +134,19 @@ describe('GameManager', () => {
       await gameManager.selectDeck(game!.roomId, 'player2', 2);
       await gameManager.selectDeck(game!.roomId, 'player3', 3);
 
-      const cards = game!.players.find((player) => player.id === ownerId)?.cards;
+      // 업데이트된 게임 상태 가져오기
+      const updatedGame = await mockDb.getGame(game!.roomId);
+
+      // 게임이 playing 상태인지 확인
+      expect(updatedGame?.phase).toBe('playing');
+      expect(updatedGame?.currentTurn).toBeTruthy();
+
+      // 현재 턴인 플레이어 찾기
+      const currentPlayerId = updatedGame!.currentTurn!;
+      const player = updatedGame!.players.find((p) => p.id === currentPlayerId);
+      expect(player?.cards.length).toBeGreaterThan(0);
+
+      const cards = player?.cards;
       const pickCard =
         cards && cards.length > 0
           ? cards.reduce((max, card) => (card.rank > max.rank ? card : max), cards[0])
@@ -142,10 +154,11 @@ describe('GameManager', () => {
       if (!pickCard) {
         throw new Error('pickCard not found');
       }
-      const playedGame = await gameManager.playCard(game!.roomId, ownerId, [pickCard]);
+
+      const playedGame = await gameManager.playCard(game!.roomId, currentPlayerId, [pickCard]);
 
       expect(playedGame).not.toBeNull();
-      expect(playedGame?.lastPlay?.playerId).toBe(ownerId);
+      expect(playedGame?.lastPlay?.playerId).toBe(currentPlayerId);
     });
 
     it('유효하지 않은 카드를 낼 수 없어야 합니다', async () => {
