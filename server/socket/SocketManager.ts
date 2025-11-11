@@ -189,31 +189,6 @@ export default class SocketManager {
       );
 
       socket.on(
-        SocketEvent.DEAL_CARDS,
-        async (
-          { roomId }: { roomId: string },
-          callback?: (response: { success: boolean; data?: any; error?: string }) => void
-        ) => {
-          try {
-            const success = await this.gameManager.dealCards(roomId, socket.id);
-            if (!success) {
-              if (typeof callback === 'function')
-                callback({ success: false, error: '카드 배분에 실패했습니다.' });
-              return;
-            }
-            if (typeof callback === 'function') callback({ success: true });
-            this.emitGameState(roomId);
-          } catch (error) {
-            if (typeof callback === 'function')
-              callback({
-                success: false,
-                error: error instanceof Error ? error.message : '카드 배분 중 오류가 발생했습니다.',
-              });
-          }
-        }
-      );
-
-      socket.on(
         SocketEvent.SELECT_DECK,
         async (
           { roomId, cardIndex }: { roomId: string; cardIndex: number },

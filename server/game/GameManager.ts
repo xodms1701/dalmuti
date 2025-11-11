@@ -1,4 +1,6 @@
 import { Card, Game, Player, RoleSelectionCard, Database } from '../types';
+import { Server } from 'socket.io';
+import { SocketEvent } from '../socket/events';
 
 export default class GameManager {
   private readonly MIN_PLAYERS = 4;
@@ -7,8 +9,11 @@ export default class GameManager {
 
   private db: Database;
 
-  constructor(db: Database) {
+  private io: Server;
+
+  constructor(db: Database, io: Server) {
     this.db = db;
+    this.io = io;
   }
 
   public async createGame(ownerId: string, nickname: string): Promise<Game | null> {
@@ -403,84 +408,64 @@ export default class GameManager {
         p.rank = index + 1;
       });
 
-      game.phase = 'roleSelectionComplete';
+      // 자동으로 카드 섞기 및 배분
+      this.initializeDeck(game);
+      this.shuffleDeck(game);
+
+      // 플레이어 수에 맞게 각 플레이어가 선택할 수 있는 덱 생성
+      const playerCount = game.players.length;
+      const cardsPerPlayer = Math.floor(game.deck.length / playerCount);
+      const remainingCards = game.deck.length % playerCount;
+
+      // 각 플레이어의 카드 초기화
+      game.players.forEach((player) => {
+        player.cards = [];
+      });
+
+      // selectableDecks 초기화
+      game.selectableDecks = [];
+
+      // 각 플레이어에게 동일한 수의 카드 배분
+      for (let i = 0; i < playerCount; i++) {
+        const startIndex = i * cardsPerPlayer;
+        const endIndex = startIndex + cardsPerPlayer;
+        game.selectableDecks.push({
+          cards: game.deck.slice(startIndex, endIndex),
+          isSelected: false,
+        });
+      }
+
+      // 남은 카드가 있다면 순서대로 배분
+      if (remainingCards > 0) {
+        for (let i = 0; i < remainingCards; i++) {
+          const cardIndex = playerCount * cardsPerPlayer + i;
+          game.selectableDecks[i].cards.push(game.deck[cardIndex]);
+        }
+      }
+
+      // 모든 카드 배분이 끝난 후 한 번에 정렬
+      for (const deck of game.selectableDecks) {
+        deck.cards.sort((a, b) => {
+          if (a.isJoker && !b.isJoker) return 1;
+          if (!a.isJoker && b.isJoker) return -1;
+          return a.rank - b.rank;
+        });
+      }
+
+      // rank가 낮을수록 높은 순위이므로 오름차순 정렬
+      const rankedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+      // 카드 선택 단계로 전환
+      game.phase = 'cardSelection';
+      game.currentTurn = rankedPlayers[0].id; // 가장 높은 순위의 플레이어부터 시작
     }
 
     await this.db.updateGame(roomId, {
       players: game.players,
       roleSelectionDeck: game.roleSelectionDeck,
       phase: game.phase,
-    });
-
-    return true;
-  }
-
-  public async dealCards(roomId: string, playerId: string): Promise<boolean> {
-    const game = await this.db.getGame(roomId);
-    if (!game || game.phase !== 'roleSelectionComplete') {
-      return false;
-    }
-
-    if (game.ownerId !== playerId) {
-      return false;
-    }
-
-    // 덱 초기화 및 섞기
-    this.initializeDeck(game);
-    this.shuffleDeck(game);
-
-    // 플레이어 수에 맞게 각 플레이어가 선택할 수 있는 덱 생성
-    const playerCount = game.players.length;
-    const cardsPerPlayer = Math.floor(game.deck.length / playerCount);
-    const remainingCards = game.deck.length % playerCount;
-
-    // 각 플레이어의 카드 초기화
-    game.players.forEach((player) => {
-      player.cards = [];
-    });
-
-    // selectableDecks 초기화
-    game.selectableDecks = [];
-
-    // 각 플레이어에게 동일한 수의 카드 배분
-    for (let i = 0; i < playerCount; i++) {
-      const startIndex = i * cardsPerPlayer;
-      const endIndex = startIndex + cardsPerPlayer;
-      game.selectableDecks.push({
-        cards: game.deck.slice(startIndex, endIndex),
-        isSelected: false,
-      });
-    }
-
-    // 남은 카드가 있다면 순서대로 배분
-    if (remainingCards > 0) {
-      for (let i = 0; i < remainingCards; i++) {
-        const cardIndex = playerCount * cardsPerPlayer + i;
-        game.selectableDecks[i].cards.push(game.deck[cardIndex]);
-      }
-    }
-
-    // 모든 카드 배분이 끝난 후 한 번에 정렬
-    for (const deck of game.selectableDecks) {
-      deck.cards.sort((a, b) => {
-        if (a.isJoker && !b.isJoker) return 1;
-        if (!a.isJoker && b.isJoker) return -1;
-        return a.rank - b.rank;
-      });
-    }
-
-    // rank가 낮을수록 높은 순위이므로 오름차순 정렬
-    const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
-
-    // 카드 선택 단계로 전환
-    game.phase = 'cardSelection';
-    game.currentTurn = sortedPlayers[0].id; // 가장 높은 순위의 플레이어부터 시작
-
-    await this.db.updateGame(roomId, {
-      phase: game.phase,
       deck: game.deck,
       currentTurn: game.currentTurn,
-      players: game.players,
       selectableDecks: game.selectableDecks,
     });
 
@@ -619,33 +604,100 @@ export default class GameManager {
         });
 
         // 게임 상태 초기화
-        game.phase = 'roleSelectionComplete';
-        game.currentTurn = null;
         game.lastPlay = undefined;
-        game.deck = [];
         game.round = 1;
         game.roleSelectionDeck = this.initializeRoleSelectionDeck();
-        game.selectableDecks = [];
         game.isVoting = false;
         game.votes = {};
         game.finishedPlayers = [];
 
-        // 덱 초기화
-        this.initializeDeck(game);
+        // 각 플레이어의 카드 초기화
+        game.players.forEach((player) => {
+          player.cards = [];
+        });
+
+        // 먼저 roleSelectionComplete 단계로 전환하여 순위 확인 화면 표시
+        game.phase = 'roleSelectionComplete';
 
         await this.db.updateGame(roomId, {
           players: game.players,
           phase: game.phase,
-          currentTurn: game.currentTurn,
           lastPlay: game.lastPlay,
-          deck: game.deck,
           round: game.round,
           roleSelectionDeck: game.roleSelectionDeck,
-          selectableDecks: game.selectableDecks,
           isVoting: game.isVoting,
           votes: game.votes,
           finishedPlayers: game.finishedPlayers,
         });
+
+        // 5초 후 카드 섞기 및 배분
+        setTimeout(async () => {
+          // 게임 상태 다시 가져오기 (혹시 변경되었을 수 있으므로)
+          const updatedGame = await this.db.getGame(roomId);
+          if (!updatedGame || updatedGame.phase !== 'roleSelectionComplete') {
+            return;
+          }
+
+          // 자동으로 카드 섞기 및 배분
+          this.initializeDeck(updatedGame);
+          this.shuffleDeck(updatedGame);
+
+          // 플레이어 수에 맞게 각 플레이어가 선택할 수 있는 덱 생성
+          const playerCount = updatedGame.players.length;
+          const cardsPerPlayer = Math.floor(updatedGame.deck.length / playerCount);
+          const remainingCards = updatedGame.deck.length % playerCount;
+
+          // selectableDecks 초기화
+          updatedGame.selectableDecks = [];
+
+          // 각 플레이어에게 동일한 수의 카드 배분
+          for (let i = 0; i < playerCount; i++) {
+            const startIndex = i * cardsPerPlayer;
+            const endIndex = startIndex + cardsPerPlayer;
+            updatedGame.selectableDecks.push({
+              cards: updatedGame.deck.slice(startIndex, endIndex),
+              isSelected: false,
+            });
+          }
+
+          // 남은 카드가 있다면 순서대로 배분
+          if (remainingCards > 0) {
+            for (let i = 0; i < remainingCards; i++) {
+              const cardIndex = playerCount * cardsPerPlayer + i;
+              updatedGame.selectableDecks[i].cards.push(updatedGame.deck[cardIndex]);
+            }
+          }
+
+          // 모든 카드 배분이 끝난 후 한 번에 정렬
+          for (const deck of updatedGame.selectableDecks) {
+            deck.cards.sort((a, b) => {
+              if (a.isJoker && !b.isJoker) return 1;
+              if (!a.isJoker && b.isJoker) return -1;
+              return a.rank - b.rank;
+            });
+          }
+
+          // rank가 낮을수록 높은 순위이므로 오름차순 정렬
+          const rankedPlayers = [...updatedGame.players].sort(
+            (a, b) => (a.rank || 0) - (b.rank || 0)
+          );
+
+          // 카드 선택 단계로 전환
+          updatedGame.phase = 'cardSelection';
+          updatedGame.currentTurn = rankedPlayers[0].id; // 가장 높은 순위의 플레이어부터 시작
+
+          await this.db.updateGame(roomId, {
+            players: updatedGame.players,
+            phase: updatedGame.phase,
+            currentTurn: updatedGame.currentTurn,
+            deck: updatedGame.deck,
+            selectableDecks: updatedGame.selectableDecks,
+          });
+
+          // 클라이언트에게 업데이트된 게임 상태 전송
+          const finalGameState = await this.db.getGame(roomId);
+          this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, finalGameState);
+        }, 5000);
       } else {
         // 게임 종료
         game.phase = 'gameEnd';

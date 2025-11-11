@@ -3,6 +3,7 @@ import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import HelpModal from "../components/HelpModal";
 
 const Container = styled.div`
   display: flex;
@@ -85,10 +86,52 @@ const Button = styled.button<{ disabled?: boolean }>`
   }
 `;
 
+const HelpButton = styled.button`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #357abd;
+    transform: scale(1.05);
+  }
+`;
+
+const PlayerCountInfo = styled.div`
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+`;
+
+const InfoText = styled.p`
+  font-size: 1rem;
+  color: #856404;
+  margin: 0;
+`;
+
 const Room: React.FC = () => {
   const { socketId, ready, startGame } = useSocketContext();
   const { game } = useGameStore();
   const navigate = useNavigate();
+  const [isHelpOpen, setIsHelpOpen] = React.useState(false);
 
   const isHost = game?.ownerId === socketId;
 
@@ -125,12 +168,31 @@ const Room: React.FC = () => {
     game.players.length <= 8 &&
     game.players.every((player) => player.isReady);
 
+  const playerCount = game.players.length;
+  const needMorePlayers = playerCount < 4;
+  const tooManyPlayers = playerCount > 8;
+
   return (
     <Container>
       <RoomInfo>
         <RoomTitle>게임 준비 방</RoomTitle>
         <RoomCode>방 코드: {game.roomId}</RoomCode>
       </RoomInfo>
+
+      <PlayerCountInfo>
+        <InfoText>
+          {needMorePlayers && `현재 ${playerCount}명 / 최소 4명 필요`}
+          {tooManyPlayers && `현재 ${playerCount}명 / 최대 8명까지 가능`}
+          {!needMorePlayers &&
+            !tooManyPlayers &&
+            `현재 ${playerCount}명 참가 중 (4~8명)`}
+        </InfoText>
+        {canStartGame && (
+          <InfoText style={{ color: "#28a745", fontWeight: "bold" }}>
+            ✓ 모든 플레이어가 준비 완료! 게임을 시작할 수 있습니다.
+          </InfoText>
+        )}
+      </PlayerCountInfo>
 
       <PlayerList>
         {game.players.map((player) => (
@@ -160,6 +222,13 @@ const Room: React.FC = () => {
           </Button>
         )}
       </ButtonContainer>
+
+      <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        type="room"
+      />
     </Container>
   );
 };

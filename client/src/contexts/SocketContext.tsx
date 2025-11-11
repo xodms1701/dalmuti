@@ -26,9 +26,6 @@ interface SocketContextType {
     playerId: string,
     roleNumber: number
   ) => Promise<{ success: boolean; error?: string; data?: any }>;
-  dealCards: (
-    roomId: string
-  ) => Promise<{ success: boolean; error?: string; data?: any }>;
   selectDeck: (
     roomId: string,
     cardIndex: number
@@ -169,15 +166,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const dealCards = async (roomId: string) => {
-    try {
-      await socketClient.dealCards(roomId);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: (error as Error).message };
-    }
-  };
-
   const selectDeck = async (roomId: string, cardIndex: number) => {
     try {
       await socketClient.selectDeck(roomId, cardIndex);
@@ -239,7 +227,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         ready,
         startGame,
         selectRole,
-        dealCards,
         selectDeck,
         playCard,
         pass,

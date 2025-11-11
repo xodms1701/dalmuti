@@ -24,7 +24,7 @@ app.get('/api', (req, res) => {
 });
 
 const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
-const gameManager = new GameManager(db);
+const gameManager = new GameManager(db, io);
 new SocketManager(io, gameManager);
 
 const PORT = process.env.PORT || 3000;

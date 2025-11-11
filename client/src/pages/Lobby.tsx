@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocketContext } from "../contexts/SocketContext";
 import styled from "styled-components";
+import HelpModal from "../components/HelpModal";
 
 const Container = styled.div`
   display: flex;
@@ -89,6 +90,54 @@ const Divider = styled.div`
   }
 `;
 
+const HelpButton = styled.button`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #357abd;
+    transform: scale(1.05);
+  }
+`;
+
+const GameInfo = styled.div`
+  background: #e3f0fc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  max-width: 400px;
+  width: 100%;
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+`;
+
+const InfoTitle = styled.h3`
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0;
+`;
+
+const InfoText = styled.p`
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+`;
+
 const Lobby: React.FC = () => {
   const navigate = useNavigate();
   const { createRoom, joinRoom } = useSocketContext();
@@ -96,6 +145,7 @@ const Lobby: React.FC = () => {
   const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +192,21 @@ const Lobby: React.FC = () => {
 
   return (
     <Container>
-      <Title>달무티</Title>
+      <Title>위대한 달무티</Title>
+
+      <GameInfo>
+        <InfoTitle>🎮 게임 소개</InfoTitle>
+        <InfoText>
+          • 4~8명이 함께 즐기는 카드 게임
+        </InfoText>
+        <InfoText>
+          • 낮은 숫자가 강한 카드! (1이 가장 강함)
+        </InfoText>
+        <InfoText>
+          • 카드를 가장 먼저 없애는 사람이 승리
+        </InfoText>
+      </GameInfo>
+
       <Card>
         <Form onSubmit={handleCreateRoom}>
           <h2>새로운 방 만들기</h2>
@@ -183,6 +247,13 @@ const Lobby: React.FC = () => {
 
         {error && <ErrorMessage>{error}</ErrorMessage>}
       </Card>
+
+      <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        type="lobby"
+      />
     </Container>
   );
 };

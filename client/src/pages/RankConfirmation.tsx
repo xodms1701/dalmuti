@@ -70,34 +70,57 @@ const Info = styled.div`
   text-align: center;
 `;
 
-const ShuffleButton = styled.button`
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
+const NextGameInfo = styled.div`
+  background: #e3f0fc;
   border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+`;
 
-  &:hover {
-    background-color: #45a049;
-  }
+const NextGameText = styled.p`
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+`;
+
+const Countdown = styled.div`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4a90e2;
+  margin-top: 1rem;
 `;
 
 const RankConfirmation: React.FC = () => {
-  const { socketId, dealCards } = useSocketContext();
+  const { socketId } = useSocketContext();
   const { game } = useGameStore();
   const navigate = useNavigate();
-
-  const handleShuffle = async () => {
-    if (!game?.roomId || !socketId) return;
-    await dealCards(game.roomId);
-  };
+  const [countdown, setCountdown] = React.useState(5);
 
   React.useEffect(() => {
     if (game?.phase === "cardSelection") {
       navigate("/select-card-deck");
+    }
+  }, [game?.phase, navigate]);
+
+  React.useEffect(() => {
+    // 페이지 마운트 시 phase가 roleSelectionComplete이면 즉시 타이머 시작
+    if (game?.phase === "roleSelectionComplete") {
+      setCountdown(5); // 카운트다운 리셋
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
     }
   }, [game?.phase, navigate]);
 
@@ -110,19 +133,32 @@ const RankConfirmation: React.FC = () => {
 
   return (
     <Container>
-      <Title>계급 확인</Title>
+      <Title>다음 게임 순위 확인</Title>
       <Info>이전 게임의 순위에 따라 계급이 재배정되었습니다.</Info>
       <RankList>
         {sortedPlayers.map((player) => (
           <PlayerItem key={player.id} rank={player.rank || 0}>
-            <PlayerName>{player.nickname}</PlayerName>
+            <PlayerName>
+              {player.nickname}
+              {player.id === socketId && " (나)"}
+            </PlayerName>
             <RankBadge>{player.rank}등</RankBadge>
           </PlayerItem>
         ))}
       </RankList>
-      {game.ownerId === socketId && (
-        <ShuffleButton onClick={handleShuffle}>카드 섞기</ShuffleButton>
-      )}
+      <NextGameInfo>
+        <NextGameText>
+          위 순서대로 다음 게임이 진행됩니다.
+        </NextGameText>
+        <NextGameText>
+          1등부터 순서대로 카드 덱을 선택합니다.
+        </NextGameText>
+        {countdown > 0 ? (
+          <Countdown>{countdown}초 후 시작...</Countdown>
+        ) : (
+          <Countdown>곧 시작합니다...</Countdown>
+        )}
+      </NextGameInfo>
     </Container>
   );
 };

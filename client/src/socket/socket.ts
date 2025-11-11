@@ -211,10 +211,6 @@ class SocketClient {
     });
   }
 
-  dealCards(roomId: string): Promise<void> {
-    return this.emitWithAck<void>(SocketEvent.DEAL_CARDS, { roomId: roomId });
-  }
-
   selectDeck(roomId: string, cardIndex: number): Promise<void> {
     return this.emitWithAck<void>(SocketEvent.SELECT_DECK, {
       roomId: roomId,

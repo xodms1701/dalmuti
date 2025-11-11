@@ -3,6 +3,7 @@ import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import HelpModal from "../components/HelpModal";
 
 const Container = styled.div`
   display: flex;
@@ -28,20 +29,47 @@ const DeckList = styled.div`
   margin-bottom: 2rem;
 `;
 
-const DeckCard = styled.button<{ selected: boolean }>`
-  width: 80px;
-  height: 120px;
-  border-radius: 10px;
-  border: 2px solid ${({ selected }) => (selected ? "#ccc" : "#4a90e2")};
-  background: ${({ selected }) => (selected ? "#eee" : "#fff")};
-  color: #333;
-  font-size: 1.5rem;
+const DeckCard = styled.button<{ selected: boolean; disabled: boolean }>`
+  width: 100px;
+  height: 140px;
+  border-radius: 12px;
+  border: 3px solid ${({ selected }) => (selected ? "#ccc" : "#4a90e2")};
+  background: ${({ selected }) => (selected ? "#f0f0f0" : "#fff")};
+  color: ${({ selected }) => (selected ? "#999" : "#333")};
+  font-size: 2rem;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: ${({ selected }) => (selected ? "not-allowed" : "pointer")};
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  transition: background 0.2s, border 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  position: relative;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(74, 144, 226, 0.3);
+    border-color: #357abd;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+`;
+
+const SelectedBadge = styled.div`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #28a745;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
 `;
 
 const Info = styled.div`
@@ -51,23 +79,142 @@ const Info = styled.div`
   text-align: center;
 `;
 
+const HelpButton = styled.button`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: #357abd;
+    transform: scale(1.05);
+  }
+`;
+
+const GuideBox = styled.div`
+  background: #e3f0fc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  width: 100%;
+`;
+
+const GuideText = styled.p`
+  font-size: 1rem;
+  color: #333;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+`;
+
+const Highlight = styled.span`
+  color: #4a90e2;
+  font-weight: bold;
+`;
+
+const CurrentTurnBanner = styled.div<{ isMyTurn: boolean }>`
+  background: ${({ isMyTurn }) => (isMyTurn ? "#28a745" : "#ffc107")};
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  max-width: 800px;
+  width: 100%;
+`;
+
+const TurnOrder = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1rem;
+`;
+
+const PlayerName = styled.span<{ isCurrent: boolean; hasSelected: boolean }>`
+  color: ${({ isCurrent, hasSelected }) =>
+    isCurrent ? "#28a745" : hasSelected ? "#999" : "#333"};
+  font-weight: ${({ isCurrent }) => (isCurrent ? "bold" : "normal")};
+  text-decoration: ${({ hasSelected }) => (hasSelected ? "line-through" : "none")};
+`;
+
+const RankBadge = styled.div<{ rank: number }>`
+  background: ${({ rank }) => {
+    switch (rank) {
+      case 1:
+        return "#FFD700";
+      case 2:
+        return "#C0C0C0";
+      case 3:
+        return "#CD7F32";
+      default:
+        return "#E0E0E0";
+    }
+  }};
+  color: #333;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: 1rem;
+`;
+
+const JokerInfo = styled.div`
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  max-width: 800px;
+  width: 100%;
+`;
+
+const JokerText = styled.p`
+  font-size: 0.95rem;
+  color: #856404;
+  margin: 0.25rem 0;
+  line-height: 1.5;
+`;
+
 const SelectCardDeck: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, selectDeck } = useSocketContext();
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const handleSelectDeck = (idx: number) => {
     if (!game?.roomId || !socketId) return;
     selectDeck(game.roomId, idx);
   };
 
-  const myRank = game?.players.find((player) => player.id === socketId)?.rank;
+  const myPlayer = game?.players.find((player) => player.id === socketId);
+  const myRank = myPlayer?.rank;
+  const isMyTurn = game?.currentTurn === socketId;
 
   // rank 순서대로 플레이어 정렬
   const sortedPlayers = (game?.players || [])
     .slice()
     .sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+  const currentTurnPlayer = game?.players.find((p) => p.id === game.currentTurn);
+  const allPlayersSelected = game?.players.every((player) => player.cards.length > 0);
+  const rankChanged = sortedPlayers[0]?.id !== game?.currentTurn && allPlayersSelected;
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -95,44 +242,89 @@ const SelectCardDeck: React.FC = () => {
   return (
     <Container>
       <Title>카드 덱 선택</Title>
-      <Info>나의 계급: {myRank}</Info>
-      <Info>
-        플레이 순서:{" "}
-        {sortedPlayers
-          .map(
-            (player, idx) =>
-              `${player.nickname}${player.id === socketId ? " (나)" : ""}${
-                idx < sortedPlayers.length - 1 ? " → " : ""
-              }`
-          )
-          .join("")}
-      </Info>
-      {game?.players.every((player) => player.cards.length > 0) && (
-        <Info>
-          모든 플레이어가 카드를 받았습니다.
-          <br />
-          계급이 그대로라면 조커를 2장 뽑은 유저는 없습니다. <br />
-          만약 계급이 변경되었다면 플레이 순서의 첫번째 유저가 조커를 2장 뽑은
-          사람입니다.
-        </Info>
-      )}
-      {countdown !== null && (
-        <Info style={{ color: "#e74c3c", fontWeight: 600 }}>
-          {countdown}초 뒤에 플레이 화면으로 이동합니다.
-        </Info>
-      )}
+
+      <RankBadge rank={myRank || 0}>{myRank}등</RankBadge>
+
+      <CurrentTurnBanner isMyTurn={isMyTurn}>
+        {isMyTurn
+          ? "🎯 당신의 차례입니다! 카드 덱을 선택하세요"
+          : `${currentTurnPlayer?.nickname}님이 선택 중입니다...`}
+      </CurrentTurnBanner>
+
+      <GuideBox>
+        <GuideText>
+          <Highlight>순위 순서대로</Highlight> 카드 덱을 선택합니다
+        </GuideText>
+        <GuideText>
+          • 각 덱은 같은 수의 카드를 포함하고 있습니다
+        </GuideText>
+        <GuideText>
+          • 조커 2장을 받으면 자동으로 1등이 됩니다 (순서 변경됨)
+        </GuideText>
+      </GuideBox>
+
+      <TurnOrder>
+        <strong>선택 순서:</strong>
+        {sortedPlayers.map((player, idx) => {
+          const hasSelected = player.cards.length > 0;
+          const isCurrent = player.id === game?.currentTurn;
+          return (
+            <React.Fragment key={player.id}>
+              <PlayerName isCurrent={isCurrent} hasSelected={hasSelected}>
+                {player.nickname}
+                {player.id === socketId && " (나)"}
+                {hasSelected && " ✓"}
+              </PlayerName>
+              {idx < sortedPlayers.length - 1 && " → "}
+            </React.Fragment>
+          );
+        })}
+      </TurnOrder>
+
       <DeckList>
         {game?.selectableDecks.map((deck, idx) => (
           <DeckCard
             key={idx}
             selected={deck.isSelected}
-            disabled={deck.isSelected}
+            disabled={deck.isSelected || !isMyTurn}
             onClick={() => handleSelectDeck(idx)}
           >
             {idx + 1}
+            {deck.isSelected && <SelectedBadge>✓</SelectedBadge>}
           </DeckCard>
         ))}
       </DeckList>
+
+      {allPlayersSelected && (
+        <JokerInfo>
+          <JokerText>
+            <strong>✨ 모든 플레이어가 카드를 선택했습니다!</strong>
+          </JokerText>
+          {rankChanged ? (
+            <JokerText>
+              🃏 <strong>{currentTurnPlayer?.nickname}님</strong>이 조커 2장을
+              받아 1등이 되었습니다!
+            </JokerText>
+          ) : (
+            <JokerText>
+              조커 2장을 받은 플레이어가 없습니다. 순위가 그대로 유지됩니다.
+            </JokerText>
+          )}
+        </JokerInfo>
+      )}
+
+      {countdown !== null && (
+        <Info style={{ color: "#e74c3c", fontWeight: 600, fontSize: "1.2rem" }}>
+          {countdown}초 후 게임이 시작됩니다...
+        </Info>
+      )}
+
+      <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        type="play"
+      />
     </Container>
   );
 };

@@ -1,13 +1,20 @@
 import GameManager from '../game/GameManager';
 import MockDatabase from './mocks/MockDatabase';
+import { Server } from 'socket.io';
 
 describe('GameManager', () => {
   let gameManager: GameManager;
   let mockDb: MockDatabase;
+  let mockIo: any;
 
   beforeEach(() => {
     mockDb = new MockDatabase();
-    gameManager = new GameManager(mockDb);
+    // Mock Socket.IO Server
+    mockIo = {
+      to: jest.fn().mockReturnThis(),
+      emit: jest.fn(),
+    };
+    gameManager = new GameManager(mockDb, mockIo as Server);
   });
 
   afterEach(() => {
@@ -115,14 +122,11 @@ describe('GameManager', () => {
       // 게임 시작
       await gameManager.startGame(game!.roomId);
 
-      // 역할 선택
+      // 역할 선택 (마지막 플레이어가 선택하면 자동으로 카드 배분됨)
       await gameManager.selectRole(game!.roomId, ownerId, 1);
       await gameManager.selectRole(game!.roomId, 'player1', 2);
       await gameManager.selectRole(game!.roomId, 'player2', 3);
       await gameManager.selectRole(game!.roomId, 'player3', 4);
-
-      // 카드 배분
-      await gameManager.dealCards(game!.roomId, ownerId);
 
       // 카드 선택
       await gameManager.selectDeck(game!.roomId, ownerId, 0);
@@ -256,43 +260,7 @@ describe('GameManager', () => {
     });
   });
 
-  describe('dealCards', () => {
-    it('모든 플레이어에게 카드를 배분할 수 있어야 합니다', async () => {
-      const ownerId = 'owner1';
-      const game = await gameManager.createGame(ownerId, 'Owner');
-
-      // 최소 플레이어 수만큼 참가
-      for (let i = 1; i < 4; i++) {
-        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
-      }
-
-      // 게임 시작
-      await gameManager.startGame(game!.roomId);
-
-      // 역할 선택
-      await gameManager.selectRole(game!.roomId, ownerId, 1);
-      await gameManager.selectRole(game!.roomId, 'player1', 2);
-      await gameManager.selectRole(game!.roomId, 'player2', 3);
-      await gameManager.selectRole(game!.roomId, 'player3', 4);
-
-      const success = await gameManager.dealCards(game!.roomId, ownerId);
-      expect(success).toBe(true);
-
-      const updatedGame = await mockDb.getGame(game!.roomId);
-      expect(updatedGame?.phase).toBe('cardSelection');
-      expect(updatedGame?.selectableDecks).toHaveLength(4);
-    });
-
-    it('게임 소유자가 아닌 플레이어는 카드를 배분할 수 없어야 합니다', async () => {
-      const ownerId = 'owner1';
-      const game = await gameManager.createGame(ownerId, 'Owner');
-      await gameManager.joinGame(game!.roomId, 'player1', 'Player1');
-      await gameManager.startGame(game!.roomId);
-
-      const success = await gameManager.dealCards(game!.roomId, 'player1');
-      expect(success).toBe(false);
-    });
-  });
+  // dealCards 테스트는 제거됨 - selectRole에서 자동으로 카드 배분이 처리됨
 
   describe('setPlayerReady', () => {
     it('플레이어의 준비 상태를 설정할 수 있어야 합니다', async () => {
@@ -326,14 +294,11 @@ describe('GameManager', () => {
       // 게임 시작
       await gameManager.startGame(game!.roomId);
 
-      // 역할 선택
+      // 역할 선택 (마지막 플레이어가 선택하면 자동으로 카드 배분됨)
       await gameManager.selectRole(game!.roomId, ownerId, 1);
       await gameManager.selectRole(game!.roomId, 'player1', 2);
       await gameManager.selectRole(game!.roomId, 'player2', 3);
       await gameManager.selectRole(game!.roomId, 'player3', 4);
-
-      // 카드 배분
-      await gameManager.dealCards(game!.roomId, ownerId);
 
       // 카드 선택
       await gameManager.selectDeck(game!.roomId, ownerId, 0);
