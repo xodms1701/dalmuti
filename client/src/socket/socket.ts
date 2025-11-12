@@ -218,6 +218,30 @@ class SocketClient {
     });
   }
 
+  selectRevolution(
+    roomId: string,
+    playerId: string,
+    wantRevolution: boolean
+  ): Promise<void> {
+    return this.emitWithAck<void>(SocketEvent.SELECT_REVOLUTION, {
+      roomId: roomId,
+      playerId,
+      wantRevolution,
+    });
+  }
+
+  selectTaxCards(
+    roomId: string,
+    playerId: string,
+    cards: Card[]
+  ): Promise<void> {
+    return this.emitWithAck<void>(SocketEvent.SELECT_TAX_CARDS, {
+      roomId: roomId,
+      playerId,
+      cards,
+    });
+  }
+
   playCard(roomId: string, playerId: string, cards: Card[]): Promise<void> {
     return this.emitWithAck<void>(SocketEvent.PLAY_CARD, {
       roomId: roomId,

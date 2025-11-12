@@ -578,33 +578,17 @@ export default class GameManager {
       );
 
       if (doubleJokerPlayer) {
-        const originalRank = doubleJokerPlayer.rank || 0;
-        if (originalRank !== 1) {
-          // 조커 2장 플레이어를 1등으로 설정
-          doubleJokerPlayer.rank = 1;
-
-          // 원래 순서를 유지하면서 순위 재배정
-          const players = [...game.players];
-          const doubleJokerIndex = players.findIndex((p) => p === doubleJokerPlayer);
-
-          // 조커 2장 플레이어 다음부터 순서대로 2등, 3등, ...으로 설정
-          let newRank = 2;
-          for (let i = 1; i < players.length; i++) {
-            const currentIndex = (doubleJokerIndex + i) % players.length;
-            if (players[currentIndex] !== doubleJokerPlayer) {
-              players[currentIndex].rank = newRank++;
-            }
-          }
-
-          // currentTurn을 조커 2장을 받은 플레이어로 변경
-          game.currentTurn = doubleJokerPlayer.id;
-        }
+        // 조커 2장 보유자 표시
+        doubleJokerPlayer.hasDoubleJoker = true;
+        // 혁명 선택 페이즈로 전환
+        game.phase = 'revolution';
+        game.currentTurn = doubleJokerPlayer.id;
+      } else {
+        // 조커 2장이 없으면 세금 페이즈로
+        game.phase = 'tax';
+        // 세금 교환 초기화
+        this.initializeTaxExchanges(game);
       }
-
-      // 게임 시작 준비
-      game.phase = 'playing';
-      game.lastPlay = undefined;
-      game.round = 1;
     }
 
     await this.db.updateGame(roomId, {
@@ -868,5 +852,239 @@ export default class GameManager {
       };
     });
     game.roundPlays = [];
+  }
+
+  public async selectRevolution(
+    roomId: string,
+    playerId: string,
+    wantRevolution: boolean
+  ): Promise<boolean> {
+    const game = await this.db.getGame(roomId);
+    if (!game || game.phase !== 'revolution' || game.currentTurn !== playerId) {
+      return false;
+    }
+
+    const player = game.players.find((p) => p.id === playerId);
+    if (!player || !player.hasDoubleJoker) {
+      return false;
+    }
+
+    player.revolutionChoice = wantRevolution;
+
+    if (wantRevolution) {
+      // 혁명을 일으킨다
+      const playerCount = game.players.length;
+      const isLowestRank = player.rank === playerCount;
+
+      if (isLowestRank) {
+        // 대혁명: 모든 순위 뒤집기
+        game.players.forEach((p) => {
+          if (p.rank !== null) {
+            p.rank = playerCount - p.rank + 1;
+          }
+        });
+        game.revolutionStatus = {
+          isRevolution: true,
+          isGreatRevolution: true,
+          revolutionPlayerId: playerId,
+        };
+      } else {
+        // 일반 혁명: 순위 유지
+        game.revolutionStatus = {
+          isRevolution: true,
+          isGreatRevolution: false,
+          revolutionPlayerId: playerId,
+        };
+      }
+
+      // 혁명이 일어나면 세금 없이 바로 게임 시작
+      game.phase = 'playing';
+      game.lastPlay = undefined;
+      game.round = 1;
+      // 1등부터 시작
+      const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+      game.currentTurn = sortedPlayers[0].id;
+    } else {
+      // 혁명을 일으키지 않는다 - 조커 2장으로 1등
+      player.rank = 1;
+
+      // 원래 순서를 유지하면서 순위 재배정
+      const players = [...game.players];
+      const doubleJokerIndex = players.findIndex((p) => p === player);
+
+      let newRank = 2;
+      for (let i = 1; i < players.length; i++) {
+        const currentIndex = (doubleJokerIndex + i) % players.length;
+        if (players[currentIndex] !== player) {
+          players[currentIndex].rank = newRank++;
+        }
+      }
+
+      // 세금 페이즈로 전환
+      game.phase = 'tax';
+      this.initializeTaxExchanges(game);
+    }
+
+    await this.db.updateGame(roomId, {
+      players: game.players,
+      phase: game.phase,
+      currentTurn: game.currentTurn,
+      lastPlay: game.lastPlay,
+      round: game.round,
+      revolutionStatus: game.revolutionStatus,
+      taxExchanges: game.taxExchanges,
+    });
+
+    return true;
+  }
+
+  private initializeTaxExchanges(game: Game): void {
+    const playerCount = game.players.length;
+    const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+    game.taxExchanges = [];
+
+    if (playerCount === 4) {
+      // 4명: 1위 ↔ 4위 2장씩
+      game.taxExchanges.push(
+        {
+          fromPlayerId: sortedPlayers[3].id, // 4위 → 1위
+          toPlayerId: sortedPlayers[0].id,
+          cardCount: 2,
+          completed: false,
+        },
+        {
+          fromPlayerId: sortedPlayers[0].id, // 1위 → 4위
+          toPlayerId: sortedPlayers[3].id,
+          cardCount: 2,
+          completed: false,
+        }
+      );
+    } else if (playerCount >= 5) {
+      // 5명 이상: 1위 ↔ 최하위 2장씩, 2위 ↔ 차하위 1장씩
+      game.taxExchanges.push(
+        {
+          fromPlayerId: sortedPlayers[playerCount - 1].id, // 최하위 → 1위
+          toPlayerId: sortedPlayers[0].id,
+          cardCount: 2,
+          completed: false,
+        },
+        {
+          fromPlayerId: sortedPlayers[0].id, // 1위 → 최하위
+          toPlayerId: sortedPlayers[playerCount - 1].id,
+          cardCount: 2,
+          completed: false,
+        },
+        {
+          fromPlayerId: sortedPlayers[playerCount - 2].id, // 차하위 → 2위
+          toPlayerId: sortedPlayers[1].id,
+          cardCount: 1,
+          completed: false,
+        },
+        {
+          fromPlayerId: sortedPlayers[1].id, // 2위 → 차하위
+          toPlayerId: sortedPlayers[playerCount - 2].id,
+          cardCount: 1,
+          completed: false,
+        }
+      );
+    }
+  }
+
+  public async selectTaxCards(
+    roomId: string,
+    playerId: string,
+    cards: Card[]
+  ): Promise<boolean> {
+    const game = await this.db.getGame(roomId);
+    if (!game || game.phase !== 'tax') {
+      return false;
+    }
+
+    const player = game.players.find((p) => p.id === playerId);
+    if (!player) {
+      return false;
+    }
+
+    // 해당 플레이어가 줘야 하는 세금 찾기
+    const taxExchange = game.taxExchanges?.find(
+      (ex) => ex.fromPlayerId === playerId && !ex.completed
+    );
+    if (!taxExchange) {
+      return false;
+    }
+
+    // 카드 검증
+    if (!this.validateTaxCards(cards, taxExchange.cardCount)) {
+      return false;
+    }
+
+    // 카드 소유 확인
+    const hasAllCards = cards.every((card) =>
+      player.cards.some((c) => c.rank === card.rank && c.isJoker === card.isJoker)
+    );
+    if (!hasAllCards) {
+      return false;
+    }
+
+    // 세금 교환 실행
+    const toPlayer = game.players.find((p) => p.id === taxExchange.toPlayerId);
+    if (!toPlayer) {
+      return false;
+    }
+
+    // 카드 제거
+    cards.forEach((card) => {
+      const index = player.cards.findIndex(
+        (c) => c.rank === card.rank && c.isJoker === card.isJoker
+      );
+      if (index !== -1) {
+        player.cards.splice(index, 1);
+      }
+    });
+
+    // 카드 추가
+    toPlayer.cards.push(...cards);
+
+    // 교환 완료 표시
+    taxExchange.completed = true;
+
+    // 모든 교환이 완료되었는지 확인
+    const allCompleted = game.taxExchanges?.every((ex) => ex.completed) || false;
+    if (allCompleted) {
+      // 게임 시작
+      game.phase = 'playing';
+      game.lastPlay = undefined;
+      game.round = 1;
+      // 1등부터 시작
+      const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+      game.currentTurn = sortedPlayers[0].id;
+    }
+
+    await this.db.updateGame(roomId, {
+      players: game.players,
+      phase: game.phase,
+      currentTurn: game.currentTurn,
+      lastPlay: game.lastPlay,
+      round: game.round,
+      taxExchanges: game.taxExchanges,
+    });
+
+    return true;
+  }
+
+  private validateTaxCards(cards: Card[], expectedCount: number): boolean {
+    // 개수 확인
+    if (cards.length !== expectedCount) {
+      return false;
+    }
+
+    // 조커(13) 포함 여부 확인
+    const hasJoker = cards.some((card) => card.isJoker);
+    if (hasJoker) {
+      return false;
+    }
+
+    return true;
   }
 }

@@ -119,23 +119,37 @@ describe('GameManager', () => {
         await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
       }
 
-      // 게임 시작
-      await gameManager.startGame(game!.roomId);
-
-      // 역할 선택 (마지막 플레이어가 선택하면 자동으로 카드 배분됨)
-      await gameManager.selectRole(game!.roomId, ownerId, 1);
-      await gameManager.selectRole(game!.roomId, 'player1', 2);
-      await gameManager.selectRole(game!.roomId, 'player2', 3);
-      await gameManager.selectRole(game!.roomId, 'player3', 4);
-
-      // 카드 선택
-      await gameManager.selectDeck(game!.roomId, ownerId, 0);
-      await gameManager.selectDeck(game!.roomId, 'player1', 1);
-      await gameManager.selectDeck(game!.roomId, 'player2', 2);
-      await gameManager.selectDeck(game!.roomId, 'player3', 3);
+      // 강제로 게임 상태 설정 (더블 조커 없이)
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 3;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+        ];
+        updatedGame.players[1].cards = [
+          { rank: 3, isJoker: false },
+          { rank: 4, isJoker: false },
+        ];
+        updatedGame.players[2].cards = [
+          { rank: 5, isJoker: false },
+          { rank: 6, isJoker: false },
+        ];
+        updatedGame.players[3].cards = [
+          { rank: 7, isJoker: false },
+          { rank: 8, isJoker: false },
+        ];
+        updatedGame.currentTurn = ownerId;
+        updatedGame.round = 1;
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
 
       // 업데이트된 게임 상태 가져오기
-      const updatedGame = await mockDb.getGame(game!.roomId);
+      updatedGame = await mockDb.getGame(game!.roomId);
 
       // 게임이 playing 상태인지 확인
       expect(updatedGame?.phase).toBe('playing');
@@ -393,7 +407,7 @@ describe('GameManager', () => {
       expect(resultGame?.players.find((p) => p.id === 'player4')?.rank).toBe(4);
     });
 
-    it('2등이 조커 2장을 가지면 rank가 1등이 되어야 한다', async () => {
+    it('2등이 조커 2장을 가지면 revolution 페이즈로 가야 한다', async () => {
       // 1. 게임 상태를 준비
       const ownerId = 'player1';
       const game = await gameManager.createGame(ownerId, 'Owner');
@@ -432,13 +446,12 @@ describe('GameManager', () => {
       await gameManager.selectDeck(game!.roomId, 'player3', 2);
 
       const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.phase).toBe('revolution'); // revolution 페이즈로 전환
       expect(resultGame?.currentTurn).toBe('player2');
-      expect(resultGame?.players.find((p) => p.id === 'player2')?.rank).toBe(1); // player2가 1등이 됨
-      expect(resultGame?.players.find((p) => p.id === 'player3')?.rank).toBe(2); // player3이 2등이 됨
-      expect(resultGame?.players.find((p) => p.id === 'player1')?.rank).toBe(3); // player1이 3등이 됨
+      expect(resultGame?.players.find((p) => p.id === 'player2')?.hasDoubleJoker).toBe(true);
     });
 
-    it('3등이 조커 2장을 가지면 rank가 1등이 되어야 한다', async () => {
+    it('3등이 조커 2장을 가지면 revolution 페이즈로 가야 한다', async () => {
       // 1. 게임 상태를 준비
       const ownerId = 'player1';
       const game = await gameManager.createGame(ownerId, 'Owner');
@@ -477,10 +490,9 @@ describe('GameManager', () => {
       await gameManager.selectDeck(game!.roomId, 'player3', 2);
 
       const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.phase).toBe('revolution'); // revolution 페이즈로 전환
       expect(resultGame?.currentTurn).toBe('player3');
-      expect(resultGame?.players.find((p) => p.id === 'player3')?.rank).toBe(1); // player3이 1등이 됨
-      expect(resultGame?.players.find((p) => p.id === 'player1')?.rank).toBe(2); // player1이 2등이 됨
-      expect(resultGame?.players.find((p) => p.id === 'player2')?.rank).toBe(3); // player2이 3등이 됨
+      expect(resultGame?.players.find((p) => p.id === 'player3')?.hasDoubleJoker).toBe(true);
     });
   });
 
@@ -776,6 +788,330 @@ describe('GameManager', () => {
       // 3. playerStats가 업데이트되었는지 확인
       const resultGame = await mockDb.getGame(game!.roomId);
       expect(resultGame?.playerStats['player1'].totalPasses).toBe(1);
+    });
+  });
+
+  describe('selectRevolution', () => {
+    it('최하위 순위 플레이어가 대혁명을 일으켜야 합니다', async () => {
+      // 1. 4명의 플레이어로 게임 생성 및 시작
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 4; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      // 2. revolution 페이즈로 설정 및 최하위 순위 플레이어에게 더블 조커 부여
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'revolution';
+        updatedGame.players[0].rank = 4; // 최하위 순위
+        updatedGame.players[1].rank = 3;
+        updatedGame.players[2].rank = 2;
+        updatedGame.players[3].rank = 1;
+        updatedGame.players[0].hasDoubleJoker = true;
+        updatedGame.players[0].cards = [
+          { rank: 13, isJoker: true },
+          { rank: 13, isJoker: true },
+        ];
+        updatedGame.currentTurn = 'owner1';
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 3. 대혁명 선택
+      const success = await gameManager.selectRevolution(game!.roomId, 'owner1', true);
+      expect(success).toBe(true);
+
+      // 4. 결과 확인: 순위가 뒤집혀야 함
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.revolutionStatus?.isRevolution).toBe(true);
+      expect(resultGame?.revolutionStatus?.isGreatRevolution).toBe(true);
+      expect(resultGame?.revolutionStatus?.revolutionPlayerId).toBe('owner1');
+      expect(resultGame?.players[0].rank).toBe(1); // 4 -> 1
+      expect(resultGame?.players[1].rank).toBe(2); // 3 -> 2
+      expect(resultGame?.players[2].rank).toBe(3); // 2 -> 3
+      expect(resultGame?.players[3].rank).toBe(4); // 1 -> 4
+      expect(resultGame?.phase).toBe('playing');
+    });
+
+    it('최하위가 아닌 플레이어가 일반 혁명을 일으켜야 합니다', async () => {
+      // 1. 4명의 플레이어로 게임 생성
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 4; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      // 2. revolution 페이즈로 설정 및 2위 플레이어에게 더블 조커 부여
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'revolution';
+        updatedGame.players[0].rank = 2; // 2위
+        updatedGame.players[1].rank = 3;
+        updatedGame.players[2].rank = 1;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[0].hasDoubleJoker = true;
+        updatedGame.players[0].cards = [
+          { rank: 13, isJoker: true },
+          { rank: 13, isJoker: true },
+        ];
+        updatedGame.currentTurn = 'owner1';
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 3. 일반 혁명 선택
+      const success = await gameManager.selectRevolution(game!.roomId, 'owner1', true);
+      expect(success).toBe(true);
+
+      // 4. 결과 확인: 순위는 유지되어야 함
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.revolutionStatus?.isRevolution).toBe(true);
+      expect(resultGame?.revolutionStatus?.isGreatRevolution).toBe(false);
+      expect(resultGame?.revolutionStatus?.revolutionPlayerId).toBe('owner1');
+      expect(resultGame?.players[0].rank).toBe(2); // 순위 유지
+      expect(resultGame?.players[1].rank).toBe(3);
+      expect(resultGame?.players[2].rank).toBe(1);
+      expect(resultGame?.players[3].rank).toBe(4);
+      expect(resultGame?.phase).toBe('playing');
+    });
+
+    it('혁명을 거부하면 플레이어가 1위가 되고 세금 페이즈로 가야 합니다', async () => {
+      // 1. 4명의 플레이어로 게임 생성
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 4; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      // 2. revolution 페이즈로 설정 및 더블 조커 부여
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'revolution';
+        updatedGame.players[0].rank = 3;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 4;
+        updatedGame.players[3].rank = 1;
+        updatedGame.players[0].hasDoubleJoker = true;
+        updatedGame.players[0].cards = [
+          { rank: 13, isJoker: true },
+          { rank: 13, isJoker: true },
+        ];
+        updatedGame.currentTurn = 'owner1';
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 3. 혁명 거부
+      const success = await gameManager.selectRevolution(game!.roomId, 'owner1', false);
+      expect(success).toBe(true);
+
+      // 4. 결과 확인: 플레이어가 1위가 되고 나머지 순위 재배정
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.players[0].rank).toBe(1);
+      expect(resultGame?.phase).toBe('tax');
+      expect(resultGame?.taxExchanges).toBeDefined();
+      expect(resultGame?.taxExchanges?.length).toBe(2); // 4명이므로 2개의 교환 (1위↔4위 양방향)
+    });
+
+    it('잘못된 페이즈에서는 혁명을 선택할 수 없어야 합니다', async () => {
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+
+      const success = await gameManager.selectRevolution(game!.roomId, 'owner1', true);
+      expect(success).toBe(false);
+    });
+
+    it('더블 조커가 없는 플레이어는 혁명을 선택할 수 없어야 합니다', async () => {
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'revolution';
+        updatedGame.currentTurn = 'owner1';
+        updatedGame.players[0].hasDoubleJoker = false;
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      const success = await gameManager.selectRevolution(game!.roomId, 'owner1', true);
+      expect(success).toBe(false);
+    });
+  });
+
+  describe('selectTaxCards', () => {
+    it('4명 플레이어일 때 1위와 4위가 2장씩 교환해야 합니다', async () => {
+      // 1. 4명의 플레이어로 게임 생성
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 4; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      // 2. tax 페이즈로 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'tax';
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 3;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+          { rank: 3, isJoker: false },
+        ];
+        updatedGame.players[3].cards = [
+          { rank: 10, isJoker: false },
+          { rank: 11, isJoker: false },
+          { rank: 12, isJoker: false },
+        ];
+        updatedGame.taxExchanges = [
+          { fromPlayerId: 'player3', toPlayerId: 'owner1', cardCount: 2, completed: false },
+          { fromPlayerId: 'owner1', toPlayerId: 'player3', cardCount: 2, completed: false },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 3. 4위 플레이어가 가장 낮은 카드 2장을 1위에게
+      const success1 = await gameManager.selectTaxCards(game!.roomId, 'player3', [
+        { rank: 10, isJoker: false },
+        { rank: 11, isJoker: false },
+      ]);
+      expect(success1).toBe(true);
+
+      // 4. 1위 플레이어가 가장 높은 카드 2장을 4위에게
+      const success2 = await gameManager.selectTaxCards(game!.roomId, 'owner1', [
+        { rank: 1, isJoker: false },
+        { rank: 2, isJoker: false },
+      ]);
+      expect(success2).toBe(true);
+
+      // 5. 결과 확인: playing 페이즈로 전환
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.phase).toBe('playing');
+      expect(resultGame?.taxExchanges?.every((ex) => ex.completed)).toBe(true);
+    });
+
+    it('5명 이상 플레이어일 때 세금 교환이 올바르게 설정되어야 합니다', async () => {
+      // 1. 5명의 플레이어로 게임 생성
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 5; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      // 2. tax 페이즈로 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'tax';
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 3;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[4].rank = 5;
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+          { rank: 3, isJoker: false },
+        ];
+        updatedGame.players[1].cards = [
+          { rank: 4, isJoker: false },
+          { rank: 5, isJoker: false },
+        ];
+        updatedGame.players[3].cards = [
+          { rank: 10, isJoker: false },
+          { rank: 11, isJoker: false },
+        ];
+        updatedGame.players[4].cards = [
+          { rank: 12, isJoker: false },
+          { rank: 11, isJoker: false },
+          { rank: 10, isJoker: false },
+        ];
+        updatedGame.taxExchanges = [
+          { fromPlayerId: 'player4', toPlayerId: 'owner1', cardCount: 2, completed: false },
+          { fromPlayerId: 'owner1', toPlayerId: 'player4', cardCount: 2, completed: false },
+          { fromPlayerId: 'player3', toPlayerId: 'player1', cardCount: 1, completed: false },
+          { fromPlayerId: 'player1', toPlayerId: 'player3', cardCount: 1, completed: false },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 3. 세금 교환 실행
+      await gameManager.selectTaxCards(game!.roomId, 'player4', [
+        { rank: 12, isJoker: false },
+        { rank: 11, isJoker: false },
+      ]);
+      await gameManager.selectTaxCards(game!.roomId, 'owner1', [
+        { rank: 1, isJoker: false },
+        { rank: 2, isJoker: false },
+      ]);
+      await gameManager.selectTaxCards(game!.roomId, 'player3', [{ rank: 10, isJoker: false }]);
+      const success = await gameManager.selectTaxCards(game!.roomId, 'player1', [
+        { rank: 4, isJoker: false },
+      ]);
+      expect(success).toBe(true);
+
+      // 4. 결과 확인
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.phase).toBe('playing');
+    });
+
+    it('조커가 포함된 카드는 세금으로 낼 수 없어야 합니다', async () => {
+      // 1. 게임 생성 및 tax 페이즈 설정
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 4; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'tax';
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[3].cards = [
+          { rank: 13, isJoker: true },
+          { rank: 11, isJoker: false },
+        ];
+        updatedGame.taxExchanges = [
+          { fromPlayerId: 'player3', toPlayerId: 'owner1', cardCount: 2, completed: false },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 2. 조커 포함 카드로 세금 내기 시도
+      const success = await gameManager.selectTaxCards(game!.roomId, 'player3', [
+        { rank: 13, isJoker: true },
+        { rank: 11, isJoker: false },
+      ]);
+      expect(success).toBe(false);
+    });
+
+    it('잘못된 카드 개수는 거부되어야 합니다', async () => {
+      // 1. 게임 생성 및 tax 페이즈 설정
+      const ownerId = 'owner1';
+      const game = await gameManager.createGame(ownerId, 'Owner');
+      for (let i = 1; i < 4; i++) {
+        await gameManager.joinGame(game!.roomId, `player${i}`, `Player${i}`);
+      }
+
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'tax';
+        updatedGame.players[3].cards = [
+          { rank: 10, isJoker: false },
+          { rank: 11, isJoker: false },
+          { rank: 12, isJoker: false },
+        ];
+        updatedGame.taxExchanges = [
+          { fromPlayerId: 'player3', toPlayerId: 'owner1', cardCount: 2, completed: false },
+        ];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 2. 1장만 내기 시도 (2장이어야 함)
+      const success = await gameManager.selectTaxCards(game!.roomId, 'player3', [
+        { rank: 10, isJoker: false },
+      ]);
+      expect(success).toBe(false);
     });
   });
 });
