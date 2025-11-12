@@ -905,22 +905,8 @@ export default class GameManager {
       const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
       game.currentTurn = sortedPlayers[0].id;
     } else {
-      // 혁명을 일으키지 않는다 - 조커 2장으로 1등
-      player.rank = 1;
-
-      // 원래 순서를 유지하면서 순위 재배정
-      const players = [...game.players];
-      const doubleJokerIndex = players.findIndex((p) => p === player);
-
-      let newRank = 2;
-      for (let i = 1; i < players.length; i++) {
-        const currentIndex = (doubleJokerIndex + i) % players.length;
-        if (players[currentIndex] !== player) {
-          players[currentIndex].rank = newRank++;
-        }
-      }
-
-      // 세금 페이즈로 전환
+      // 혁명을 일으키지 않는다 - 순위 그대로 유지, 조커 2장 사실 숨김
+      // 아무 것도 변경하지 않고 세금 페이즈로 전환
       game.phase = 'tax';
       this.initializeTaxExchanges(game);
     }

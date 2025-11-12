@@ -874,7 +874,7 @@ describe('GameManager', () => {
       expect(resultGame?.phase).toBe('playing');
     });
 
-    it('혁명을 거부하면 플레이어가 1위가 되고 세금 페이즈로 가야 합니다', async () => {
+    it('혁명을 거부하면 순위가 그대로 유지되고 세금 페이즈로 가야 합니다', async () => {
       // 1. 4명의 플레이어로 게임 생성
       const ownerId = 'owner1';
       const game = await gameManager.createGame(ownerId, 'Owner');
@@ -903,12 +903,16 @@ describe('GameManager', () => {
       const success = await gameManager.selectRevolution(game!.roomId, 'owner1', false);
       expect(success).toBe(true);
 
-      // 4. 결과 확인: 플레이어가 1위가 되고 나머지 순위 재배정
+      // 4. 결과 확인: 순위 그대로 유지, 조커 2장 사실 숨김
       const resultGame = await mockDb.getGame(game!.roomId);
-      expect(resultGame?.players[0].rank).toBe(1);
+      expect(resultGame?.players[0].rank).toBe(3); // 순위 유지
+      expect(resultGame?.players[1].rank).toBe(2);
+      expect(resultGame?.players[2].rank).toBe(4);
+      expect(resultGame?.players[3].rank).toBe(1);
       expect(resultGame?.phase).toBe('tax');
       expect(resultGame?.taxExchanges).toBeDefined();
       expect(resultGame?.taxExchanges?.length).toBe(2); // 4명이므로 2개의 교환 (1위↔4위 양방향)
+      expect(resultGame?.revolutionStatus).toBeUndefined(); // 혁명 정보 없음 (조커 2장 사실 숨김)
     });
 
     it('잘못된 페이즈에서는 혁명을 선택할 수 없어야 합니다', async () => {

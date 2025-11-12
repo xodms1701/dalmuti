@@ -195,8 +195,8 @@ const RevolutionSelection: React.FC = () => {
         >
           <ButtonTitle>😊 혁명을 일으키지 않는다</ButtonTitle>
           <ButtonDescription>
-            조커 2장의 힘으로 1등이 됩니다. 나머지 플레이어의 순위가 재배정되며,
-            정상적으로 세금을 거둡니다.
+            순위가 그대로 유지되고 정상적으로 세금을 거둡니다. 조커 2장을 가진
+            사실을 숨길 수 있습니다.
           </ButtonDescription>
         </ChoiceButton>
       </ButtonContainer>
