@@ -289,23 +289,26 @@ const RevolutionSelection: React.FC = () => {
     <Container>
       <Title>🃏 혁명 선택</Title>
 
-      {showResult && (
-        <ResultModal>
-          <ResultContent isRevolution={getResultContent().isRevolution}>
-            <ResultIcon>{getResultContent().icon}</ResultIcon>
-            <ResultTitle isRevolution={getResultContent().isRevolution}>
-              {getResultContent().title}
-            </ResultTitle>
-            <ResultDescription>
-              {getResultContent().description}
-            </ResultDescription>
-            <CountdownText>
-              <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
-              이동합니다
-            </CountdownText>
-          </ResultContent>
-        </ResultModal>
-      )}
+      {showResult && (() => {
+        const content = getResultContent();
+        return (
+          <ResultModal>
+            <ResultContent isRevolution={content.isRevolution}>
+              <ResultIcon>{content.icon}</ResultIcon>
+              <ResultTitle isRevolution={content.isRevolution}>
+                {content.title}
+              </ResultTitle>
+              <ResultDescription>
+                {content.description}
+              </ResultDescription>
+              <CountdownText>
+                <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
+                이동합니다
+              </CountdownText>
+            </ResultContent>
+          </ResultModal>
+        );
+      })()}
 
       <InfoBox>
         <InfoText>

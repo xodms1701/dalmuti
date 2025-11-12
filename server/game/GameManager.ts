@@ -935,9 +935,6 @@ export default class GameManager {
     const playerCount = game.players.length;
     const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
-    game.taxExchanges = [];
-
-    // 세금 교환 대상 정의
     const exchangePairs: Array<{ fromIdx: number; toIdx: number; count: number }> = [];
 
     if (playerCount === 4) {
@@ -956,50 +953,53 @@ export default class GameManager {
       );
     }
 
-    // 각 교환 쌍에 대해 자동으로 카드 선택 및 교환
+    // Step 1: 각 플레이어가 줄 카드를 미리 결정
+    const cardsToGiveByPlayer = new Map<string, Card[]>();
+    for (const pair of exchangePairs) {
+      const fromPlayer = sortedPlayers[pair.fromIdx];
+      if (!cardsToGiveByPlayer.has(fromPlayer.id)) {
+        const cardsToGive = this.selectTaxCardsAutomatically(
+          fromPlayer,
+          pair.count,
+          pair.fromIdx <= 1 // 높은 순위(1, 2등)는 큰 카드를 줌
+        );
+        cardsToGiveByPlayer.set(fromPlayer.id, cardsToGive);
+      }
+    }
+
+    // Step 2: 모든 카드 교환 실행
     for (const pair of exchangePairs) {
       const fromPlayer = sortedPlayers[pair.fromIdx];
       const toPlayer = sortedPlayers[pair.toIdx];
+      const cardsGiven = cardsToGiveByPlayer.get(fromPlayer.id) || [];
 
-      // 카드 자동 선택
-      const cardsToGive = this.selectTaxCardsAutomatically(
-        fromPlayer,
-        pair.count,
-        pair.fromIdx <= 1 // 높은 순위(1, 2등)는 큰 카드를 줌
-      );
-
-      // 카드 교환 수행
-      cardsToGive.forEach((card) => {
+      cardsGiven.forEach((card) => {
         const index = fromPlayer.cards.findIndex(
           (c) => c.rank === card.rank && c.isJoker === card.isJoker
         );
-        if (index !== -1) {
-          fromPlayer.cards.splice(index, 1);
-        }
+        if (index !== -1) fromPlayer.cards.splice(index, 1);
       });
-      toPlayer.cards.push(...cardsToGive);
+      toPlayer.cards.push(...cardsGiven);
+    }
 
-      // 교환 기록 저장 (받은 카드는 나중에 역교환 시 기록됨)
-      game.taxExchanges.push({
+    // Step 3: UI용 교환 기록 생성
+    game.taxExchanges = exchangePairs.map((pair) => {
+      const fromPlayer = sortedPlayers[pair.fromIdx];
+      const toPlayer = sortedPlayers[pair.toIdx];
+
+      const cardsGiven = cardsToGiveByPlayer.get(fromPlayer.id) || [];
+      const cardsReceived = cardsToGiveByPlayer.get(toPlayer.id) || [];
+
+      return {
         fromPlayerId: fromPlayer.id,
         toPlayerId: toPlayer.id,
         cardCount: pair.count,
-        cardsGiven: cardsToGive,
-        cardsReceived: [], // 역교환에서 채워질 예정
-      });
-    }
-
-    // 각 플레이어가 받은 카드 기록 업데이트
-    game.taxExchanges.forEach((exchange) => {
-      const reverseExchange = game.taxExchanges?.find(
-        (ex) => ex.fromPlayerId === exchange.toPlayerId && ex.toPlayerId === exchange.fromPlayerId
-      );
-      if (reverseExchange) {
-        exchange.cardsReceived = reverseExchange.cardsGiven;
-      }
+        cardsGiven: cardsGiven,
+        cardsReceived: cardsReceived,
+      };
     });
 
-    // 게임 시작 준비 (phase는 호출자가 결정)
+    // Step 4: 게임 시작 준비
     game.lastPlay = undefined;
     game.round = 1;
     game.currentTurn = sortedPlayers[0].id;
