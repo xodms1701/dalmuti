@@ -3,6 +3,8 @@ import { useGameStore } from "../store/gameStore";
 import { useSocketContext } from "../contexts/SocketContext";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import GameHistory from "../components/GameHistory";
+import GameHistoryDetail from "../components/GameHistoryDetail";
 
 const Container = styled.div`
   display: flex;
@@ -40,8 +42,30 @@ const VoteStatus = styled.div`
   min-width: 250px;
 `;
 
+const HistoryButton = styled.button`
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #5a6268;
+  }
+`;
+
 const VotePage: React.FC = () => {
-  const { game } = useGameStore();
+  const {
+    game,
+    showGameHistory,
+    setShowGameHistory,
+    selectedHistoryIndex,
+    setSelectedHistoryIndex,
+  } = useGameStore();
   const { socketId, vote } = useSocketContext();
   const navigate = useNavigate();
 
@@ -58,6 +82,11 @@ const VotePage: React.FC = () => {
   if (!game?.isVoting) return null;
 
   const myVote = socketId ? game.votes[socketId] : undefined;
+  const hasHistory = game.gameHistories && game.gameHistories.length > 0;
+  const selectedHistory =
+    selectedHistoryIndex !== null && game.gameHistories
+      ? game.gameHistories[selectedHistoryIndex]
+      : null;
 
   return (
     <Container>
@@ -90,6 +119,21 @@ const VotePage: React.FC = () => {
           </div>
         ))}
       </VoteStatus>
+      {hasHistory && (
+        <HistoryButton onClick={() => setShowGameHistory(true)}>
+          이전 게임 결과 보기
+        </HistoryButton>
+      )}
+      <GameHistory
+        isOpen={showGameHistory}
+        onClose={() => setShowGameHistory(false)}
+        histories={game.gameHistories || []}
+      />
+      <GameHistoryDetail
+        isOpen={selectedHistoryIndex !== null}
+        onClose={() => setSelectedHistoryIndex(null)}
+        history={selectedHistory}
+      />
     </Container>
   );
 };

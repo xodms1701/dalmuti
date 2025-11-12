@@ -42,6 +42,30 @@ export interface Play {
   cards: Card[];
 }
 
+export interface RoundPlay {
+  round: number;
+  playerId: string;
+  cards: Card[];
+  timestamp: Date;
+}
+
+export interface GameHistory {
+  gameNumber: number;
+  players: {
+    playerId: string;
+    nickname: string;
+    rank: number;
+    finishedAtRound: number;
+    totalCardsPlayed: number;
+    totalPasses: number;
+  }[];
+  finishedOrder: string[];
+  totalRounds: number;
+  roundPlays: RoundPlay[];
+  startedAt: Date;
+  endedAt: Date;
+}
+
 export enum GamePhase {
   WAITING = "waiting",
   ROLE_SELECTION = "roleSelection",
@@ -72,6 +96,15 @@ export interface Game {
   finishedPlayers: string[];
   createdAt: Date;
   updatedAt: Date;
+  gameNumber: number;
+  gameHistories: GameHistory[];
+  currentGameStartedAt?: Date;
+  playerStats: Record<string, {
+    totalCardsPlayed: number;
+    totalPasses: number;
+    finishedAtRound: number;
+  }>;
+  roundPlays: RoundPlay[];
 }
 
 export interface UIState {

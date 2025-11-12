@@ -1,4 +1,4 @@
-import { Card, Game, Player, RoleSelectionCard, Database } from '../types';
+import { Card, Game, Player, RoleSelectionCard, Database, GameHistory } from '../types';
 import { Server } from 'socket.io';
 import { SocketEvent } from '../socket/events';
 
@@ -44,6 +44,11 @@ export default class GameManager {
       finishedPlayers: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      gameNumber: 1,
+      gameHistories: [],
+      currentGameStartedAt: undefined,
+      playerStats: {},
+      roundPlays: [],
     };
 
     return this.db.createGame(game);
@@ -120,11 +125,26 @@ export default class GameManager {
     game.phase = 'roleSelection';
     this.initializeDeck(game);
     game.roleSelectionDeck = this.initializeRoleSelectionDeck();
+    game.currentGameStartedAt = new Date();
+
+    // 플레이어별 통계 초기화
+    game.playerStats = {};
+    game.players.forEach((player) => {
+      game.playerStats[player.id] = {
+        totalCardsPlayed: 0,
+        totalPasses: 0,
+        finishedAtRound: 0,
+      };
+    });
+    game.roundPlays = [];
 
     await this.db.updateGame(roomId, {
       phase: game.phase,
       deck: game.deck,
       roleSelectionDeck: game.roleSelectionDeck,
+      currentGameStartedAt: game.currentGameStartedAt,
+      playerStats: game.playerStats,
+      roundPlays: game.roundPlays,
     });
 
     return true;
@@ -195,11 +215,31 @@ export default class GameManager {
       cards: playedCards,
     };
 
+    // 플레이 기록 저장
+    game.roundPlays.push({
+      round: game.round,
+      playerId,
+      cards: playedCards,
+      timestamp: new Date(),
+    });
+
+    // 플레이어 통계 업데이트
+    if (!game.playerStats[playerId]) {
+      game.playerStats[playerId] = {
+        totalCardsPlayed: 0,
+        totalPasses: 0,
+        finishedAtRound: 0,
+      };
+    }
+    game.playerStats[playerId].totalCardsPlayed += playedCards.length;
+
     // 플레이어의 카드가 모두 소진되었는지 확인
     if (player.cards.length === 0) {
       // 플레이어를 완료 목록에 추가
       if (!game.finishedPlayers.includes(playerId)) {
         game.finishedPlayers.push(playerId);
+        // 카드를 소진한 라운드 기록
+        game.playerStats[playerId].finishedAtRound = game.round;
       }
 
       // 모든 플레이어의 카드가 소진되었는지 확인
@@ -260,6 +300,8 @@ export default class GameManager {
       phase: game.phase,
       finishedPlayers: game.finishedPlayers,
       isVoting: game.isVoting,
+      roundPlays: game.roundPlays,
+      playerStats: game.playerStats,
     });
 
     return game;
@@ -290,6 +332,16 @@ export default class GameManager {
     }
 
     currentPlayer.isPassed = true;
+
+    // 패스 횟수 기록
+    if (!game.playerStats[playerId]) {
+      game.playerStats[playerId] = {
+        totalCardsPlayed: 0,
+        totalPasses: 0,
+        finishedAtRound: 0,
+      };
+    }
+    game.playerStats[playerId].totalPasses++;
 
     // 순위 순서대로 정렬된 플레이어 목록
     const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
@@ -368,6 +420,7 @@ export default class GameManager {
       currentTurn: game.currentTurn,
       round: game.round,
       lastPlay: game.lastPlay,
+      playerStats: game.playerStats,
     });
 
     return true;
@@ -595,6 +648,34 @@ export default class GameManager {
       const allAgreed = Object.values(game.votes).every((v) => v);
 
       if (allAgreed) {
+        // 현재 게임 이력 저장
+        const gameHistory: GameHistory = {
+          gameNumber: game.gameNumber,
+          players: game.finishedPlayers.map((playerId, index) => {
+            const player = game.players.find((p) => p.id === playerId);
+            const stats = game.playerStats[playerId] || {
+              totalCardsPlayed: 0,
+              totalPasses: 0,
+              finishedAtRound: 0,
+            };
+            return {
+              playerId,
+              nickname: player?.nickname || '',
+              rank: index + 1,
+              finishedAtRound: stats.finishedAtRound,
+              totalCardsPlayed: stats.totalCardsPlayed,
+              totalPasses: stats.totalPasses,
+            };
+          }),
+          finishedOrder: [...game.finishedPlayers],
+          totalRounds: game.round,
+          roundPlays: [...game.roundPlays],
+          startedAt: game.currentGameStartedAt || new Date(),
+          endedAt: new Date(),
+        };
+
+        game.gameHistories.push(gameHistory);
+
         // finishedPlayers 순서대로 계급 재배정
         game.finishedPlayers.forEach((playerId, index) => {
           const player = game.players.find((p) => p.id === playerId);
@@ -603,6 +684,9 @@ export default class GameManager {
           }
         });
 
+        // 게임 번호 증가
+        game.gameNumber++;
+
         // 게임 상태 초기화
         game.lastPlay = undefined;
         game.round = 1;
@@ -610,6 +694,18 @@ export default class GameManager {
         game.isVoting = false;
         game.votes = {};
         game.finishedPlayers = [];
+        game.currentGameStartedAt = new Date();
+        game.roundPlays = [];
+
+        // 플레이어별 통계 초기화
+        game.playerStats = {};
+        game.players.forEach((player) => {
+          game.playerStats[player.id] = {
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          };
+        });
 
         // 각 플레이어의 카드 초기화
         game.players.forEach((player) => {
@@ -628,6 +724,11 @@ export default class GameManager {
           isVoting: game.isVoting,
           votes: game.votes,
           finishedPlayers: game.finishedPlayers,
+          gameHistories: game.gameHistories,
+          gameNumber: game.gameNumber,
+          playerStats: game.playerStats,
+          roundPlays: game.roundPlays,
+          currentGameStartedAt: game.currentGameStartedAt,
         });
 
         // 5초 후 카드 섞기 및 배분
@@ -692,6 +793,8 @@ export default class GameManager {
             currentTurn: updatedGame.currentTurn,
             deck: updatedGame.deck,
             selectableDecks: updatedGame.selectableDecks,
+            playerStats: updatedGame.playerStats,
+            roundPlays: updatedGame.roundPlays,
           });
 
           // 클라이언트에게 업데이트된 게임 상태 전송

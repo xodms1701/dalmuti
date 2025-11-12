@@ -6,6 +6,8 @@ interface GameStore {
   ui: UIState;
   userId: string | null;
   nickname: string | null;
+  showGameHistory: boolean;
+  selectedHistoryIndex: number | null;
   setGame: (game: Game) => void;
   setUserId: (userId: string) => void;
   setNickname: (nickname: string) => void;
@@ -14,6 +16,8 @@ interface GameStore {
   selectRole: (role: number) => void;
   selectDeck: (deck: number) => void;
   clearSelection: () => void;
+  setShowGameHistory: (show: boolean) => void;
+  setSelectedHistoryIndex: (index: number | null) => void;
   reset: () => void;
 }
 
@@ -30,6 +34,8 @@ const initialState = {
   },
   userId: null,
   nickname: null,
+  showGameHistory: false,
+  selectedHistoryIndex: null,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -76,5 +82,7 @@ export const useGameStore = create<GameStore>((set) => ({
         selectedDeck: null,
       },
     })),
+  setShowGameHistory: (showGameHistory) => set({ showGameHistory }),
+  setSelectedHistoryIndex: (selectedHistoryIndex) => set({ selectedHistoryIndex }),
   reset: () => set(initialState),
 }));

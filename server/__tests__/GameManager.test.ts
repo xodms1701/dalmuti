@@ -628,4 +628,154 @@ describe('GameManager', () => {
       expect(resultGame?.currentTurn).toBe('player2'); // player1은 카드가 없으므로 player2가 다음 턴이 되어야 함
     });
   });
+
+  describe('게임 이력 저장', () => {
+    it('게임이 종료되고 모든 플레이어가 찬성하면 게임 이력이 저장되어야 합니다', async () => {
+      // 1. 게임 생성 및 플레이어 참가
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Player1');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 2. 게임 시작
+      await gameManager.startGame(game!.roomId);
+
+      // 3. 역할 선택
+      await gameManager.selectRole(game!.roomId, ownerId, 1);
+      await gameManager.selectRole(game!.roomId, 'player2', 2);
+      await gameManager.selectRole(game!.roomId, 'player3', 3);
+      await gameManager.selectRole(game!.roomId, 'player4', 4);
+
+      // 4. 카드 선택
+      await gameManager.selectDeck(game!.roomId, ownerId, 0);
+      await gameManager.selectDeck(game!.roomId, 'player2', 1);
+      await gameManager.selectDeck(game!.roomId, 'player3', 2);
+      await gameManager.selectDeck(game!.roomId, 'player4', 3);
+
+      // 5. 게임 종료 상태로 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.isVoting = true;
+        updatedGame.finishedPlayers = ['player1', 'player2', 'player3', 'player4'];
+        updatedGame.round = 5; // 5라운드 진행했다고 가정
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 6. 초기 상태 확인
+      expect(updatedGame?.gameNumber).toBe(1);
+      expect(updatedGame?.gameHistories).toHaveLength(0);
+
+      // 7. 모든 플레이어가 찬성 투표
+      await gameManager.vote(game!.roomId, ownerId, true);
+      await gameManager.vote(game!.roomId, 'player2', true);
+      await gameManager.vote(game!.roomId, 'player3', true);
+      await gameManager.vote(game!.roomId, 'player4', true);
+
+      // 8. 게임 이력이 저장되었는지 확인
+      const finalGame = await mockDb.getGame(game!.roomId);
+      expect(finalGame?.gameHistories).toHaveLength(1);
+      expect(finalGame?.gameNumber).toBe(2); // 게임 번호가 증가했는지 확인
+
+      // 9. 저장된 이력 내용 확인
+      const history = finalGame?.gameHistories[0];
+      expect(history?.gameNumber).toBe(1);
+      expect(history?.players).toHaveLength(4);
+      expect(history?.finishedOrder).toEqual(['player1', 'player2', 'player3', 'player4']);
+      expect(history?.totalRounds).toBe(5);
+      expect(history?.players[0].rank).toBe(1); // 첫 번째 완료한 플레이어가 1등
+      expect(history?.players[0].playerId).toBe('player1');
+    });
+
+    it('플레이 기록이 roundPlays에 저장되어야 합니다', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Player1');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, cards 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 3;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[0].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+        ];
+        updatedGame.players[1].cards = [{ rank: 3, isJoker: false }];
+        updatedGame.players[2].cards = [{ rank: 4, isJoker: false }];
+        updatedGame.players[3].cards = [{ rank: 5, isJoker: false }];
+        // playerStats 초기화
+        updatedGame.playerStats = {
+          player1: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player2: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player3: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player4: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+        };
+        updatedGame.roundPlays = [];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 2. 카드 플레이
+      await gameManager.playCard(game!.roomId, 'player1', [{ rank: 1, isJoker: false }]);
+
+      // 3. roundPlays가 기록되었는지 확인
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.roundPlays).toHaveLength(1);
+      expect(resultGame?.roundPlays[0].round).toBe(1);
+      expect(resultGame?.roundPlays[0].playerId).toBe('player1');
+      expect(resultGame?.roundPlays[0].cards).toEqual([{ rank: 1, isJoker: false }]);
+
+      // 4. playerStats가 업데이트되었는지 확인
+      expect(resultGame?.playerStats['player1'].totalCardsPlayed).toBe(1);
+    });
+
+    it('패스 횟수가 playerStats에 기록되어야 합니다', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Player1');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, cards 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.lastPlay = { playerId: 'player2', cards: [{ rank: 1, isJoker: false }] };
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 3;
+        updatedGame.players[3].rank = 4;
+        updatedGame.players[0].cards = [{ rank: 2, isJoker: false }];
+        updatedGame.players[1].cards = [{ rank: 3, isJoker: false }];
+        updatedGame.players[2].cards = [{ rank: 4, isJoker: false }];
+        updatedGame.players[3].cards = [{ rank: 5, isJoker: false }];
+        updatedGame.playerStats = {
+          player1: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player2: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player3: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player4: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+        };
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // 2. 패스
+      await gameManager.passTurn(game!.roomId, 'player1');
+
+      // 3. playerStats가 업데이트되었는지 확인
+      const resultGame = await mockDb.getGame(game!.roomId);
+      expect(resultGame?.playerStats['player1'].totalPasses).toBe(1);
+    });
+  });
 });
