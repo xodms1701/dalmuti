@@ -459,6 +459,32 @@ export default class GameManager {
       this.initializeDeck(game);
       this.shuffleDeck(game);
 
+      // 개발 환경에서 테스트를 위한 백도어: 조커 2장을 첫 번째 구간으로 이동
+      if (process.env.NODE_ENV === 'development' || process.env.ENABLE_TEST_BACKDOOR === 'true') {
+        console.log('[TEST BACKDOOR] Moving 2 jokers to first deck positions');
+
+        const jokerIndices: number[] = [];
+        game.deck.forEach((card, index) => {
+          if (card.isJoker) jokerIndices.push(index);
+        });
+
+        // 조커 2장을 0, 1 위치와 교환
+        if (jokerIndices.length >= 2) {
+          // 첫 번째 조커를 0번 위치로
+          if (jokerIndices[0] !== 0) {
+            [game.deck[0], game.deck[jokerIndices[0]]] = [game.deck[jokerIndices[0]], game.deck[0]];
+          }
+
+          // 두 번째 조커를 1번 위치로
+          const secondJokerIndex = jokerIndices[1];
+          if (secondJokerIndex !== 1) {
+            [game.deck[1], game.deck[secondJokerIndex]] = [game.deck[secondJokerIndex], game.deck[1]];
+          }
+
+          console.log('[TEST BACKDOOR] Jokers placed at positions 0 and 1');
+        }
+      }
+
       // 플레이어 수에 맞게 각 플레이어가 선택할 수 있는 덱 생성
       const playerCount = game.players.length;
       const cardsPerPlayer = Math.floor(game.deck.length / playerCount);

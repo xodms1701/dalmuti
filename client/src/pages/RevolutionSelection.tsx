@@ -240,6 +240,9 @@ const RevolutionSelection: React.FC = () => {
         <Title>혁명 선택</Title>
         <InfoBox>
           <InfoText>다른 플레이어가 혁명을 선택하고 있습니다...</InfoText>
+          <InfoText style={{ fontSize: "14px", marginTop: "10px", opacity: 0.7 }}>
+            잠시만 기다려주세요.
+          </InfoText>
         </InfoBox>
       </Container>
     );

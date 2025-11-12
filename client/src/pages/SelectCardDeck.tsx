@@ -206,10 +206,6 @@ const SelectCardDeck: React.FC = () => {
           return prev - 1;
         });
       }, 1000);
-    } else if (game?.phase === "revolution") {
-      navigate("/revolution");
-    } else if (game?.phase === "tax") {
-      navigate("/tax");
     } else {
       setCountdown(null);
     }
