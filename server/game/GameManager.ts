@@ -320,18 +320,9 @@ export default class GameManager {
       return false;
     }
 
-    // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인 (게임 완료한 플레이어 제외)
-    // 단, 마지막으로 카드를 낸 플레이어가 게임을 완료하지 않았다면, 그 플레이어도 체크에서 제외
+    // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인
     const otherPlayersAllPassed = game.players
-      .filter((p) => {
-        if (p.id === playerId) return false; // 나 자신 제외
-        if (game.finishedPlayers.includes(p.id)) return false; // 게임 완료한 플레이어 제외
-        // 마지막으로 카드를 낸 플레이어가 게임을 완료하지 않았다면 제외
-        if (game.lastPlay && p.id === game.lastPlay.playerId && !game.finishedPlayers.includes(game.lastPlay.playerId)) {
-          return false;
-        }
-        return true;
-      })
+      .filter((p) => p.id !== playerId)
       .every((p) => p.isPassed);
 
     if (otherPlayersAllPassed) {
