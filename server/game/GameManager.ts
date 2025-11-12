@@ -599,6 +599,7 @@ export default class GameManager {
       lastPlay: game.lastPlay,
       round: game.round,
       selectableDecks: game.selectableDecks,
+      taxExchanges: game.taxExchanges,
     });
 
     return true;
@@ -988,7 +989,8 @@ export default class GameManager {
       const toPlayer = sortedPlayers[pair.toIdx];
 
       const cardsGiven = cardsToGiveByPlayer.get(fromPlayer.id) || [];
-      const cardsReceived = cardsToGiveByPlayer.get(toPlayer.id) || [];
+      // toPlayer가 받는 카드는 fromPlayer가 준 카드와 동일
+      const cardsReceived = cardsGiven;
 
       return {
         fromPlayerId: fromPlayer.id,
