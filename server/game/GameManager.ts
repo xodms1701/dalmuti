@@ -315,9 +315,9 @@ export default class GameManager {
       return false;
     }
 
-    // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인
+    // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인 (게임 완료한 플레이어 제외)
     const otherPlayersAllPassed = game.players
-      .filter((p) => p.id !== playerId)
+      .filter((p) => p.id !== playerId && !game.finishedPlayers.includes(p.id))
       .every((p) => p.isPassed);
 
     if (otherPlayersAllPassed) {
