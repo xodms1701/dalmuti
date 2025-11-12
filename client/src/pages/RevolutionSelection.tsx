@@ -5,6 +5,8 @@ import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
 import HelpModal from "../components/HelpModal";
 
+const COUNTDOWN_SECONDS = 5;
+
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -195,7 +197,7 @@ const RevolutionSelection: React.FC = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [myChoice, setMyChoice] = useState<boolean | null>(null);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
@@ -205,32 +207,32 @@ const RevolutionSelection: React.FC = () => {
   useEffect(() => {
     if (myChoice !== null && (game?.phase === "playing" || game?.phase === "tax")) {
       setShowResult(true);
-      setCountdown(5);
+      setCountdown(COUNTDOWN_SECONDS);
     }
   }, [game?.phase, myChoice]);
 
-  // 카운트다운 및 페이지 이동
+  // 카운트다운 처리
   useEffect(() => {
-    if (showResult) {
+    if (showResult && countdown > 0) {
       const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            // 혁명 거부 시 세금 교환이 있으면 tax 페이지로, 아니면 play 페이지로
-            if (myChoice === false && game?.taxExchanges && game.taxExchanges.length > 0) {
-              navigate("/tax");
-            } else {
-              navigate("/play");
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
+        setCountdown((prev) => prev - 1);
       }, 1000);
 
       return () => clearInterval(timer);
     }
-  }, [showResult, myChoice, game?.taxExchanges, navigate]);
+  }, [showResult, countdown]);
+
+  // 카운트다운이 0이 되면 페이지 이동
+  useEffect(() => {
+    if (showResult && countdown === 0) {
+      // 혁명 거부 시 세금 교환이 있으면 tax 페이지로, 아니면 play 페이지로
+      if (myChoice === false && game?.taxExchanges && game.taxExchanges.length > 0) {
+        navigate("/tax");
+      } else {
+        navigate("/play");
+      }
+    }
+  }, [showResult, countdown, myChoice, game?.taxExchanges, navigate]);
 
   if (!myPlayer || !isMyTurn) {
     return (

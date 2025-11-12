@@ -522,20 +522,17 @@ export default class GameManager {
   public async selectDeck(roomId: string, playerId: string, cardIndex: number): Promise<boolean> {
     const game = await this.db.getGame(roomId);
     if (!game || game.phase !== 'cardSelection' || game.currentTurn !== playerId) {
-      console.log('game not found or phase not cardSelection or currentTurn not playerId');
       return false;
     }
 
     const player = game.players.find((p) => p.id === playerId);
     if (!player || cardIndex < 0 || cardIndex >= game.selectableDecks.length) {
-      console.log('player not found or card index out of range');
       return false;
     }
 
     // 카드 선택
     const selectedCard = game.selectableDecks[cardIndex];
     if (!selectedCard || selectedCard.isSelected) {
-      console.log('selected card not found or already selected');
       return false;
     }
 
