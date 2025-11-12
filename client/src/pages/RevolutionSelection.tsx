@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
@@ -115,11 +116,21 @@ const Highlight = styled.span`
 const RevolutionSelection: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, selectRevolution } = useSocketContext();
+  const navigate = useNavigate();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
   const isMyTurn = game?.currentTurn === socketId;
+
+  // 게임 페이즈가 변경되면 해당 페이지로 이동
+  useEffect(() => {
+    if (game?.phase === "tax") {
+      navigate("/tax");
+    } else if (game?.phase === "playing") {
+      navigate("/play");
+    }
+  }, [game?.phase, navigate]);
 
   if (!myPlayer || !isMyTurn) {
     return (

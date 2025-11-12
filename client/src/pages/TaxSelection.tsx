@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
@@ -157,11 +158,19 @@ const TaxStatusItem = styled.div<{ completed: boolean }>`
 const TaxSelection: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, selectTaxCards } = useSocketContext();
+  const navigate = useNavigate();
   const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
+
+  // 게임 페이즈가 playing으로 변경되면 플레이 페이지로 이동
+  useEffect(() => {
+    if (game?.phase === "playing") {
+      navigate("/play");
+    }
+  }, [game?.phase, navigate]);
 
   if (!myPlayer) {
     return (
