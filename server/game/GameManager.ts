@@ -549,26 +549,23 @@ export default class GameManager {
     // rank가 낮을수록 높은 순위이므로 오름차순 정렬
     const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
-    if (remainingDecks.length === 1) {
-      // 다음 플레이어 찾기
-      const currentPlayerIndex = sortedPlayers.findIndex((p) => p.id === playerId);
-      const nextPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
-      const nextPlayer = sortedPlayers[nextPlayerIndex];
+    // 다음 플레이어 찾기
+    const currentPlayerIndex = sortedPlayers.findIndex((p) => p.id === playerId);
+    const nextPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
 
-      // 마지막 덱 자동 할당
-      const lastDeck = game.selectableDecks.find((deck) => !deck.isSelected);
-      if (lastDeck) {
-        lastDeck.isSelected = true;
-        lastDeck.selectedBy = nextPlayer.id;
-        nextPlayer.cards.push(...lastDeck.cards);
-      }
+    if (remainingDecks.length === 1) {
+      const nextPlayer = sortedPlayers[nextPlayerIndex];
+      const lastDeck = remainingDecks[0];
+
+      lastDeck.isSelected = true;
+      lastDeck.selectedBy = nextPlayer.id;
+      nextPlayer.cards.push(...lastDeck.cards);
+
       // 모든 덱이 선택되었으므로 1등(rank가 가장 낮은 플레이어)으로 턴 설정
       // 조커 2장 로직에서 변경될 수 있음
       game.currentTurn = sortedPlayers[0].id;
     } else {
       // 남은 덱이 2개 이상이면 다음 플레이어로 턴 넘기기
-      const currentPlayerIndex = sortedPlayers.findIndex((p) => p.id === playerId);
-      const nextPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
       game.currentTurn = sortedPlayers[nextPlayerIndex].id;
     }
 
