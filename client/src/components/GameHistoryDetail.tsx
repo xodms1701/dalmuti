@@ -222,6 +222,11 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
     return `${rank}등`;
   };
 
+  // 닉네임 맵 캐싱 (성능 최적화)
+  const playerNicknameMap = React.useMemo(() => {
+    return new Map(history.players.map((p) => [p.playerId, p.nickname]));
+  }, [history]);
+
   // 라운드별로 플레이 기록 그룹화
   const groupedPlays: Record<number, RoundPlay[]> = {};
   history.roundPlays.forEach((play) => {
@@ -232,8 +237,7 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
   });
 
   const getPlayerNickname = (playerId: string) => {
-    const player = history.players.find((p) => p.playerId === playerId);
-    return player?.nickname || "알 수 없음";
+    return playerNicknameMap.get(playerId) || "알 수 없음";
   };
 
   return (
@@ -249,8 +253,8 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
         <Section>
           <SectionTitle>최종 순위</SectionTitle>
           <PlayerGrid>
-            {history.players.map((player, idx) => (
-              <PlayerCard key={idx}>
+            {history.players.map((player) => (
+              <PlayerCard key={player.playerId}>
                 <PlayerRank rank={player.rank}>
                   {getRankLabel(player.rank)}
                 </PlayerRank>
@@ -274,13 +278,13 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
               .map((round) => (
                 <RoundGroup key={round}>
                   <RoundHeader>라운드 {round}</RoundHeader>
-                  {groupedPlays[round].map((play, idx) => (
-                    <PlayItem key={idx}>
+                  {groupedPlays[round].map((play) => (
+                    <PlayItem key={`${play.playerId}-${play.timestamp}`}>
                       <PlayTime>{formatTime(play.timestamp)}</PlayTime>
                       <PlayPlayer>{getPlayerNickname(play.playerId)}</PlayPlayer>
                       <PlayCards>
                         {play.cards.map((card, cardIdx) => (
-                          <CardChip key={cardIdx} isJoker={card.isJoker}>
+                          <CardChip key={`${card.rank}-${card.isJoker}-${cardIdx}`} isJoker={card.isJoker}>
                             {card.isJoker ? "조커" : card.rank}
                           </CardChip>
                         ))}

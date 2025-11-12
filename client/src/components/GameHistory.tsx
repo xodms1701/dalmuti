@@ -187,7 +187,7 @@ const GameHistory: React.FC<GameHistoryProps> = ({
           <HistoryList>
             {histories.map((history, index) => (
               <HistoryCard
-                key={index}
+                key={history.gameNumber}
                 onClick={() => handleHistoryClick(index)}
               >
                 <GameNumber>게임 {history.gameNumber}</GameNumber>
@@ -199,8 +199,8 @@ const GameHistory: React.FC<GameHistoryProps> = ({
                   <TotalRounds>총 {history.totalRounds} 라운드</TotalRounds>
                 </GameInfo>
                 <PlayerRankings>
-                  {history.players.map((player, idx) => (
-                    <RankRow key={idx}>
+                  {history.players.map((player) => (
+                    <RankRow key={player.playerId}>
                       <Rank rank={player.rank}>{getRankLabel(player.rank)}</Rank>
                       <PlayerName>{player.nickname}</PlayerName>
                       <Stats>

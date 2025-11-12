@@ -128,15 +128,7 @@ export default class GameManager {
     game.currentGameStartedAt = new Date();
 
     // 플레이어별 통계 초기화
-    game.playerStats = {};
-    game.players.forEach((player) => {
-      game.playerStats[player.id] = {
-        totalCardsPlayed: 0,
-        totalPasses: 0,
-        finishedAtRound: 0,
-      };
-    });
-    game.roundPlays = [];
+    this.resetGameStatsAndPlays(game);
 
     await this.db.updateGame(roomId, {
       phase: game.phase,
@@ -223,7 +215,7 @@ export default class GameManager {
       timestamp: new Date(),
     });
 
-    // 플레이어 통계 업데이트
+    // 플레이어 통계 업데이트 (테스트에서 강제로 상태를 설정하는 경우를 대비)
     if (!game.playerStats[playerId]) {
       game.playerStats[playerId] = {
         totalCardsPlayed: 0,
@@ -333,7 +325,7 @@ export default class GameManager {
 
     currentPlayer.isPassed = true;
 
-    // 패스 횟수 기록
+    // 패스 횟수 기록 (테스트에서 강제로 상태를 설정하는 경우를 대비)
     if (!game.playerStats[playerId]) {
       game.playerStats[playerId] = {
         totalCardsPlayed: 0,
@@ -695,17 +687,9 @@ export default class GameManager {
         game.votes = {};
         game.finishedPlayers = [];
         game.currentGameStartedAt = new Date();
-        game.roundPlays = [];
 
         // 플레이어별 통계 초기화
-        game.playerStats = {};
-        game.players.forEach((player) => {
-          game.playerStats[player.id] = {
-            totalCardsPlayed: 0,
-            totalPasses: 0,
-            finishedAtRound: 0,
-          };
-        });
+        this.resetGameStatsAndPlays(game);
 
         // 각 플레이어의 카드 초기화
         game.players.forEach((player) => {
@@ -850,5 +834,17 @@ export default class GameManager {
       const j = Math.floor(Math.random() * (i + 1));
       [game.deck[i], game.deck[j]] = [game.deck[j], game.deck[i]];
     }
+  }
+
+  private resetGameStatsAndPlays(game: Game): void {
+    game.playerStats = {};
+    game.players.forEach((player) => {
+      game.playerStats[player.id] = {
+        totalCardsPlayed: 0,
+        totalPasses: 0,
+        finishedAtRound: 0,
+      };
+    });
+    game.roundPlays = [];
   }
 }
