@@ -72,13 +72,6 @@ const SelectedBadge = styled.div`
   font-size: 0.9rem;
 `;
 
-const Info = styled.div`
-  font-size: 1rem;
-  color: #666;
-  margin-bottom: 1.5rem;
-  text-align: center;
-`;
-
 const HelpButton = styled.button`
   position: fixed;
   bottom: 2rem;
@@ -124,8 +117,9 @@ const Highlight = styled.span`
   font-weight: bold;
 `;
 
-const CurrentTurnBanner = styled.div<{ isMyTurn: boolean }>`
-  background: ${({ isMyTurn }) => (isMyTurn ? "#28a745" : "#ffc107")};
+const CurrentTurnBanner = styled.div<{ isMyTurn: boolean; isCountdown?: boolean }>`
+  background: ${({ isMyTurn, isCountdown }) =>
+    isCountdown ? "#e74c3c" : isMyTurn ? "#28a745" : "#ffc107"};
   color: white;
   padding: 1rem;
   border-radius: 8px;
@@ -249,10 +243,14 @@ const SelectCardDeck: React.FC = () => {
 
       <RankBadge rank={myRank || 0}>{myRank}등</RankBadge>
 
-      <CurrentTurnBanner isMyTurn={isMyTurn}>
-        {isMyTurn
-          ? "🎯 당신의 차례입니다! 카드 덱을 선택하세요"
-          : `${currentTurnPlayer?.nickname}님이 선택 중입니다...`}
+      <CurrentTurnBanner isMyTurn={isMyTurn} isCountdown={countdown !== null}>
+        {countdown !== null ? (
+          `⏰ ${countdown}초 후 게임이 시작됩니다...`
+        ) : isMyTurn ? (
+          "🎯 당신의 차례입니다! 카드 덱을 선택하세요"
+        ) : (
+          `${currentTurnPlayer?.nickname}님이 선택 중입니다...`
+        )}
       </CurrentTurnBanner>
 
       <GuideBox>
@@ -315,12 +313,6 @@ const SelectCardDeck: React.FC = () => {
             </JokerText>
           )}
         </JokerInfo>
-      )}
-
-      {countdown !== null && (
-        <Info style={{ color: "#e74c3c", fontWeight: 600, fontSize: "1.2rem" }}>
-          {countdown}초 후 게임이 시작됩니다...
-        </Info>
       )}
 
       <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
