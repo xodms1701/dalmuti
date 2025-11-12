@@ -909,6 +909,7 @@ describe('GameManager', () => {
       expect(resultGame?.players[1].rank).toBe(2);
       expect(resultGame?.players[2].rank).toBe(4);
       expect(resultGame?.players[3].rank).toBe(1);
+      expect(resultGame?.players[0].hasDoubleJoker).toBeUndefined(); // hasDoubleJoker 플래그 제거됨
       expect(resultGame?.phase).toBe('tax');
       expect(resultGame?.taxExchanges).toBeDefined();
       expect(resultGame?.taxExchanges?.length).toBe(2); // 4명이므로 2개의 교환 (1위↔4위 양방향)

@@ -906,7 +906,10 @@ export default class GameManager {
       game.currentTurn = sortedPlayers[0].id;
     } else {
       // 혁명을 일으키지 않는다 - 순위 그대로 유지, 조커 2장 사실 숨김
-      // 아무 것도 변경하지 않고 세금 페이즈로 전환
+      // hasDoubleJoker 플래그 제거하여 조커 2장 사실 숨김
+      player.hasDoubleJoker = undefined;
+
+      // 세금 페이즈로 전환
       game.phase = 'tax';
       this.initializeTaxExchanges(game);
     }
