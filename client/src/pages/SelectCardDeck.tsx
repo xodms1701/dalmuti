@@ -168,23 +168,6 @@ const RankBadge = styled.div<{ rank: number }>`
   margin-bottom: 1rem;
 `;
 
-const JokerInfo = styled.div`
-  background: #fff3cd;
-  border: 2px solid #ffc107;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1rem;
-  max-width: 800px;
-  width: 100%;
-`;
-
-const JokerText = styled.p`
-  font-size: 0.95rem;
-  color: #856404;
-  margin: 0.25rem 0;
-  line-height: 1.5;
-`;
-
 const SelectCardDeck: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, selectDeck } = useSocketContext();
