@@ -14,6 +14,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/socket.io-client": "^3.0.0",
     "@types/styled-components": "^5.1.34",
+    "@vercel/speed-insights": "^1.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-ga4": "^2.1.0",

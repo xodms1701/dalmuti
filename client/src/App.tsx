@@ -9,6 +9,7 @@ import SelectCardDeck from "./pages/SelectCardDeck";
 import Play from "./pages/Play";
 import VotePage from "./pages/VotePage";
 import RankConfirmation from "./pages/RankConfirmation";
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const AppContent: React.FC = () => {
   const { connect } = useSocketContext();
@@ -38,11 +39,14 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <SocketProvider>
-        <AppContent />
-      </SocketProvider>
-    </Router>
+    <>
+      <Router>
+        <SocketProvider>
+          <AppContent />
+        </SocketProvider>
+      </Router>
+      <SpeedInsights />
+    </>
   );
 };
 
