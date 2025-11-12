@@ -214,7 +214,11 @@ const SelectCardDeck: React.FC = () => {
 
   const currentTurnPlayer = game?.players.find((p) => p.id === game.currentTurn);
   const allPlayersSelected = game?.players.every((player) => player.cards.length > 0);
-  const rankChanged = sortedPlayers[0]?.id !== game?.currentTurn && allPlayersSelected;
+
+  // 조커 2장을 가진 플레이어 찾기
+  const doubleJokerPlayer = allPlayersSelected
+    ? game?.players.find(p => p.cards.filter(card => card.isJoker).length === 2)
+    : null;
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -300,9 +304,9 @@ const SelectCardDeck: React.FC = () => {
           <JokerText>
             <strong>✨ 모든 플레이어가 카드를 선택했습니다!</strong>
           </JokerText>
-          {rankChanged ? (
+          {doubleJokerPlayer ? (
             <JokerText>
-              🃏 <strong>{currentTurnPlayer?.nickname}님</strong>이 조커 2장을
+              🃏 <strong>{doubleJokerPlayer.nickname}님</strong>이 조커 2장을
               받아 1등이 되었습니다!
             </JokerText>
           ) : (

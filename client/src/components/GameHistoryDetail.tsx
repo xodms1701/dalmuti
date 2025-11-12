@@ -204,12 +204,13 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
   onClose,
   history,
 }) => {
-  if (!isOpen || !history) return null;
-
-  // 닉네임 맵 캐싱 (성능 최적화)
+  // 닉네임 맵 캐싱 (성능 최적화) - Hook은 항상 최상위에서 호출
   const playerNicknameMap = React.useMemo(() => {
+    if (!history) return new Map();
     return new Map(history.players.map((p) => [p.playerId, p.nickname]));
   }, [history]);
+
+  if (!isOpen || !history) return null;
 
   // 라운드별로 플레이 기록 그룹화
   const groupedPlays: Record<number, RoundPlay[]> = {};
