@@ -287,30 +287,33 @@ const RevolutionSelection: React.FC = () => {
     }
   };
 
+  // 결과 모달 렌더링
+  const renderResultModal = () => {
+    const content = getResultContent();
+    return (
+      <ResultModal>
+        <ResultContent isRevolution={content.isRevolution}>
+          <ResultIcon>{content.icon}</ResultIcon>
+          <ResultTitle isRevolution={content.isRevolution}>
+            {content.title}
+          </ResultTitle>
+          <ResultDescription>
+            {content.description}
+          </ResultDescription>
+          <CountdownText>
+            <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
+            이동합니다
+          </CountdownText>
+        </ResultContent>
+      </ResultModal>
+    );
+  };
+
   return (
     <Container>
       <Title>🃏 혁명 선택</Title>
 
-      {showResult && (() => {
-        const content = getResultContent();
-        return (
-          <ResultModal>
-            <ResultContent isRevolution={content.isRevolution}>
-              <ResultIcon>{content.icon}</ResultIcon>
-              <ResultTitle isRevolution={content.isRevolution}>
-                {content.title}
-              </ResultTitle>
-              <ResultDescription>
-                {content.description}
-              </ResultDescription>
-              <CountdownText>
-                <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
-                이동합니다
-              </CountdownText>
-            </ResultContent>
-          </ResultModal>
-        );
-      })()}
+      {showResult && renderResultModal()}
 
       <InfoBox>
         <InfoText>
