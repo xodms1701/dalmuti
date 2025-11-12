@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { SocketProvider, useSocketContext } from "./contexts/SocketContext";
+import { trackPageView } from "./analytics";
 import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import RoleSelection from "./pages/RoleSelection";
@@ -11,10 +12,16 @@ import RankConfirmation from "./pages/RankConfirmation";
 
 const AppContent: React.FC = () => {
   const { connect } = useSocketContext();
+  const location = useLocation();
 
   useEffect(() => {
     connect();
   }, [connect]);
+
+  // 페이지 변경 시 Google Analytics 추적
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
 
   return (
     <Routes>

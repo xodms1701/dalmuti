@@ -3,6 +3,10 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
+import { initGA } from "./analytics";
+
+// Google Analytics 초기화
+initGA();
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
