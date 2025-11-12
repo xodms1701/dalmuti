@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useSocketContext } from "../contexts/SocketContext";
 import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
-import { Card as CardType } from "../types";
 import HelpModal from "../components/HelpModal";
 
 const Container = styled.div`
@@ -157,25 +156,33 @@ const TaxStatusItem = styled.div<{ completed: boolean }>`
 
 const TaxSelection: React.FC = () => {
   const { game } = useGameStore();
-  const { socketId, selectTaxCards } = useSocketContext();
+  const { socketId } = useSocketContext();
   const navigate = useNavigate();
-  const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
 
-  // 게임 페이즈가 playing으로 변경되면 플레이 페이지로 이동
+  // 5초 카운트다운 후 플레이 페이지로 이동
   useEffect(() => {
-    if (game?.phase === "playing") {
-      navigate("/play");
-    }
-  }, [game?.phase, navigate]);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          navigate("/play");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [navigate]);
 
   if (!myPlayer) {
     return (
       <Container>
-        <Title>세금 납부</Title>
+        <Title>💰 세금 교환</Title>
         <WaitingMessage>
           <InfoText>로딩 중...</InfoText>
         </WaitingMessage>
@@ -183,175 +190,97 @@ const TaxSelection: React.FC = () => {
     );
   }
 
-  // 내가 세금을 내야 하는지 확인
-  const myTaxExchange = game?.taxExchanges?.find(
-    (ex) => ex.fromPlayerId === socketId && !ex.completed
+  // 내가 준 세금과 받은 세금 찾기
+  const myGivenTax = game?.taxExchanges?.find(
+    (ex) => ex.fromPlayerId === socketId
+  );
+  const myReceivedTax = game?.taxExchanges?.find(
+    (ex) => ex.toPlayerId === socketId
   );
 
-  const toggleCard = (card: CardType) => {
-    // 조커는 선택 불가
-    if (card.isJoker) {
-      alert("조커는 세금으로 낼 수 없습니다!");
-      return;
-    }
-
-    const isAlreadySelected = selectedCards.some(
-      (c) => c.rank === card.rank && c.isJoker === card.isJoker
-    );
-
-    if (isAlreadySelected) {
-      setSelectedCards(
-        selectedCards.filter(
-          (c) => !(c.rank === card.rank && c.isJoker === card.isJoker)
-        )
-      );
-    } else {
-      if (myTaxExchange && selectedCards.length < myTaxExchange.cardCount) {
-        setSelectedCards([...selectedCards, card]);
-      }
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!game?.roomId || !socketId || !myTaxExchange || isSubmitting) return;
-
-    if (selectedCards.length !== myTaxExchange.cardCount) {
-      alert(
-        `정확히 ${myTaxExchange.cardCount}장의 카드를 선택해야 합니다.`
-      );
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await selectTaxCards(game.roomId, socketId, selectedCards);
-      setSelectedCards([]);
-    } catch (error) {
-      console.error("세금 카드 선택 실패:", error);
-      setIsSubmitting(false);
-      alert("세금 카드 선택에 실패했습니다. 다시 시도해주세요.");
-    }
-  };
-
-  // 순위에 따른 안내 메시지
-  const getGuidanceMessage = () => {
-    if (!myPlayer.rank) return "";
-
-    const playerCount = game?.players.length || 0;
-    const isHighRank = myPlayer.rank <= 2;
-
-    if (isHighRank) {
-      return "가장 큰 숫자의 카드를 선택하세요 (높은 순위는 큰 카드를 냅니다)";
-    } else {
-      return "가장 작은 숫자의 카드를 선택하세요 (낮은 순위는 작은 카드를 냅니다)";
-    }
-  };
-
-  // 세금 진행 상황 표시
-  const renderTaxStatus = () => {
-    if (!game?.taxExchanges) return null;
-
-    return (
-      <TaxStatusList>
-        <InfoText>
-          <strong>세금 교환 진행 상황:</strong>
-        </InfoText>
-        {game.taxExchanges.map((ex, idx) => {
-          const fromPlayer = game.players.find((p) => p.id === ex.fromPlayerId);
-          const toPlayer = game.players.find((p) => p.id === ex.toPlayerId);
-          return (
-            <TaxStatusItem key={idx} completed={ex.completed}>
-              {fromPlayer?.nickname} → {toPlayer?.nickname}: {ex.cardCount}장{" "}
-              {ex.completed ? "✓" : "대기 중..."}
-            </TaxStatusItem>
-          );
-        })}
-      </TaxStatusList>
-    );
-  };
-
-  if (!myTaxExchange) {
-    return (
-      <Container>
-        <Title>💰 세금 납부</Title>
-        <WaitingMessage>
-          <InfoText>다른 플레이어가 세금을 내고 있습니다...</InfoText>
-        </WaitingMessage>
-        {renderTaxStatus()}
-        <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
-        <HelpModal
-          isOpen={isHelpOpen}
-          onClose={() => setIsHelpOpen(false)}
-          type="play"
-        />
-      </Container>
-    );
-  }
-
-  // 교환 대상 플레이어 찾기
-  const targetPlayer = game?.players.find(
-    (p) => p.id === myTaxExchange.toPlayerId
-  );
+  // 세금 교환 대상자인지 확인
+  const isInvolved = myGivenTax || myReceivedTax;
 
   return (
     <Container>
-      <Title>💰 세금 납부</Title>
+      <Title>💰 세금 교환</Title>
 
       <InfoBox>
         <InfoText>
           <strong>현재 순위:</strong> {myPlayer.rank}등
         </InfoText>
         <InfoText>
-          <strong>교환 대상:</strong> {targetPlayer?.nickname} (
-          {targetPlayer?.rank}등)
-        </InfoText>
-        <InfoText>
-          <strong>제출할 카드 수:</strong>{" "}
-          <Highlight>{myTaxExchange.cardCount}장</Highlight>
-        </InfoText>
-        <InfoText>
-          <strong>안내:</strong> {getGuidanceMessage()}
-        </InfoText>
-        <InfoText>
-          • 조커는 세금으로 낼 수 없습니다
+          세금 교환이 자동으로 완료되었습니다!
         </InfoText>
       </InfoBox>
 
-      <InfoText>
-        내 카드 ({selectedCards.length}/{myTaxExchange.cardCount} 선택됨)
-      </InfoText>
+      {isInvolved ? (
+        <>
+          {myGivenTax && (
+            <InfoBox style={{ background: "#fff3cd", borderColor: "#ffc107" }}>
+              <InfoText>
+                <strong>
+                  {game.players.find((p) => p.id === myGivenTax.toPlayerId)?.nickname}
+                  님에게 보낸 카드:
+                </strong>
+              </InfoText>
+              <CardList>
+                {myGivenTax.cardsGiven.map((card, idx) => (
+                  <Card key={idx} selected={false} disabled={true}>
+                    {card.isJoker ? "🃏" : card.rank}
+                  </Card>
+                ))}
+              </CardList>
+            </InfoBox>
+          )}
 
-      <CardList>
-        {myPlayer.cards
-          .slice()
-          .sort((a, b) => a.rank - b.rank)
-          .map((card, idx) => {
-            const isSelected = selectedCards.some(
-              (c) => c.rank === card.rank && c.isJoker === card.isJoker
-            );
-            return (
-              <Card
-                key={`${card.rank}-${card.isJoker}-${idx}`}
-                selected={isSelected}
-                disabled={card.isJoker}
-                onClick={() => toggleCard(card)}
-              >
+          {myReceivedTax && myReceivedTax.cardsReceived.length > 0 && (
+            <InfoBox style={{ background: "#d4edda", borderColor: "#28a745" }}>
+              <InfoText>
+                <strong>
+                  {game.players.find((p) => p.id === myReceivedTax.fromPlayerId)?.nickname}
+                  님에게서 받은 카드:
+                </strong>
+              </InfoText>
+              <CardList>
+                {myReceivedTax.cardsReceived.map((card, idx) => (
+                  <Card key={idx} selected={false} disabled={true}>
+                    {card.isJoker ? "🃏" : card.rank}
+                  </Card>
+                ))}
+              </CardList>
+            </InfoBox>
+          )}
+        </>
+      ) : (
+        <InfoBox>
+          <InfoText>
+            세금 교환 대상이 아닙니다. 게임을 시작합니다!
+          </InfoText>
+        </InfoBox>
+      )}
+
+      <InfoBox>
+        <InfoText>
+          <strong>내 현재 카드:</strong>
+        </InfoText>
+        <CardList>
+          {myPlayer.cards
+            .slice()
+            .sort((a, b) => a.rank - b.rank)
+            .map((card, idx) => (
+              <Card key={idx} selected={false} disabled={true}>
                 {card.isJoker ? "🃏" : card.rank}
               </Card>
-            );
-          })}
-      </CardList>
+            ))}
+        </CardList>
+      </InfoBox>
 
-      <Button
-        onClick={handleSubmit}
-        disabled={
-          selectedCards.length !== myTaxExchange.cardCount || isSubmitting
-        }
-      >
-        {isSubmitting ? "제출 중..." : `${myTaxExchange.cardCount}장 제출하기`}
-      </Button>
-
-      {renderTaxStatus()}
+      <WaitingMessage>
+        <InfoText>
+          <strong>{countdown}</strong>초 후 게임이 시작됩니다...
+        </InfoText>
+      </WaitingMessage>
 
       <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
       <HelpModal

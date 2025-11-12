@@ -79,6 +79,14 @@ export enum GamePhase {
   GAME_END = "gameEnd",
 }
 
+export interface TaxExchange {
+  fromPlayerId: string;
+  toPlayerId: string;
+  cardCount: number;
+  cardsGiven: Card[];
+  cardsReceived: Card[];
+}
+
 export interface Game {
   roomId: string;
   ownerId: string;
@@ -115,12 +123,7 @@ export interface Game {
     isGreatRevolution: boolean;
     revolutionPlayerId?: string;
   };
-  taxExchanges?: Array<{
-    fromPlayerId: string;
-    toPlayerId: string;
-    cardCount: number;
-    completed: boolean;
-  }>;
+  taxExchanges?: TaxExchange[];
 }
 
 export interface UIState {

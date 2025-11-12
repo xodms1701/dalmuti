@@ -203,7 +203,7 @@ const RevolutionSelection: React.FC = () => {
 
   // 게임 페이즈가 변경되면 결과 모달 표시
   useEffect(() => {
-    if (myChoice !== null && (game?.phase === "tax" || game?.phase === "playing")) {
+    if (myChoice !== null && game?.phase === "playing") {
       setShowResult(true);
       setCountdown(5);
     }
@@ -216,9 +216,10 @@ const RevolutionSelection: React.FC = () => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            if (game?.phase === "tax") {
+            // 혁명 거부 시 세금 교환이 있으면 tax 페이지로, 아니면 play 페이지로
+            if (myChoice === false && game?.taxExchanges && game.taxExchanges.length > 0) {
               navigate("/tax");
-            } else if (game?.phase === "playing") {
+            } else {
               navigate("/play");
             }
             return 0;
@@ -229,7 +230,7 @@ const RevolutionSelection: React.FC = () => {
 
       return () => clearInterval(timer);
     }
-  }, [showResult, game?.phase, navigate]);
+  }, [showResult, myChoice, game?.taxExchanges, navigate]);
 
   if (!myPlayer || !isMyTurn) {
     return (

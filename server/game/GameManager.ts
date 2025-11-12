@@ -909,9 +909,13 @@ export default class GameManager {
       // hasDoubleJoker 플래그 제거하여 조커 2장 사실 숨김
       player.hasDoubleJoker = undefined;
 
-      // 세금 페이즈로 전환
-      game.phase = 'tax';
+      // 세금 교환 수행
       this.initializeTaxExchanges(game);
+
+      // 세금 교환 결과를 표시하기 위해 tax 페이즈로 설정
+      // 프론트엔드에서 5초 동안 결과를 보여준 후 자동으로 /play로 이동
+      // (게임 상태는 이미 playing 준비가 완료되어 있음)
+      game.phase = 'tax';
     }
 
     await this.db.updateGame(roomId, {
@@ -933,147 +937,107 @@ export default class GameManager {
 
     game.taxExchanges = [];
 
+    // 세금 교환 대상 정의
+    const exchangePairs: Array<{ fromIdx: number; toIdx: number; count: number }> = [];
+
     if (playerCount === 4) {
       // 4명: 1위 ↔ 4위 2장씩
-      game.taxExchanges.push(
-        {
-          fromPlayerId: sortedPlayers[3].id, // 4위 → 1위
-          toPlayerId: sortedPlayers[0].id,
-          cardCount: 2,
-          completed: false,
-        },
-        {
-          fromPlayerId: sortedPlayers[0].id, // 1위 → 4위
-          toPlayerId: sortedPlayers[3].id,
-          cardCount: 2,
-          completed: false,
-        }
+      exchangePairs.push(
+        { fromIdx: 3, toIdx: 0, count: 2 }, // 4위 → 1위
+        { fromIdx: 0, toIdx: 3, count: 2 }  // 1위 → 4위
       );
     } else if (playerCount >= 5) {
       // 5명 이상: 1위 ↔ 최하위 2장씩, 2위 ↔ 차하위 1장씩
-      game.taxExchanges.push(
-        {
-          fromPlayerId: sortedPlayers[playerCount - 1].id, // 최하위 → 1위
-          toPlayerId: sortedPlayers[0].id,
-          cardCount: 2,
-          completed: false,
-        },
-        {
-          fromPlayerId: sortedPlayers[0].id, // 1위 → 최하위
-          toPlayerId: sortedPlayers[playerCount - 1].id,
-          cardCount: 2,
-          completed: false,
-        },
-        {
-          fromPlayerId: sortedPlayers[playerCount - 2].id, // 차하위 → 2위
-          toPlayerId: sortedPlayers[1].id,
-          cardCount: 1,
-          completed: false,
-        },
-        {
-          fromPlayerId: sortedPlayers[1].id, // 2위 → 차하위
-          toPlayerId: sortedPlayers[playerCount - 2].id,
-          cardCount: 1,
-          completed: false,
-        }
+      exchangePairs.push(
+        { fromIdx: playerCount - 1, toIdx: 0, count: 2 }, // 최하위 → 1위
+        { fromIdx: 0, toIdx: playerCount - 1, count: 2 }, // 1위 → 최하위
+        { fromIdx: playerCount - 2, toIdx: 1, count: 1 }, // 차하위 → 2위
+        { fromIdx: 1, toIdx: playerCount - 2, count: 1 }  // 2위 → 차하위
       );
     }
+
+    // 각 교환 쌍에 대해 자동으로 카드 선택 및 교환
+    for (const pair of exchangePairs) {
+      const fromPlayer = sortedPlayers[pair.fromIdx];
+      const toPlayer = sortedPlayers[pair.toIdx];
+
+      // 카드 자동 선택
+      const cardsToGive = this.selectTaxCardsAutomatically(
+        fromPlayer,
+        pair.count,
+        pair.fromIdx <= 1 // 높은 순위(1, 2등)는 큰 카드를 줌
+      );
+
+      // 카드 교환 수행
+      cardsToGive.forEach((card) => {
+        const index = fromPlayer.cards.findIndex(
+          (c) => c.rank === card.rank && c.isJoker === card.isJoker
+        );
+        if (index !== -1) {
+          fromPlayer.cards.splice(index, 1);
+        }
+      });
+      toPlayer.cards.push(...cardsToGive);
+
+      // 교환 기록 저장 (받은 카드는 나중에 역교환 시 기록됨)
+      game.taxExchanges.push({
+        fromPlayerId: fromPlayer.id,
+        toPlayerId: toPlayer.id,
+        cardCount: pair.count,
+        cardsGiven: cardsToGive,
+        cardsReceived: [], // 역교환에서 채워질 예정
+      });
+    }
+
+    // 각 플레이어가 받은 카드 기록 업데이트
+    game.taxExchanges.forEach((exchange) => {
+      const reverseExchange = game.taxExchanges?.find(
+        (ex) => ex.fromPlayerId === exchange.toPlayerId && ex.toPlayerId === exchange.fromPlayerId
+      );
+      if (reverseExchange) {
+        exchange.cardsReceived = reverseExchange.cardsGiven;
+      }
+    });
+
+    // 게임 시작 준비 (phase는 호출자가 결정)
+    game.lastPlay = undefined;
+    game.round = 1;
+    game.currentTurn = sortedPlayers[0].id;
   }
 
+  private selectTaxCardsAutomatically(
+    player: Player,
+    count: number,
+    selectLargest: boolean
+  ): Card[] {
+    // 조커가 아닌 카드만 필터링
+    const nonJokerCards = player.cards.filter((card) => !card.isJoker);
+
+    // 정렬: selectLargest가 true면 내림차순, false면 오름차순
+    const sortedCards = [...nonJokerCards].sort((a, b) =>
+      selectLargest ? b.rank - a.rank : a.rank - b.rank
+    );
+
+    // 상위 count개 선택
+    return sortedCards.slice(0, count);
+  }
+
+  /**
+   * @deprecated 세금 교환이 자동으로 처리되므로 더 이상 사용하지 않음
+   * 하위 호환성을 위해 메서드는 유지하지만 항상 false를 반환함
+   */
   public async selectTaxCards(
     roomId: string,
     playerId: string,
     cards: Card[]
   ): Promise<boolean> {
-    const game = await this.db.getGame(roomId);
-    if (!game || game.phase !== 'tax') {
-      return false;
-    }
-
-    const player = game.players.find((p) => p.id === playerId);
-    if (!player) {
-      return false;
-    }
-
-    // 해당 플레이어가 줘야 하는 세금 찾기
-    const taxExchange = game.taxExchanges?.find(
-      (ex) => ex.fromPlayerId === playerId && !ex.completed
-    );
-    if (!taxExchange) {
-      return false;
-    }
-
-    // 카드 검증
-    if (!this.validateTaxCards(cards, taxExchange.cardCount)) {
-      return false;
-    }
-
-    // 카드 소유 확인
-    const hasAllCards = cards.every((card) =>
-      player.cards.some((c) => c.rank === card.rank && c.isJoker === card.isJoker)
-    );
-    if (!hasAllCards) {
-      return false;
-    }
-
-    // 세금 교환 실행
-    const toPlayer = game.players.find((p) => p.id === taxExchange.toPlayerId);
-    if (!toPlayer) {
-      return false;
-    }
-
-    // 카드 제거
-    cards.forEach((card) => {
-      const index = player.cards.findIndex(
-        (c) => c.rank === card.rank && c.isJoker === card.isJoker
-      );
-      if (index !== -1) {
-        player.cards.splice(index, 1);
-      }
-    });
-
-    // 카드 추가
-    toPlayer.cards.push(...cards);
-
-    // 교환 완료 표시
-    taxExchange.completed = true;
-
-    // 모든 교환이 완료되었는지 확인
-    const allCompleted = game.taxExchanges?.every((ex) => ex.completed) || false;
-    if (allCompleted) {
-      // 게임 시작
-      game.phase = 'playing';
-      game.lastPlay = undefined;
-      game.round = 1;
-      // 1등부터 시작
-      const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
-      game.currentTurn = sortedPlayers[0].id;
-    }
-
-    await this.db.updateGame(roomId, {
-      players: game.players,
-      phase: game.phase,
-      currentTurn: game.currentTurn,
-      lastPlay: game.lastPlay,
-      round: game.round,
-      taxExchanges: game.taxExchanges,
-    });
-
-    return true;
+    return false;
   }
 
+  /**
+   * @deprecated 세금 교환이 자동으로 처리되므로 더 이상 사용하지 않음
+   */
   private validateTaxCards(cards: Card[], expectedCount: number): boolean {
-    // 개수 확인
-    if (cards.length !== expectedCount) {
-      return false;
-    }
-
-    // 조커(13) 포함 여부 확인
-    const hasJoker = cards.some((card) => card.isJoker);
-    if (hasJoker) {
-      return false;
-    }
-
-    return true;
+    return false;
   }
 }
