@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { GameHistory as GameHistoryType } from "../types";
 import { useGameStore } from "../store/gameStore";
+import { formatDate, getRankLabel } from "../utils/format";
 
 const Overlay = styled.div`
   position: fixed;
@@ -164,22 +165,10 @@ const GameHistory: React.FC<GameHistoryProps> = ({
     setSelectedHistoryIndex(index);
   };
 
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  };
-
-  const getRankLabel = (rank: number) => {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
-    return `${rank}등`;
-  };
-
   return (
     <Overlay onClick={onClose}>
       <Modal onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose}>×</CloseButton>
+        <CloseButton onClick={onClose} aria-label="게임 이력 닫기">×</CloseButton>
         <Title>게임 이력</Title>
         {histories.length === 0 ? (
           <EmptyState>아직 게임 이력이 없습니다.</EmptyState>

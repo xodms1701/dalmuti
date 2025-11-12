@@ -100,6 +100,7 @@ export interface Game {
   gameHistories: GameHistory[];
   currentGameStartedAt?: Date;
   playerStats: Record<string, {
+    nickname: string;
     totalCardsPlayed: number;
     totalPasses: number;
     finishedAtRound: number;

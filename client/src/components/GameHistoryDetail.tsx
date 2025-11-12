@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { GameHistory, RoundPlay } from "../types";
+import { formatDate, formatTime, getRankLabel } from "../utils/format";
 
 const Overlay = styled.div`
   position: fixed;
@@ -205,23 +206,6 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
 }) => {
   if (!isOpen || !history) return null;
 
-  const formatTime = (date: Date) => {
-    const d = new Date(date);
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
-  };
-
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  };
-
-  const getRankLabel = (rank: number) => {
-    if (rank === 1) return "🥇 1등";
-    if (rank === 2) return "🥈 2등";
-    if (rank === 3) return "🥉 3등";
-    return `${rank}등`;
-  };
-
   // 닉네임 맵 캐싱 (성능 최적화)
   const playerNicknameMap = React.useMemo(() => {
     return new Map(history.players.map((p) => [p.playerId, p.nickname]));
@@ -243,7 +227,7 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
   return (
     <Overlay onClick={onClose}>
       <Modal onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose}>×</CloseButton>
+        <CloseButton onClick={onClose} aria-label="상세 기록 닫기">×</CloseButton>
         <Title>게임 {history.gameNumber} 상세 기록</Title>
         <Subtitle>
           {formatDate(history.startedAt)} ~ {formatDate(history.endedAt)} | 총{" "}
@@ -256,7 +240,7 @@ const GameHistoryDetail: React.FC<GameHistoryDetailProps> = ({
             {history.players.map((player) => (
               <PlayerCard key={player.playerId}>
                 <PlayerRank rank={player.rank}>
-                  {getRankLabel(player.rank)}
+                  {getRankLabel(player.rank, true)}
                 </PlayerRank>
                 <PlayerName>{player.nickname}</PlayerName>
                 <PlayerStat>

@@ -218,6 +218,7 @@ export default class GameManager {
     // 플레이어 통계 업데이트 (테스트에서 강제로 상태를 설정하는 경우를 대비)
     if (!game.playerStats[playerId]) {
       game.playerStats[playerId] = {
+        nickname: player.nickname,
         totalCardsPlayed: 0,
         totalPasses: 0,
         finishedAtRound: 0,
@@ -328,6 +329,7 @@ export default class GameManager {
     // 패스 횟수 기록 (테스트에서 강제로 상태를 설정하는 경우를 대비)
     if (!game.playerStats[playerId]) {
       game.playerStats[playerId] = {
+        nickname: currentPlayer.nickname,
         totalCardsPlayed: 0,
         totalPasses: 0,
         finishedAtRound: 0,
@@ -646,13 +648,14 @@ export default class GameManager {
           players: game.finishedPlayers.map((playerId, index) => {
             const player = game.players.find((p) => p.id === playerId);
             const stats = game.playerStats[playerId] || {
+              nickname: player?.nickname || '',
               totalCardsPlayed: 0,
               totalPasses: 0,
               finishedAtRound: 0,
             };
             return {
               playerId,
-              nickname: player?.nickname || '',
+              nickname: stats.nickname,
               rank: index + 1,
               finishedAtRound: stats.finishedAtRound,
               totalCardsPlayed: stats.totalCardsPlayed,
@@ -840,6 +843,7 @@ export default class GameManager {
     game.playerStats = {};
     game.players.forEach((player) => {
       game.playerStats[player.id] = {
+        nickname: player.nickname,
         totalCardsPlayed: 0,
         totalPasses: 0,
         finishedAtRound: 0,

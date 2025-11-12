@@ -715,10 +715,10 @@ describe('GameManager', () => {
         updatedGame.players[3].cards = [{ rank: 5, isJoker: false }];
         // playerStats 초기화
         updatedGame.playerStats = {
-          player1: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player2: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player3: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player4: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player1: { nickname: '플레이어1', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player2: { nickname: '플레이어2', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player3: { nickname: '플레이어3', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player4: { nickname: '플레이어4', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
         };
         updatedGame.roundPlays = [];
         await mockDb.updateGame(game!.roomId, updatedGame);
@@ -762,10 +762,10 @@ describe('GameManager', () => {
         updatedGame.players[2].cards = [{ rank: 4, isJoker: false }];
         updatedGame.players[3].cards = [{ rank: 5, isJoker: false }];
         updatedGame.playerStats = {
-          player1: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player2: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player3: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player4: { totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player1: { nickname: '플레이어1', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player2: { nickname: '플레이어2', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player3: { nickname: '플레이어3', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player4: { nickname: '플레이어4', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
         };
         await mockDb.updateGame(game!.roomId, updatedGame);
       }
