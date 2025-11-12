@@ -316,8 +316,17 @@ export default class GameManager {
     }
 
     // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인 (게임 완료한 플레이어 제외)
+    // 단, 마지막으로 카드를 낸 플레이어가 게임을 완료하지 않았다면, 그 플레이어도 체크에서 제외
     const otherPlayersAllPassed = game.players
-      .filter((p) => p.id !== playerId && !game.finishedPlayers.includes(p.id))
+      .filter((p) => {
+        if (p.id === playerId) return false; // 나 자신 제외
+        if (game.finishedPlayers.includes(p.id)) return false; // 게임 완료한 플레이어 제외
+        // 마지막으로 카드를 낸 플레이어가 게임을 완료하지 않았다면 제외
+        if (game.lastPlay && p.id === game.lastPlay.playerId && !game.finishedPlayers.includes(game.lastPlay.playerId)) {
+          return false;
+        }
+        return true;
+      })
       .every((p) => p.isPassed);
 
     if (otherPlayersAllPassed) {
@@ -360,19 +369,12 @@ export default class GameManager {
     }
 
     // 모든 플레이어가 패스했을 때 라운드 넘김
+    // 게임을 완료하지 않은 플레이어 중에서, 마지막으로 카드를 낸 플레이어를 제외한 나머지가 모두 패스했는지 확인
     let allPassed = false;
     if (game.lastPlay && game.lastPlay.playerId) {
-      if (game.finishedPlayers.length > 0) {
-        // 게임을 종료한 유저가 있을 때
-        allPassed = game.players
-          .filter((p) => !game.finishedPlayers.includes(p.id) && p.id !== game.lastPlay!.playerId)
-          .every((p) => p.isPassed);
-      } else {
-        // 게임을 종료한 유저가 없을 때
-        allPassed = game.players
-          .filter((p) => p.id !== game.lastPlay!.playerId)
-          .every((p) => p.isPassed);
-      }
+      allPassed = game.players
+        .filter((p) => !game.finishedPlayers.includes(p.id) && p.id !== game.lastPlay!.playerId)
+        .every((p) => p.isPassed);
     }
 
     if (allPassed && game.lastPlay && game.lastPlay.playerId) {
