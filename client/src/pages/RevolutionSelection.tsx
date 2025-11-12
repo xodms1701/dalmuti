@@ -203,7 +203,7 @@ const RevolutionSelection: React.FC = () => {
 
   // 게임 페이즈가 변경되면 결과 모달 표시
   useEffect(() => {
-    if (myChoice !== null && game?.phase === "playing") {
+    if (myChoice !== null && (game?.phase === "playing" || game?.phase === "tax")) {
       setShowResult(true);
       setCountdown(5);
     }

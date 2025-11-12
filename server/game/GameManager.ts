@@ -989,15 +989,12 @@ export default class GameManager {
       const toPlayer = sortedPlayers[pair.toIdx];
 
       const cardsGiven = cardsToGiveByPlayer.get(fromPlayer.id) || [];
-      // toPlayer가 받는 카드는 fromPlayer가 준 카드와 동일
-      const cardsReceived = cardsGiven;
 
       return {
         fromPlayerId: fromPlayer.id,
         toPlayerId: toPlayer.id,
         cardCount: pair.count,
         cardsGiven: cardsGiven,
-        cardsReceived: cardsReceived,
       };
     });
 

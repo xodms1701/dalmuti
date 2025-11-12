@@ -234,7 +234,7 @@ const TaxSelection: React.FC = () => {
             </InfoBox>
           )}
 
-          {myReceivedTax && myReceivedTax.cardsReceived && myReceivedTax.cardsReceived.length > 0 && (
+          {myReceivedTax && myReceivedTax.cardsGiven && myReceivedTax.cardsGiven.length > 0 && (
             <InfoBox style={{ background: "#d4edda", borderColor: "#28a745" }}>
               <InfoText>
                 <strong>
@@ -243,7 +243,7 @@ const TaxSelection: React.FC = () => {
                 </strong>
               </InfoText>
               <CardList>
-                {myReceivedTax.cardsReceived.map((card, idx) => (
+                {myReceivedTax.cardsGiven.map((card, idx) => (
                   <Card key={idx} selected={false} disabled={true}>
                     {card.isJoker ? "🃏" : card.rank}
                   </Card>

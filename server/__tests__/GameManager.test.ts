@@ -930,7 +930,6 @@ describe('GameManager', () => {
         );
         expect(lowToHigh).toBeDefined();
         expect(lowToHigh?.cardsGiven.length).toBe(2);
-        expect(lowToHigh?.cardsReceived.length).toBe(2);
 
         // 1위 → 4위 교환 확인
         const highToLow = exchanges.find(
@@ -938,7 +937,6 @@ describe('GameManager', () => {
         );
         expect(highToLow).toBeDefined();
         expect(highToLow?.cardsGiven.length).toBe(2);
-        expect(highToLow?.cardsReceived.length).toBe(2);
       }
     });
 

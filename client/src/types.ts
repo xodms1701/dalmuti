@@ -84,7 +84,6 @@ export interface TaxExchange {
   toPlayerId: string;
   cardCount: number;
   cardsGiven: Card[];
-  cardsReceived: Card[];
 }
 
 export interface Game {
