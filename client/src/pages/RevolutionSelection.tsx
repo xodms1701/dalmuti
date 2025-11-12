@@ -113,24 +113,123 @@ const Highlight = styled.span`
   font-weight: bold;
 `;
 
+const ResultModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+`;
+
+const ResultContent = styled.div<{ isRevolution: boolean }>`
+  background: white;
+  border-radius: 16px;
+  padding: 3rem;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease-out;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+`;
+
+const ResultIcon = styled.div`
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+`;
+
+const ResultTitle = styled.h2<{ isRevolution: boolean }>`
+  font-size: 2rem;
+  color: ${({ isRevolution }) => (isRevolution ? "#e74c3c" : "#28a745")};
+  margin-bottom: 1rem;
+  font-weight: bold;
+`;
+
+const ResultDescription = styled.p`
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+`;
+
+const CountdownText = styled.div`
+  font-size: 1rem;
+  color: #999;
+`;
+
+const CountdownNumber = styled.span`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4a90e2;
+`;
+
 const RevolutionSelection: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, selectRevolution } = useSocketContext();
   const navigate = useNavigate();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const [myChoice, setMyChoice] = useState<boolean | null>(null);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
   const isMyTurn = game?.currentTurn === socketId;
 
-  // 게임 페이즈가 변경되면 해당 페이지로 이동
+  // 게임 페이즈가 변경되면 결과 모달 표시
   useEffect(() => {
-    if (game?.phase === "tax") {
-      navigate("/tax");
-    } else if (game?.phase === "playing") {
-      navigate("/play");
+    if (myChoice !== null && (game?.phase === "tax" || game?.phase === "playing")) {
+      setShowResult(true);
+      setCountdown(5);
     }
-  }, [game?.phase, navigate]);
+  }, [game?.phase, myChoice]);
+
+  // 카운트다운 및 페이지 이동
+  useEffect(() => {
+    if (showResult) {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            if (game?.phase === "tax") {
+              navigate("/tax");
+            } else if (game?.phase === "playing") {
+              navigate("/play");
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [showResult, game?.phase, navigate]);
 
   if (!myPlayer || !isMyTurn) {
     return (
@@ -152,17 +251,60 @@ const RevolutionSelection: React.FC = () => {
     if (!game?.roomId || !socketId || isSubmitting) return;
 
     setIsSubmitting(true);
+    setMyChoice(wantRevolution);
     try {
       await selectRevolution(game.roomId, socketId, wantRevolution);
     } catch (error) {
       console.error("혁명 선택 실패:", error);
       setIsSubmitting(false);
+      setMyChoice(null);
+    }
+  };
+
+  // 결과 메시지 생성
+  const getResultContent = () => {
+    if (myChoice === true) {
+      const isGreatRevolution = game?.revolutionStatus?.isGreatRevolution;
+      return {
+        icon: "🔥",
+        title: isGreatRevolution ? "대혁명 발생!" : "혁명 발생!",
+        description: isGreatRevolution
+          ? "모든 플레이어의 순위가 뒤집힙니다! 세금 없이 게임이 시작됩니다."
+          : "순위는 유지되지만 세금 없이 게임이 시작됩니다!",
+        isRevolution: true,
+      };
+    } else {
+      return {
+        icon: "😊",
+        title: "무사히 지나갔습니다",
+        description:
+          "순위가 그대로 유지되고 정상적으로 세금을 거둡니다. 조커 2장을 가진 사실을 숨겼습니다!",
+        isRevolution: false,
+      };
     }
   };
 
   return (
     <Container>
       <Title>🃏 혁명 선택</Title>
+
+      {showResult && (
+        <ResultModal>
+          <ResultContent isRevolution={getResultContent().isRevolution}>
+            <ResultIcon>{getResultContent().icon}</ResultIcon>
+            <ResultTitle isRevolution={getResultContent().isRevolution}>
+              {getResultContent().title}
+            </ResultTitle>
+            <ResultDescription>
+              {getResultContent().description}
+            </ResultDescription>
+            <CountdownText>
+              <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
+              이동합니다
+            </CountdownText>
+          </ResultContent>
+        </ResultModal>
+      )}
 
       <InfoBox>
         <InfoText>
