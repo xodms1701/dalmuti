@@ -230,18 +230,6 @@ class SocketClient {
     });
   }
 
-  selectTaxCards(
-    roomId: string,
-    playerId: string,
-    cards: Card[]
-  ): Promise<void> {
-    return this.emitWithAck<void>(SocketEvent.SELECT_TAX_CARDS, {
-      roomId: roomId,
-      playerId,
-      cards,
-    });
-  }
-
   playCard(roomId: string, playerId: string, cards: Card[]): Promise<void> {
     return this.emitWithAck<void>(SocketEvent.PLAY_CARD, {
       roomId: roomId,

@@ -35,11 +35,6 @@ interface SocketContextType {
     playerId: string,
     wantRevolution: boolean
   ) => Promise<{ success: boolean; error?: string; data?: any }>;
-  selectTaxCards: (
-    roomId: string,
-    playerId: string,
-    cards: any[]
-  ) => Promise<{ success: boolean; error?: string; data?: any }>;
   playCard: (
     roomId: string,
     playerId: string,
@@ -198,19 +193,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const selectTaxCards = async (
-    roomId: string,
-    playerId: string,
-    cards: any[]
-  ) => {
-    try {
-      await socketClient.selectTaxCards(roomId, playerId, cards);
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: (error as Error).message };
-    }
-  };
-
   const playCard = async (roomId: string, playerId: string, cards: any[]) => {
     try {
       await socketClient.playCard(roomId, playerId, cards);
@@ -265,7 +247,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         selectRole,
         selectDeck,
         selectRevolution,
-        selectTaxCards,
         playCard,
         pass,
         vote,

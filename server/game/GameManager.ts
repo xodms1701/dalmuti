@@ -1022,22 +1022,4 @@ export default class GameManager {
     return sortedCards.slice(0, count);
   }
 
-  /**
-   * @deprecated 세금 교환이 자동으로 처리되므로 더 이상 사용하지 않음
-   * 하위 호환성을 위해 메서드는 유지하지만 항상 false를 반환함
-   */
-  public async selectTaxCards(
-    roomId: string,
-    playerId: string,
-    cards: Card[]
-  ): Promise<boolean> {
-    return false;
-  }
-
-  /**
-   * @deprecated 세금 교환이 자동으로 처리되므로 더 이상 사용하지 않음
-   */
-  private validateTaxCards(cards: Card[], expectedCount: number): boolean {
-    return false;
-  }
 }

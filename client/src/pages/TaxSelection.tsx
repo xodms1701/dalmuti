@@ -216,11 +216,11 @@ const TaxSelection: React.FC = () => {
 
       {isInvolved ? (
         <>
-          {myGivenTax && (
+          {myGivenTax && myGivenTax.cardsGiven && myGivenTax.cardsGiven.length > 0 && (
             <InfoBox style={{ background: "#fff3cd", borderColor: "#ffc107" }}>
               <InfoText>
                 <strong>
-                  {game.players.find((p) => p.id === myGivenTax.toPlayerId)?.nickname}
+                  {game?.players.find((p) => p.id === myGivenTax.toPlayerId)?.nickname}
                   님에게 보낸 카드:
                 </strong>
               </InfoText>
@@ -234,11 +234,11 @@ const TaxSelection: React.FC = () => {
             </InfoBox>
           )}
 
-          {myReceivedTax && myReceivedTax.cardsReceived.length > 0 && (
+          {myReceivedTax && myReceivedTax.cardsReceived && myReceivedTax.cardsReceived.length > 0 && (
             <InfoBox style={{ background: "#d4edda", borderColor: "#28a745" }}>
               <InfoText>
                 <strong>
-                  {game.players.find((p) => p.id === myReceivedTax.fromPlayerId)?.nickname}
+                  {game?.players.find((p) => p.id === myReceivedTax.fromPlayerId)?.nickname}
                   님에게서 받은 카드:
                 </strong>
               </InfoText>

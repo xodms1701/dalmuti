@@ -247,32 +247,6 @@ export default class SocketManager {
       );
 
       socket.on(
-        SocketEvent.SELECT_TAX_CARDS,
-        async (
-          { roomId, playerId, cards }: { roomId: string; playerId: string; cards: Card[] },
-          callback?: (response: { success: boolean; data?: any; error?: string }) => void
-        ) => {
-          try {
-            const success = await this.gameManager.selectTaxCards(roomId, playerId, cards);
-            if (!success) {
-              if (typeof callback === 'function')
-                callback({ success: false, error: '세금 카드 선택에 실패했습니다.' });
-              return;
-            }
-            if (typeof callback === 'function') callback({ success: true });
-            this.emitGameState(roomId);
-          } catch (error) {
-            if (typeof callback === 'function')
-              callback({
-                success: false,
-                error:
-                  error instanceof Error ? error.message : '세금 카드 선택 중 오류가 발생했습니다.',
-              });
-          }
-        }
-      );
-
-      socket.on(
         SocketEvent.PLAY_CARD,
         async (
           { roomId, playerId, cards }: { roomId: string; playerId: string; cards: Card[] },

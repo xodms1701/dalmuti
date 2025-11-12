@@ -8,7 +8,6 @@ export enum SocketEvent {
   SELECT_ROLE = "selectRole",
   SELECT_DECK = "selectDeck",
   SELECT_REVOLUTION = "selectRevolution",
-  SELECT_TAX_CARDS = "selectTaxCards",
   PLAY_CARD = "playCard",
   PASS = "pass",
   VOTE = "vote",
