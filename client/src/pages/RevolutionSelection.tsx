@@ -198,7 +198,6 @@ const RevolutionSelection: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const [myChoice, setMyChoice] = useState<boolean | null>(null);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
   const isMyTurn = game?.currentTurn === socketId;
@@ -239,9 +238,6 @@ const RevolutionSelection: React.FC = () => {
         <Title>혁명 선택</Title>
         <InfoBox>
           <InfoText>다른 플레이어가 혁명을 선택하고 있습니다...</InfoText>
-          <InfoText style={{ fontSize: "14px", marginTop: "10px", opacity: 0.7 }}>
-            잠시만 기다려주세요.
-          </InfoText>
         </InfoBox>
       </Container>
     );
@@ -256,13 +252,11 @@ const RevolutionSelection: React.FC = () => {
     if (!game?.roomId || !socketId || isSubmitting) return;
 
     setIsSubmitting(true);
-    setMyChoice(wantRevolution);
     try {
       await selectRevolution(game.roomId, socketId, wantRevolution);
     } catch (error) {
       console.error("혁명 선택 실패:", error);
       setIsSubmitting(false);
-      setMyChoice(null);
     }
   };
 
@@ -301,9 +295,7 @@ const RevolutionSelection: React.FC = () => {
           <ResultTitle isRevolution={content.isRevolution}>
             {content.title}
           </ResultTitle>
-          <ResultDescription>
-            {content.description}
-          </ResultDescription>
+          <ResultDescription>{content.description}</ResultDescription>
           <CountdownText>
             <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
             이동합니다
@@ -331,8 +323,8 @@ const RevolutionSelection: React.FC = () => {
         </InfoText>
         {isLowestRank ? (
           <InfoText>
-            • <strong>대혁명</strong>: 모든 플레이어의 순위가 뒤집힙니다 (1등↔최하위,
-            2등↔두 번째 최하위...) + 세금 없음
+            • <strong>대혁명</strong>: 모든 플레이어의 순위가 뒤집힙니다
+            (1등↔최하위, 2등↔두 번째 최하위...) + 세금 없음
           </InfoText>
         ) : (
           <InfoText>
