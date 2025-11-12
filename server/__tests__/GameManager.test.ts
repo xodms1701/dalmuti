@@ -497,6 +497,37 @@ describe('GameManager', () => {
   });
 
   describe('passTurn', () => {
+    it('새 라운드 시작 시 아무도 카드를 내지 않았으면 패스할 수 없어야 합니다', async () => {
+      // 1. 게임 상태를 준비
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Player1');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 phase, rank, cards 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.lastPlay = undefined; // 아직 아무도 카드를 내지 않음
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1; // player1
+        updatedGame.players[1].rank = 2; // player2
+        updatedGame.players[2].rank = 3; // player3
+        updatedGame.players[3].rank = 4; // player4
+        updatedGame.players[0].cards = [{ rank: 1, isJoker: false }];
+        updatedGame.players[1].cards = [{ rank: 2, isJoker: false }];
+        updatedGame.players[2].cards = [{ rank: 3, isJoker: false }];
+        updatedGame.players[3].cards = [{ rank: 4, isJoker: false }];
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // player1이 패스 시도 - 실패해야 함 (아직 아무도 카드를 내지 않았으므로)
+      const passSuccess = await gameManager.passTurn(game!.roomId, 'player1');
+      expect(passSuccess).toBe(false);
+    });
+
     it('게임 완료한 플레이어가 있을 때도 패스할 수 있어야 합니다', async () => {
       // 1. 게임 상태를 준비 - 4명 중 1명이 게임 완료
       const ownerId = 'player1';

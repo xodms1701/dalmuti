@@ -315,6 +315,11 @@ export default class GameManager {
       return false;
     }
 
+    // 아직 아무도 카드를 내지 않은 라운드에서는 패스 불가능 (첫 턴)
+    if (!game.lastPlay) {
+      return false;
+    }
+
     // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인 (게임 완료한 플레이어 제외)
     // 단, 마지막으로 카드를 낸 플레이어가 게임을 완료하지 않았다면, 그 플레이어도 체크에서 제외
     const otherPlayersAllPassed = game.players
