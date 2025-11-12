@@ -203,13 +203,13 @@ const RevolutionSelection: React.FC = () => {
   const myPlayer = game?.players.find((player) => player.id === socketId);
   const isMyTurn = game?.currentTurn === socketId;
 
-  // 게임 페이즈가 변경되면 결과 모달 표시
+  // 게임 페이즈가 변경되면 결과 모달 표시 (모든 플레이어)
   useEffect(() => {
-    if (myChoice !== null && (game?.phase === "playing" || game?.phase === "tax")) {
+    if (game?.phase === "playing" || game?.phase === "tax") {
       setShowResult(true);
       setCountdown(COUNTDOWN_SECONDS);
     }
-  }, [game?.phase, myChoice]);
+  }, [game?.phase]);
 
   // 카운트다운 처리
   useEffect(() => {
