@@ -222,17 +222,16 @@ const RevolutionSelection: React.FC = () => {
     }
   }, [showResult, countdown]);
 
-  // 카운트다운이 0이 되면 페이지 이동
+  // 카운트다운이 0이 되면 페이지 이동 (game.phase 기반)
   useEffect(() => {
     if (showResult && countdown === 0) {
-      // 혁명 거부 시 세금 교환이 있으면 tax 페이지로, 아니면 play 페이지로
-      if (myChoice === false && game?.taxExchanges && game.taxExchanges.length > 0) {
+      if (game?.phase === "tax") {
         navigate("/tax");
-      } else {
+      } else if (game?.phase === "playing") {
         navigate("/play");
       }
     }
-  }, [showResult, countdown, myChoice, game?.taxExchanges, navigate]);
+  }, [showResult, countdown, game?.phase, navigate]);
 
   if (!myPlayer || !isMyTurn) {
     return (
@@ -267,10 +266,12 @@ const RevolutionSelection: React.FC = () => {
     }
   };
 
-  // 결과 메시지 생성
+  // 결과 메시지 생성 (game.revolutionStatus 기반)
   const getResultContent = () => {
-    if (myChoice === true) {
-      const isGreatRevolution = game?.revolutionStatus?.isGreatRevolution;
+    const isRevolution = game?.revolutionStatus?.isRevolution;
+    const isGreatRevolution = game?.revolutionStatus?.isGreatRevolution;
+
+    if (isRevolution) {
       return {
         icon: "🔥",
         title: isGreatRevolution ? "대혁명 발생!" : "혁명 발생!",
