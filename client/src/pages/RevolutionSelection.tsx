@@ -40,6 +40,12 @@ const InfoText = styled.p`
   line-height: 1.6;
 `;
 
+const SubInfoText = styled(InfoText)`
+  font-size: 0.875rem;
+  margin-top: 0.625rem;
+  opacity: 0.7;
+`;
+
 const ButtonContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -238,6 +244,7 @@ const RevolutionSelection: React.FC = () => {
         <Title>혁명 선택</Title>
         <InfoBox>
           <InfoText>다른 플레이어가 혁명을 선택하고 있습니다...</InfoText>
+          <SubInfoText>잠시만 기다려주세요.</SubInfoText>
         </InfoBox>
       </Container>
     );
