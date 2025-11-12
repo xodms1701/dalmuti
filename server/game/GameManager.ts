@@ -522,20 +522,17 @@ export default class GameManager {
   public async selectDeck(roomId: string, playerId: string, cardIndex: number): Promise<boolean> {
     const game = await this.db.getGame(roomId);
     if (!game || game.phase !== 'cardSelection' || game.currentTurn !== playerId) {
-      console.log('game not found or phase not cardSelection or currentTurn not playerId');
       return false;
     }
 
     const player = game.players.find((p) => p.id === playerId);
     if (!player || cardIndex < 0 || cardIndex >= game.selectableDecks.length) {
-      console.log('player not found or card index out of range');
       return false;
     }
 
     // 카드 선택
     const selectedCard = game.selectableDecks[cardIndex];
     if (!selectedCard || selectedCard.isSelected) {
-      console.log('selected card not found or already selected');
       return false;
     }
 
@@ -578,33 +575,17 @@ export default class GameManager {
       );
 
       if (doubleJokerPlayer) {
-        const originalRank = doubleJokerPlayer.rank || 0;
-        if (originalRank !== 1) {
-          // 조커 2장 플레이어를 1등으로 설정
-          doubleJokerPlayer.rank = 1;
-
-          // 원래 순서를 유지하면서 순위 재배정
-          const players = [...game.players];
-          const doubleJokerIndex = players.findIndex((p) => p === doubleJokerPlayer);
-
-          // 조커 2장 플레이어 다음부터 순서대로 2등, 3등, ...으로 설정
-          let newRank = 2;
-          for (let i = 1; i < players.length; i++) {
-            const currentIndex = (doubleJokerIndex + i) % players.length;
-            if (players[currentIndex] !== doubleJokerPlayer) {
-              players[currentIndex].rank = newRank++;
-            }
-          }
-
-          // currentTurn을 조커 2장을 받은 플레이어로 변경
-          game.currentTurn = doubleJokerPlayer.id;
-        }
+        // 조커 2장 보유자 표시
+        doubleJokerPlayer.hasDoubleJoker = true;
+        // 혁명 선택 페이즈로 전환
+        game.phase = 'revolution';
+        game.currentTurn = doubleJokerPlayer.id;
+      } else {
+        // 조커 2장이 없으면 세금 페이즈로
+        game.phase = 'tax';
+        // 세금 교환 초기화
+        this.initializeTaxExchanges(game);
       }
-
-      // 게임 시작 준비
-      game.phase = 'playing';
-      game.lastPlay = undefined;
-      game.round = 1;
     }
 
     await this.db.updateGame(roomId, {
@@ -615,6 +596,7 @@ export default class GameManager {
       lastPlay: game.lastPlay,
       round: game.round,
       selectableDecks: game.selectableDecks,
+      taxExchanges: game.taxExchanges,
     });
 
     return true;
@@ -869,4 +851,171 @@ export default class GameManager {
     });
     game.roundPlays = [];
   }
+
+  public async selectRevolution(
+    roomId: string,
+    playerId: string,
+    wantRevolution: boolean
+  ): Promise<boolean> {
+    const game = await this.db.getGame(roomId);
+    if (!game || game.phase !== 'revolution' || game.currentTurn !== playerId) {
+      return false;
+    }
+
+    const player = game.players.find((p) => p.id === playerId);
+    if (!player || !player.hasDoubleJoker) {
+      return false;
+    }
+
+    player.revolutionChoice = wantRevolution;
+
+    if (wantRevolution) {
+      // 혁명을 일으킨다
+      const playerCount = game.players.length;
+      const isLowestRank = player.rank === playerCount;
+
+      if (isLowestRank) {
+        // 대혁명: 모든 순위 뒤집기
+        game.players.forEach((p) => {
+          if (p.rank !== null) {
+            p.rank = playerCount - p.rank + 1;
+          }
+        });
+        game.revolutionStatus = {
+          isRevolution: true,
+          isGreatRevolution: true,
+          revolutionPlayerId: playerId,
+        };
+      } else {
+        // 일반 혁명: 순위 유지
+        game.revolutionStatus = {
+          isRevolution: true,
+          isGreatRevolution: false,
+          revolutionPlayerId: playerId,
+        };
+      }
+
+      // 혁명이 일어나면 세금 없이 바로 게임 시작
+      game.phase = 'playing';
+      game.lastPlay = undefined;
+      game.round = 1;
+      // 1등부터 시작
+      const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+      game.currentTurn = sortedPlayers[0].id;
+    } else {
+      // 혁명을 일으키지 않는다 - 순위 그대로 유지, 조커 2장 사실 숨김
+      // hasDoubleJoker 플래그 제거하여 조커 2장 사실 숨김
+      player.hasDoubleJoker = undefined;
+
+      // 세금 교환 수행
+      this.initializeTaxExchanges(game);
+
+      // 세금 교환 결과를 표시하기 위해 tax 페이즈로 설정
+      // 프론트엔드에서 5초 동안 결과를 보여준 후 자동으로 /play로 이동
+      // (게임 상태는 이미 playing 준비가 완료되어 있음)
+      game.phase = 'tax';
+    }
+
+    await this.db.updateGame(roomId, {
+      players: game.players,
+      phase: game.phase,
+      currentTurn: game.currentTurn,
+      lastPlay: game.lastPlay,
+      round: game.round,
+      revolutionStatus: game.revolutionStatus,
+      taxExchanges: game.taxExchanges,
+    });
+
+    return true;
+  }
+
+  private initializeTaxExchanges(game: Game): void {
+    const playerCount = game.players.length;
+    const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+
+    const exchangePairs: Array<{ fromIdx: number; toIdx: number; count: number }> = [];
+
+    if (playerCount === 4) {
+      // 4명: 1위 ↔ 4위 2장씩
+      exchangePairs.push(
+        { fromIdx: 3, toIdx: 0, count: 2 }, // 4위 → 1위
+        { fromIdx: 0, toIdx: 3, count: 2 }  // 1위 → 4위
+      );
+    } else if (playerCount >= 5) {
+      // 5명 이상: 1위 ↔ 최하위 2장씩, 2위 ↔ 차하위 1장씩
+      exchangePairs.push(
+        { fromIdx: playerCount - 1, toIdx: 0, count: 2 }, // 최하위 → 1위
+        { fromIdx: 0, toIdx: playerCount - 1, count: 2 }, // 1위 → 최하위
+        { fromIdx: playerCount - 2, toIdx: 1, count: 1 }, // 차하위 → 2위
+        { fromIdx: 1, toIdx: playerCount - 2, count: 1 }  // 2위 → 차하위
+      );
+    }
+
+    // Step 1: 각 플레이어가 줄 카드를 미리 결정
+    const cardsToGiveByPlayer = new Map<string, Card[]>();
+    for (const pair of exchangePairs) {
+      const fromPlayer = sortedPlayers[pair.fromIdx];
+      if (!cardsToGiveByPlayer.has(fromPlayer.id)) {
+        const cardsToGive = this.selectTaxCardsAutomatically(
+          fromPlayer,
+          pair.count,
+          pair.fromIdx <= 1 // 높은 순위(1, 2등)는 큰 카드를 줌
+        );
+        cardsToGiveByPlayer.set(fromPlayer.id, cardsToGive);
+      }
+    }
+
+    // Step 2: 모든 카드 교환 실행
+    for (const pair of exchangePairs) {
+      const fromPlayer = sortedPlayers[pair.fromIdx];
+      const toPlayer = sortedPlayers[pair.toIdx];
+      const cardsGiven = cardsToGiveByPlayer.get(fromPlayer.id) || [];
+
+      cardsGiven.forEach((card) => {
+        const index = fromPlayer.cards.findIndex(
+          (c) => c.rank === card.rank && c.isJoker === card.isJoker
+        );
+        if (index !== -1) fromPlayer.cards.splice(index, 1);
+      });
+      toPlayer.cards.push(...cardsGiven);
+    }
+
+    // Step 3: UI용 교환 기록 생성
+    game.taxExchanges = exchangePairs.map((pair) => {
+      const fromPlayer = sortedPlayers[pair.fromIdx];
+      const toPlayer = sortedPlayers[pair.toIdx];
+
+      const cardsGiven = cardsToGiveByPlayer.get(fromPlayer.id) || [];
+
+      return {
+        fromPlayerId: fromPlayer.id,
+        toPlayerId: toPlayer.id,
+        cardCount: pair.count,
+        cardsGiven: cardsGiven,
+      };
+    });
+
+    // Step 4: 게임 시작 준비
+    game.lastPlay = undefined;
+    game.round = 1;
+    game.currentTurn = sortedPlayers[0].id;
+  }
+
+  private selectTaxCardsAutomatically(
+    player: Player,
+    count: number,
+    selectLargest: boolean
+  ): Card[] {
+    // 조커가 아닌 카드만 필터링
+    const nonJokerCards = player.cards.filter((card) => !card.isJoker);
+
+    // 정렬: selectLargest가 true면 내림차순, false면 오름차순
+    const sortedCards = [...nonJokerCards].sort((a, b) =>
+      selectLargest ? b.rank - a.rank : a.rank - b.rank
+    );
+
+    // 상위 count개 선택
+    return sortedCards.slice(0, count);
+  }
+
 }

@@ -6,6 +6,8 @@ import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import RoleSelection from "./pages/RoleSelection";
 import SelectCardDeck from "./pages/SelectCardDeck";
+import RevolutionSelection from "./pages/RevolutionSelection";
+import TaxSelection from "./pages/TaxSelection";
 import Play from "./pages/Play";
 import VotePage from "./pages/VotePage";
 import RankConfirmation from "./pages/RankConfirmation";
@@ -30,6 +32,8 @@ const AppContent: React.FC = () => {
       <Route path="/room" element={<Room />} />
       <Route path="/role-selection" element={<RoleSelection />} />
       <Route path="/select-card-deck" element={<SelectCardDeck />} />
+      <Route path="/revolution" element={<RevolutionSelection />} />
+      <Route path="/tax" element={<TaxSelection />} />
       <Route path="/play" element={<Play />} />
       <Route path="/vote" element={<VotePage />} />
       <Route path="/rank-confirmation" element={<RankConfirmation />} />

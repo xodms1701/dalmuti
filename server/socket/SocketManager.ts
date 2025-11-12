@@ -214,6 +214,39 @@ export default class SocketManager {
       );
 
       socket.on(
+        SocketEvent.SELECT_REVOLUTION,
+        async (
+          {
+            roomId,
+            playerId,
+            wantRevolution,
+          }: { roomId: string; playerId: string; wantRevolution: boolean },
+          callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        ) => {
+          try {
+            const success = await this.gameManager.selectRevolution(
+              roomId,
+              playerId,
+              wantRevolution
+            );
+            if (!success) {
+              if (typeof callback === 'function')
+                callback({ success: false, error: '혁명 선택에 실패했습니다.' });
+              return;
+            }
+            if (typeof callback === 'function') callback({ success: true });
+            this.emitGameState(roomId);
+          } catch (error) {
+            if (typeof callback === 'function')
+              callback({
+                success: false,
+                error: error instanceof Error ? error.message : '혁명 선택 중 오류가 발생했습니다.',
+              });
+          }
+        }
+      );
+
+      socket.on(
         SocketEvent.PLAY_CARD,
         async (
           { roomId, playerId, cards }: { roomId: string; playerId: string; cards: Card[] },

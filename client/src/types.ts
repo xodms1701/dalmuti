@@ -35,6 +35,8 @@ export interface Player {
   isPassed: boolean;
   isReady: boolean;
   selectableDeck?: Card[];
+  hasDoubleJoker?: boolean;
+  revolutionChoice?: boolean;
 }
 
 export interface Play {
@@ -71,8 +73,17 @@ export enum GamePhase {
   ROLE_SELECTION = "roleSelection",
   ROLE_SELECTION_COMPLETE = "roleSelectionComplete",
   CARD_SELECTION = "cardSelection",
+  REVOLUTION = "revolution",
+  TAX = "tax",
   PLAYING = "playing",
   GAME_END = "gameEnd",
+}
+
+export interface TaxExchange {
+  fromPlayerId: string;
+  toPlayerId: string;
+  cardCount: number;
+  cardsGiven: Card[];
 }
 
 export interface Game {
@@ -106,6 +117,12 @@ export interface Game {
     finishedAtRound: number;
   }>;
   roundPlays: RoundPlay[];
+  revolutionStatus?: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId?: string;
+  };
+  taxExchanges?: TaxExchange[];
 }
 
 export interface UIState {

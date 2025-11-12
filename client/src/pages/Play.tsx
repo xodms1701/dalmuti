@@ -184,6 +184,21 @@ const CurrentTurnBanner = styled.div<{ isMyTurn: boolean }>`
   width: 100%;
 `;
 
+const RevolutionBanner = styled.div<{ isGreatRevolution: boolean }>`
+  background: ${({ isGreatRevolution }) =>
+    isGreatRevolution ? "#e74c3c" : "#ff6b6b"};
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  max-width: 800px;
+  width: 100%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+`;
+
 const PlayPage: React.FC = () => {
   const { game } = useGameStore();
   const { socketId, playCard, pass } = useSocketContext();
@@ -281,6 +296,17 @@ const PlayPage: React.FC = () => {
           ? "🎮 당신의 차례입니다!"
           : `${currentPlayer?.nickname}님의 차례입니다`}
       </CurrentTurnBanner>
+
+      {game.revolutionStatus?.isRevolution && (
+        <RevolutionBanner
+          isGreatRevolution={game.revolutionStatus.isGreatRevolution}
+        >
+          🔥{" "}
+          {game.revolutionStatus.isGreatRevolution
+            ? "대혁명이 발생했습니다! 모든 순위가 뒤집혔습니다!"
+            : "혁명이 발생했습니다! 세금 없이 게임이 진행됩니다!"}
+        </RevolutionBanner>
+      )}
 
       <GuideBox>
         <GuideText>

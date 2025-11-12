@@ -207,12 +207,6 @@ const SelectCardDeck: React.FC = () => {
     .sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
   const currentTurnPlayer = game?.players.find((p) => p.id === game.currentTurn);
-  const allPlayersSelected = game?.players.every((player) => player.cards.length > 0);
-
-  // 조커 2장을 가진 플레이어 찾기
-  const doubleJokerPlayer = allPlayersSelected
-    ? game?.players.find(p => p.cards.filter(card => card.isJoker).length === 2)
-    : null;
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -229,6 +223,10 @@ const SelectCardDeck: React.FC = () => {
           return prev - 1;
         });
       }, 1000);
+    } else if (game?.phase === "revolution") {
+      navigate("/revolution");
+    } else if (game?.phase === "tax") {
+      navigate("/tax");
     } else {
       setCountdown(null);
     }
@@ -261,7 +259,7 @@ const SelectCardDeck: React.FC = () => {
           • 각 덱은 같은 수의 카드를 포함하고 있습니다
         </GuideText>
         <GuideText>
-          • 조커 2장을 받으면 자동으로 1등이 됩니다 (순서 변경됨)
+          • 조커 2장을 받으면 혁명 선택 페이즈로 이동합니다
         </GuideText>
       </GuideBox>
 
@@ -296,24 +294,6 @@ const SelectCardDeck: React.FC = () => {
           </DeckCard>
         ))}
       </DeckList>
-
-      {allPlayersSelected && (
-        <JokerInfo>
-          <JokerText>
-            <strong>✨ 모든 플레이어가 카드를 선택했습니다!</strong>
-          </JokerText>
-          {doubleJokerPlayer ? (
-            <JokerText>
-              🃏 <strong>{doubleJokerPlayer.nickname}님</strong>이 조커 2장을
-              받아 1등이 되었습니다!
-            </JokerText>
-          ) : (
-            <JokerText>
-              조커 2장을 받은 플레이어가 없습니다. 순위가 그대로 유지됩니다.
-            </JokerText>
-          )}
-        </JokerInfo>
-      )}
 
       <HelpButton onClick={() => setIsHelpOpen(true)}>?</HelpButton>
       <HelpModal

@@ -12,6 +12,8 @@ export interface Player {
   isPassed: boolean;
   isReady: boolean;
   selectableDeck?: Card[];
+  hasDoubleJoker?: boolean;
+  revolutionChoice?: boolean;
 }
 
 export interface Play {
@@ -48,6 +50,8 @@ export type GamePhase =
   | 'roleSelection'
   | 'roleSelectionComplete'
   | 'cardSelection'
+  | 'revolution'
+  | 'tax'
   | 'playing'
   | 'gameEnd';
 
@@ -55,6 +59,13 @@ export interface RoleSelectionCard {
   number: number;
   isSelected: boolean;
   selectedBy?: string;
+}
+
+export interface TaxExchange {
+  fromPlayerId: string;
+  toPlayerId: string;
+  cardCount: number;
+  cardsGiven: Card[];
 }
 
 export interface Game {
@@ -88,6 +99,12 @@ export interface Game {
     finishedAtRound: number;
   }>;
   roundPlays: RoundPlay[];
+  revolutionStatus?: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId?: string;
+  };
+  taxExchanges?: TaxExchange[];
 }
 
 export interface Database {
