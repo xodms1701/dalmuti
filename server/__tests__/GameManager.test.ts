@@ -497,6 +497,75 @@ describe('GameManager', () => {
   });
 
   describe('passTurn', () => {
+    it('첫번째 유저가 카드를 낸 직후 다음 사람이 패스할 수 있어야 합니다', async () => {
+      // 사용자가 보고한 실제 버그 시나리오
+      const ownerId = 'player1';
+      const game = await gameManager.createGame(ownerId, 'Player1');
+      await gameManager.joinGame(game!.roomId, 'player2', 'Player2');
+      await gameManager.joinGame(game!.roomId, 'player3', 'Player3');
+      await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
+
+      // 강제로 게임 상태 설정
+      let updatedGame = await mockDb.getGame(game!.roomId);
+      if (updatedGame) {
+        updatedGame.phase = 'playing';
+        updatedGame.currentTurn = 'player1';
+        updatedGame.lastPlay = undefined; // 새 라운드 시작
+        updatedGame.round = 1;
+        updatedGame.players[0].rank = 1;
+        updatedGame.players[1].rank = 2;
+        updatedGame.players[2].rank = 3;
+        updatedGame.players[3].rank = 4;
+        // player1: 10 3장 + 다른 카드들
+        updatedGame.players[0].cards = [
+          { rank: 10, isJoker: false },
+          { rank: 10, isJoker: false },
+          { rank: 10, isJoker: false },
+          { rank: 1, isJoker: false },
+        ];
+        // player2: 11, 12 카드들 (10보다 낮은 카드 3장이 없음)
+        updatedGame.players[1].cards = [
+          { rank: 11, isJoker: false },
+          { rank: 12, isJoker: false },
+        ];
+        updatedGame.players[2].cards = [{ rank: 5, isJoker: false }];
+        updatedGame.players[3].cards = [{ rank: 6, isJoker: false }];
+        updatedGame.players[0].isPassed = false;
+        updatedGame.players[1].isPassed = false;
+        updatedGame.players[2].isPassed = false;
+        updatedGame.players[3].isPassed = false;
+        updatedGame.finishedPlayers = [];
+        updatedGame.playerStats = {
+          player1: { nickname: 'Player1', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player2: { nickname: 'Player2', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player3: { nickname: 'Player3', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player4: { nickname: 'Player4', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+        };
+        await mockDb.updateGame(game!.roomId, updatedGame);
+      }
+
+      // player1이 10을 3장 냄
+      await gameManager.playCard(game!.roomId, 'player1', [
+        { rank: 10, isJoker: false },
+        { rank: 10, isJoker: false },
+        { rank: 10, isJoker: false },
+      ]);
+
+      // 상태 확인
+      updatedGame = await mockDb.getGame(game!.roomId);
+      expect(updatedGame?.lastPlay?.playerId).toBe('player1');
+      expect(updatedGame?.currentTurn).toBe('player2');
+      console.log('[DEBUG] After playCard - player2 isPassed:', updatedGame?.players[1].isPassed);
+      console.log('[DEBUG] After playCard - player3 isPassed:', updatedGame?.players[2].isPassed);
+      console.log('[DEBUG] After playCard - player4 isPassed:', updatedGame?.players[3].isPassed);
+
+      // player2가 패스 시도 - 성공해야 함!
+      const passSuccess = await gameManager.passTurn(game!.roomId, 'player2');
+      console.log('[DEBUG] Pass result:', passSuccess);
+
+      expect(passSuccess).toBe(true); // 패스가 가능해야 함
+    });
+
     it('새 라운드 시작 시 아무도 카드를 내지 않았으면 패스할 수 없어야 합니다', async () => {
       // 1. 게임 상태를 준비
       const ownerId = 'player1';
