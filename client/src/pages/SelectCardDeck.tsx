@@ -193,7 +193,14 @@ const SelectCardDeck: React.FC = () => {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (game?.phase === "playing") {
+    if (game?.phase === "revolution") {
+      // 혁명 선택 페이즈로 즉시 이동
+      navigate("/revolution");
+    } else if (game?.phase === "tax") {
+      // 세금 교환 페이즈로 즉시 이동
+      navigate("/tax");
+    } else if (game?.phase === "playing") {
+      // 게임 시작 카운트다운
       setCountdown(10);
       timer = setInterval(() => {
         setCountdown((prev) => {
@@ -206,10 +213,6 @@ const SelectCardDeck: React.FC = () => {
           return prev - 1;
         });
       }, 1000);
-    } else if (game?.phase === "revolution") {
-      navigate("/revolution");
-    } else if (game?.phase === "tax") {
-      navigate("/tax");
     } else {
       setCountdown(null);
     }

@@ -1,5 +1,10 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import { SocketProvider, useSocketContext } from "./contexts/SocketContext";
 import { trackPageView } from "./analytics";
 import Lobby from "./pages/Lobby";
@@ -11,7 +16,7 @@ import TaxSelection from "./pages/TaxSelection";
 import Play from "./pages/Play";
 import VotePage from "./pages/VotePage";
 import RankConfirmation from "./pages/RankConfirmation";
-import { SpeedInsights } from '@vercel/speed-insights/react';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const AppContent: React.FC = () => {
   const { connect } = useSocketContext();

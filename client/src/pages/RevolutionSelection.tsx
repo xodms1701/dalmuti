@@ -40,6 +40,12 @@ const InfoText = styled.p`
   line-height: 1.6;
 `;
 
+const SubInfoText = styled(InfoText)`
+  font-size: 0.875rem;
+  margin-top: 0.625rem;
+  opacity: 0.7;
+`;
+
 const ButtonContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -198,18 +204,17 @@ const RevolutionSelection: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const [myChoice, setMyChoice] = useState<boolean | null>(null);
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
   const isMyTurn = game?.currentTurn === socketId;
 
-  // 게임 페이즈가 변경되면 결과 모달 표시
+  // 게임 페이즈가 변경되면 결과 모달 표시 (모든 플레이어)
   useEffect(() => {
-    if (myChoice !== null && (game?.phase === "playing" || game?.phase === "tax")) {
+    if (game?.phase === "playing" || game?.phase === "tax") {
       setShowResult(true);
       setCountdown(COUNTDOWN_SECONDS);
     }
-  }, [game?.phase, myChoice]);
+  }, [game?.phase]);
 
   // 카운트다운 처리
   useEffect(() => {
@@ -222,17 +227,16 @@ const RevolutionSelection: React.FC = () => {
     }
   }, [showResult, countdown]);
 
-  // 카운트다운이 0이 되면 페이지 이동
+  // 카운트다운이 0이 되면 페이지 이동 (game.phase 기반)
   useEffect(() => {
     if (showResult && countdown === 0) {
-      // 혁명 거부 시 세금 교환이 있으면 tax 페이지로, 아니면 play 페이지로
-      if (myChoice === false && game?.taxExchanges && game.taxExchanges.length > 0) {
+      if (game?.phase === "tax") {
         navigate("/tax");
-      } else {
+      } else if (game?.phase === "playing") {
         navigate("/play");
       }
     }
-  }, [showResult, countdown, myChoice, game?.taxExchanges, navigate]);
+  }, [showResult, countdown, game?.phase, navigate]);
 
   if (!myPlayer || !isMyTurn) {
     return (
@@ -240,6 +244,7 @@ const RevolutionSelection: React.FC = () => {
         <Title>혁명 선택</Title>
         <InfoBox>
           <InfoText>다른 플레이어가 혁명을 선택하고 있습니다...</InfoText>
+          <SubInfoText>잠시만 기다려주세요.</SubInfoText>
         </InfoBox>
       </Container>
     );
@@ -254,20 +259,20 @@ const RevolutionSelection: React.FC = () => {
     if (!game?.roomId || !socketId || isSubmitting) return;
 
     setIsSubmitting(true);
-    setMyChoice(wantRevolution);
     try {
       await selectRevolution(game.roomId, socketId, wantRevolution);
     } catch (error) {
       console.error("혁명 선택 실패:", error);
       setIsSubmitting(false);
-      setMyChoice(null);
     }
   };
 
-  // 결과 메시지 생성
+  // 결과 메시지 생성 (game.revolutionStatus 기반)
   const getResultContent = () => {
-    if (myChoice === true) {
-      const isGreatRevolution = game?.revolutionStatus?.isGreatRevolution;
+    const isRevolution = game?.revolutionStatus?.isRevolution;
+    const isGreatRevolution = game?.revolutionStatus?.isGreatRevolution;
+
+    if (isRevolution) {
       return {
         icon: "🔥",
         title: isGreatRevolution ? "대혁명 발생!" : "혁명 발생!",
@@ -297,9 +302,7 @@ const RevolutionSelection: React.FC = () => {
           <ResultTitle isRevolution={content.isRevolution}>
             {content.title}
           </ResultTitle>
-          <ResultDescription>
-            {content.description}
-          </ResultDescription>
+          <ResultDescription>{content.description}</ResultDescription>
           <CountdownText>
             <CountdownNumber>{countdown}</CountdownNumber>초 후 다음 페이지로
             이동합니다
@@ -327,8 +330,8 @@ const RevolutionSelection: React.FC = () => {
         </InfoText>
         {isLowestRank ? (
           <InfoText>
-            • <strong>대혁명</strong>: 모든 플레이어의 순위가 뒤집힙니다 (1등↔최하위,
-            2등↔두 번째 최하위...) + 세금 없음
+            • <strong>대혁명</strong>: 모든 플레이어의 순위가 뒤집힙니다
+            (1등↔최하위, 2등↔두 번째 최하위...) + 세금 없음
           </InfoText>
         ) : (
           <InfoText>
