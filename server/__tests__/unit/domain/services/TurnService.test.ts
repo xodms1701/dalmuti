@@ -5,6 +5,7 @@
 import * as TurnService from '../../../../src/domain/services/TurnService';
 import { Game } from '../../../../src/domain/entities/Game';
 import { Player } from '../../../../src/domain/entities/Player';
+import { Card } from '../../../../src/domain/entities/Card';
 
 describe('TurnService', () => {
   describe('findNextPlayer', () => {
@@ -16,11 +17,11 @@ describe('TurnService', () => {
       const player3 = Player.create('player3', 'Charlie');
 
       player1.assignRank(1);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
       player2.assignRank(2);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player2.assignCards([Card.create(7, false)]);
       player3.assignRank(3);
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -41,11 +42,11 @@ describe('TurnService', () => {
       const player3 = Player.create('player3', 'Charlie');
 
       player1.assignRank(1);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
       player2.assignRank(2);
       player2.assignCards([]); // Finished
       player3.assignRank(3);
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -66,9 +67,9 @@ describe('TurnService', () => {
       const player2 = Player.create('player2', 'Bob');
 
       player1.assignRank(1);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
       player2.assignRank(2);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -110,7 +111,7 @@ describe('TurnService', () => {
       const player2 = Player.create('player2', 'Bob');
 
       player1.assignRank(1);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
       player2.assignRank(2);
       player2.assignCards([]);
 
@@ -138,9 +139,9 @@ describe('TurnService', () => {
       player2.pass();
       // player3 is the last player who played
 
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -149,7 +150,7 @@ describe('TurnService', () => {
       // Set lastPlay to player3
       game.setLastPlay({
         playerId: 'player3',
-        cards: [{ rank: 3, isJoker: false }],
+        cards: [Card.create(3, false)],
       });
 
       // Act
@@ -165,8 +166,8 @@ describe('TurnService', () => {
       const player1 = Player.create('player1', 'Alice');
       const player2 = Player.create('player2', 'Bob');
 
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -188,9 +189,9 @@ describe('TurnService', () => {
       player1.pass();
       // player2 and player3 have not passed
 
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -212,7 +213,7 @@ describe('TurnService', () => {
 
       player1.pass();
       player2.assignCards([]); // Finished
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -222,7 +223,7 @@ describe('TurnService', () => {
       // Set lastPlay to player3
       game.setLastPlay({
         playerId: 'player3',
-        cards: [{ rank: 3, isJoker: false }],
+        cards: [Card.create(3, false)],
       });
 
       // Act
@@ -251,7 +252,7 @@ describe('TurnService', () => {
       const game = Game.create('ROOM01');
       game.setLastPlay({
         playerId: 'player1',
-        cards: [{ rank: 5, isJoker: false }],
+        cards: [Card.create(5, false)],
       });
 
       // Act
@@ -271,8 +272,8 @@ describe('TurnService', () => {
       player2.pass();
       player1.assignRank(1);
       player2.assignRank(2);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -296,7 +297,7 @@ describe('TurnService', () => {
       player1.pass();
       player2.pass();
       player1.assignCards([]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -320,14 +321,14 @@ describe('TurnService', () => {
 
       player1.assignRank(1);
       player2.assignRank(2);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.setLastPlay({
         playerId: 'player1',
-        cards: [{ rank: 5, isJoker: false }],
+        cards: [Card.create(5, false)],
       });
 
       // Act
@@ -413,9 +414,9 @@ describe('TurnService', () => {
       const player2 = Player.create('player2', 'Bob');
       const player3 = Player.create('player3', 'Charlie');
 
-      player1.assignCards([{ rank: 5, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
       player2.assignCards([]);
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -456,8 +457,8 @@ describe('TurnService', () => {
       const player1 = Player.create('player1', 'Alice');
       const player2 = Player.create('player2', 'Bob');
 
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -478,7 +479,7 @@ describe('TurnService', () => {
       const player2 = Player.create('player2', 'Bob');
 
       player1.assignCards([]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -519,8 +520,8 @@ describe('TurnService', () => {
       const player1 = Player.create('player1', 'Alice');
       const player2 = Player.create('player2', 'Bob');
 
-      player1.assignCards([{ rank: 5, isJoker: false }]);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -544,9 +545,9 @@ describe('TurnService', () => {
       player1.assignRank(3);
       player1.assignCards([]);
       player2.assignRank(1);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player2.assignCards([Card.create(7, false)]);
       player3.assignRank(2);
-      player3.assignCards([{ rank: 3, isJoker: false }]);
+      player3.assignCards([Card.create(3, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);
@@ -583,9 +584,9 @@ describe('TurnService', () => {
       const player2 = Player.create('player2', 'Bob');
 
       player1.assignRank(2);
-      player1.assignCards([{ rank: 5, isJoker: false }]);
+      player1.assignCards([Card.create(5, false)]);
       player2.assignRank(1);
-      player2.assignCards([{ rank: 7, isJoker: false }]);
+      player2.assignCards([Card.create(7, false)]);
 
       game.addPlayer(player1);
       game.addPlayer(player2);

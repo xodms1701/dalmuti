@@ -1,3 +1,5 @@
+import { Card } from './Card';
+
 /**
  * Player Entity
  *
@@ -6,7 +8,7 @@
 export class Player {
   readonly id: string;
   readonly nickname: string;
-  private _cards: any[];
+  private _cards: Card[];
   private _role: number | null;
   private _rank: number | null;
   private _isPassed: boolean;
@@ -18,7 +20,7 @@ export class Player {
   private constructor(
     id: string,
     nickname: string,
-    cards: any[] = [],
+    cards: Card[] = [],
     role: number | null = null,
     rank: number | null = null,
     isPassed: boolean = false,
@@ -50,7 +52,7 @@ export class Player {
   }
 
   // Getters
-  get cards(): any[] {
+  get cards(): Card[] {
     return [...this._cards]; // 불변성 보장을 위해 복사본 반환
   }
 
@@ -74,31 +76,26 @@ export class Player {
    * 카드를 플레이
    * @param cards 플레이할 카드들
    */
-  playCards(cards: any[]): void {
+  playCards(cards: Card[]): void {
     if (!cards || cards.length === 0) {
       throw new Error('Cannot play empty cards');
     }
 
-    // 카드 보유 여부 확인
-    const cardRanks = cards.map((c) => c.rank);
-    for (const card of cards) {
-      const hasCard = this._cards.some(
-        (c) => c.rank === card.rank && c.isJoker === card.isJoker
+    // 카드 보유 여부 확인 및 제거 (중복 카드 정확히 처리)
+    const remainingCards = [...this._cards];
+    for (const cardToPlay of cards) {
+      const cardIndex = remainingCards.findIndex(
+        (c) => c.rank === cardToPlay.rank && c.isJoker === cardToPlay.isJoker
       );
-      if (!hasCard) {
-        throw new Error(`Player does not have card: ${card.rank}`);
+      if (cardIndex === -1) {
+        throw new Error(`Player does not have card: ${cardToPlay.rank}`);
       }
+      // 임시 배열에서 카드를 제거하여 중복 카드를 정확히 처리
+      remainingCards.splice(cardIndex, 1);
     }
 
-    // 카드 제거
-    for (const card of cards) {
-      const index = this._cards.findIndex(
-        (c) => c.rank === card.rank && c.isJoker === card.isJoker
-      );
-      if (index !== -1) {
-        this._cards.splice(index, 1);
-      }
-    }
+    // 모든 카드가 유효하면 실제 카드 목록을 업데이트
+    this._cards = remainingCards;
 
     // 패스 상태 초기화
     this._isPassed = false;
@@ -158,7 +155,7 @@ export class Player {
    * 카드 할당
    * @param cards 할당할 카드들
    */
-  assignCards(cards: any[]): void {
+  assignCards(cards: Card[]): void {
     this._cards = [...cards];
   }
 
@@ -166,7 +163,7 @@ export class Player {
    * 카드 추가
    * @param cards 추가할 카드들
    */
-  addCards(cards: any[]): void {
+  addCards(cards: Card[]): void {
     this._cards.push(...cards);
   }
 

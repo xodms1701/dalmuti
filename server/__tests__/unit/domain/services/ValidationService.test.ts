@@ -5,6 +5,7 @@
 import * as ValidationService from '../../../../src/domain/services/ValidationService';
 import { Game } from '../../../../src/domain/entities/Game';
 import { Player } from '../../../../src/domain/entities/Player';
+import { Card } from '../../../../src/domain/entities/Card';
 
 describe('ValidationService', () => {
   describe('validateGameState', () => {
@@ -52,7 +53,7 @@ describe('ValidationService', () => {
       // Arrange
       const game = Game.create('ROOM01');
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
       game.addPlayer(player);
       game.changePhase('playing');
       game.setCurrentTurn('player1');
@@ -295,14 +296,14 @@ describe('ValidationService', () => {
       const game = Game.create('ROOM01');
       const player = Player.create('player1', 'Alice');
       player.assignCards([
-        { rank: 5, isJoker: false },
-        { rank: 7, isJoker: false },
+        Card.create(5, false),
+        Card.create(7, false),
       ]);
       game.addPlayer(player);
 
       // Act
       const result = ValidationService.validatePlayerHasCards(game, 'player1', [
-        { rank: 5, isJoker: false },
+        Card.create(5, false),
       ]);
 
       // Assert
@@ -313,12 +314,12 @@ describe('ValidationService', () => {
       // Arrange
       const game = Game.create('ROOM01');
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
       game.addPlayer(player);
 
       // Act
       const result = ValidationService.validatePlayerHasCards(game, 'player1', [
-        { rank: 7, isJoker: false },
+        Card.create(7, false),
       ]);
 
       // Assert
@@ -331,7 +332,7 @@ describe('ValidationService', () => {
 
       // Act
       const result = ValidationService.validatePlayerHasCards(game, 'player1', [
-        { rank: 5, isJoker: false },
+        Card.create(5, false),
       ]);
 
       // Assert

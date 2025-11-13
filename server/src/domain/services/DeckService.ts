@@ -42,13 +42,9 @@ export function initializeDeck(): any[] {
  *
  * @param deck - 섞을 덱
  */
-export function shuffleDeck(deck: any[]): void {
-  // 기존 헬퍼는 새 배열을 반환하지만, 이 서비스는 in-place로 섞어야 함
-  const shuffled = DeckHelper.shuffleDeck(deck);
-
-  // 원본 배열을 섞인 배열로 교체
-  deck.length = 0;
-  deck.push(...shuffled);
+export function shuffleDeck(deck: any[]): any[] {
+  // 기존 헬퍼가 새 배열을 반환하므로, 불변성을 유지하여 결과 반환
+  return DeckHelper.shuffleDeck(deck);
 }
 
 /**

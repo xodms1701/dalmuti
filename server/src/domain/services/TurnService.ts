@@ -86,12 +86,8 @@ export function startNewRound(game: Game): void {
  * @returns 순위 순서로 정렬된 플레이어 배열
  */
 export function getSortedPlayers(players: Player[]): Player[] {
-  // 플레이어 엔티티 배열을 플레인 객체로 변환
-  const playersPlain = players.map((p) => p.toPlainObject());
-  const sorted = TurnHelper.getSortedPlayers(playersPlain as any);
-
-  // 정렬된 플레인 객체를 다시 엔티티로 변환
-  return sorted.map((p) => Player.fromPlainObject(p));
+  // 불필요한 변환 없이 엔티티를 직접 정렬
+  return [...players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
 }
 
 /**

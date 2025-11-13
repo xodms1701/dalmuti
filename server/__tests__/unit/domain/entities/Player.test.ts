@@ -3,6 +3,7 @@
  */
 
 import { Player } from '../../../../src/domain/entities/Player';
+import { Card } from '../../../../src/domain/entities/Card';
 
 describe('Player', () => {
   describe('create', () => {
@@ -46,13 +47,13 @@ describe('Player', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
       const cards = [
-        { rank: 5, isJoker: false },
-        { rank: 5, isJoker: false },
+        Card.create(5, false),
+        Card.create(5, false),
       ];
       player.assignCards(cards);
 
       // Act
-      player.playCards([{ rank: 5, isJoker: false }]);
+      player.playCards([Card.create(5, false)]);
 
       // Assert
       expect(player.cards).toHaveLength(1);
@@ -62,11 +63,11 @@ describe('Player', () => {
     it('should reset pass status when playing cards', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
       player.pass();
 
       // Act
-      player.playCards([{ rank: 5, isJoker: false }]);
+      player.playCards([Card.create(5, false)]);
 
       // Assert
       expect(player.isPassed).toBe(false);
@@ -83,10 +84,10 @@ describe('Player', () => {
     it('should throw error when playing cards player does not have', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
 
       // Act & Assert
-      expect(() => player.playCards([{ rank: 7, isJoker: false }])).toThrow(
+      expect(() => player.playCards([Card.create(7, false)])).toThrow(
         'Player does not have card: 7'
       );
     });
@@ -95,16 +96,16 @@ describe('Player', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
       const cards = [
-        { rank: 5, isJoker: false },
-        { rank: 5, isJoker: false },
-        { rank: 5, isJoker: false },
+        Card.create(5, false),
+        Card.create(5, false),
+        Card.create(5, false),
       ];
       player.assignCards(cards);
 
       // Act
       player.playCards([
-        { rank: 5, isJoker: false },
-        { rank: 5, isJoker: false },
+        Card.create(5, false),
+        Card.create(5, false),
       ]);
 
       // Assert
@@ -114,10 +115,10 @@ describe('Player', () => {
     it('should handle playing joker', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 13, isJoker: true }]);
+      player.assignCards([Card.create(13, true)]);
 
       // Act
-      player.playCards([{ rank: 13, isJoker: true }]);
+      player.playCards([Card.create(13, true)]);
 
       // Assert
       expect(player.cards).toHaveLength(0);
@@ -272,8 +273,8 @@ describe('Player', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
       const cards = [
-        { rank: 5, isJoker: false },
-        { rank: 7, isJoker: false },
+        Card.create(5, false),
+        Card.create(7, false),
       ];
 
       // Act
@@ -287,10 +288,10 @@ describe('Player', () => {
     it('should replace existing cards when assigning', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 3, isJoker: false }]);
+      player.assignCards([Card.create(3, false)]);
 
       // Act
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
 
       // Assert
       expect(player.cards).toHaveLength(1);
@@ -300,10 +301,10 @@ describe('Player', () => {
     it('should add cards to existing hand', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 3, isJoker: false }]);
+      player.assignCards([Card.create(3, false)]);
 
       // Act
-      player.addCards([{ rank: 5, isJoker: false }]);
+      player.addCards([Card.create(5, false)]);
 
       // Assert
       expect(player.cards).toHaveLength(2);
@@ -328,7 +329,7 @@ describe('Player', () => {
     it('should return false when player has cards', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
 
       // Act
       const result = player.hasFinished();
@@ -340,10 +341,10 @@ describe('Player', () => {
     it('should return true after playing all cards', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
 
       // Act
-      player.playCards([{ rank: 5, isJoker: false }]);
+      player.playCards([Card.create(5, false)]);
       const result = player.hasFinished();
 
       // Assert
@@ -355,7 +356,7 @@ describe('Player', () => {
     it('should convert player to plain object', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      player.assignCards([{ rank: 5, isJoker: false }]);
+      player.assignCards([Card.create(5, false)]);
       player.assignRole(3);
       player.assignRank(2);
       player.ready();
@@ -427,12 +428,12 @@ describe('Player', () => {
     it('should return a copy of cards array', () => {
       // Arrange
       const player = Player.create('player1', 'Alice');
-      const cards = [{ rank: 5, isJoker: false }];
+      const cards = [Card.create(5, false)];
       player.assignCards(cards);
 
       // Act
       const playerCards = player.cards;
-      playerCards.push({ rank: 7, isJoker: false });
+      playerCards.push(Card.create(7, false));
 
       // Assert
       expect(player.cards).toHaveLength(1);
