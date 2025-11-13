@@ -856,7 +856,7 @@ export default class GameManager {
       validGame.lastPlay = undefined;
       validGame.round = 1;
       // 1등부터 시작
-      const sortedPlayers = [...validGame.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+      const sortedPlayers = getSortedPlayers(validGame.players);
       validGame.currentTurn = sortedPlayers[0].id;
     } else {
       // 혁명을 일으키지 않는다 - 순위 그대로 유지, 조커 2장 사실 숨김
