@@ -275,8 +275,15 @@ const PlayPage: React.FC = () => {
 
   const handlePass = async () => {
     if (!game?.roomId || !socketId) return;
-    await pass(game.roomId, socketId);
-    setSelectedIdxs([]);
+
+    const result = await pass(game.roomId, socketId);
+    if (result.success) {
+      setSelectedIdxs([]);
+    } else {
+      const errorMessage = result.error ?? "알 수 없는 오류";
+      console.error('[Pass Error]', errorMessage);
+      alert(`패스할 수 없습니다: ${errorMessage}`);
+    }
   };
 
   // 순위 순서대로 정렬된 플레이어 목록

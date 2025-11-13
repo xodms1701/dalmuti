@@ -315,6 +315,11 @@ export default class GameManager {
       return false;
     }
 
+    // 아직 아무도 카드를 내지 않은 라운드에서는 패스 불가능 (첫 턴)
+    if (!game.lastPlay) {
+      return false;
+    }
+
     // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인
     const otherPlayersAllPassed = game.players
       .filter((p) => p.id !== playerId)
@@ -360,19 +365,12 @@ export default class GameManager {
     }
 
     // 모든 플레이어가 패스했을 때 라운드 넘김
+    // 게임을 완료하지 않은 플레이어 중에서, 마지막으로 카드를 낸 플레이어를 제외한 나머지가 모두 패스했는지 확인
     let allPassed = false;
     if (game.lastPlay && game.lastPlay.playerId) {
-      if (game.finishedPlayers.length > 0) {
-        // 게임을 종료한 유저가 있을 때
-        allPassed = game.players
-          .filter((p) => !game.finishedPlayers.includes(p.id) && p.id !== game.lastPlay!.playerId)
-          .every((p) => p.isPassed);
-      } else {
-        // 게임을 종료한 유저가 없을 때
-        allPassed = game.players
-          .filter((p) => p.id !== game.lastPlay!.playerId)
-          .every((p) => p.isPassed);
-      }
+      allPassed = game.players
+        .filter((p) => !game.finishedPlayers.includes(p.id) && p.id !== game.lastPlay!.playerId)
+        .every((p) => p.isPassed);
     }
 
     if (allPassed && game.lastPlay && game.lastPlay.playerId) {
@@ -614,6 +612,10 @@ export default class GameManager {
       }
     }
 
+    const hasNoDoubleJoker = allDecksSelected && !game.players.some(
+      (p) => p.cards.filter((card) => card.isJoker).length === 2
+    );
+
     await this.db.updateGame(roomId, {
       players: game.players,
       phase: game.phase,
@@ -624,6 +626,25 @@ export default class GameManager {
       selectableDecks: game.selectableDecks,
       taxExchanges: game.taxExchanges,
     });
+
+    // 더블조커가 없는 경우 10초 후 playing 페이즈로 전환
+    if (hasNoDoubleJoker) {
+      setTimeout(async () => {
+        const updatedGame = await this.db.getGame(roomId);
+        if (!updatedGame || updatedGame.phase !== 'tax') {
+          return;
+        }
+
+        updatedGame.phase = 'playing';
+        await this.db.updateGame(roomId, {
+          phase: updatedGame.phase,
+        });
+
+        // 클라이언트에게 업데이트된 게임 상태 전송
+        const finalGameState = await this.db.getGame(roomId);
+        this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, finalGameState);
+      }, 10000);
+    }
 
     return true;
   }
@@ -937,8 +958,6 @@ export default class GameManager {
       this.initializeTaxExchanges(game);
 
       // 세금 교환 결과를 표시하기 위해 tax 페이즈로 설정
-      // 프론트엔드에서 5초 동안 결과를 보여준 후 자동으로 /play로 이동
-      // (게임 상태는 이미 playing 준비가 완료되어 있음)
       game.phase = 'tax';
     }
 
@@ -951,6 +970,25 @@ export default class GameManager {
       revolutionStatus: game.revolutionStatus,
       taxExchanges: game.taxExchanges,
     });
+
+    // 혁명을 선택하지 않은 경우 10초 후 playing 페이즈로 전환
+    if (!wantRevolution) {
+      setTimeout(async () => {
+        const updatedGame = await this.db.getGame(roomId);
+        if (!updatedGame || updatedGame.phase !== 'tax') {
+          return;
+        }
+
+        updatedGame.phase = 'playing';
+        await this.db.updateGame(roomId, {
+          phase: updatedGame.phase,
+        });
+
+        // 클라이언트에게 업데이트된 게임 상태 전송
+        const finalGameState = await this.db.getGame(roomId);
+        this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, finalGameState);
+      }, 10000);
+    }
 
     return true;
   }
