@@ -61,50 +61,51 @@ export enum ErrorCode {
 }
 
 /**
- * 게임 작업 결과를 나타내는 통합 인터페이스
+ * 게임 작업 결과를 나타내는 통합 타입
  *
- * @template T - 성공 시 반환될 데이터의 타입 (기본값: Game)
+ * @template T - 성공 시 반환될 데이터의 타입
  *
  * @example
  * // 성공 케이스
- * const result: GameResult = {
+ * const result: GameResult<Game> = {
  *   success: true,
  *   data: game
  * };
  *
  * @example
  * // 실패 케이스
- * const result: GameResult = {
+ * const result: GameResult<Game> = {
  *   success: false,
  *   error: '게임을 찾을 수 없습니다.',
  *   code: ErrorCode.GAME_NOT_FOUND
  * };
  */
-export interface GameResult<T = any> {
-  /**
-   * 작업 성공 여부
-   */
-  success: boolean;
-
-  /**
-   * 성공 시 반환할 데이터
-   * success가 true일 때만 존재
-   */
-  data?: T;
-
-  /**
-   * 실패 시 에러 메시지
-   * success가 false일 때 존재해야 함
-   */
-  error?: string;
-
-  /**
-   * 실패 시 에러 코드
-   * success가 false일 때 존재해야 함
-   * 클라이언트에서 에러 유형별 처리를 위해 사용
-   */
-  code?: ErrorCode;
-}
+export type GameResult<T = any> =
+  | {
+      /**
+       * 작업 성공 여부 (성공)
+       */
+      success: true;
+      /**
+       * 성공 시 반환할 데이터 (필수)
+       */
+      data: T;
+    }
+  | {
+      /**
+       * 작업 성공 여부 (실패)
+       */
+      success: false;
+      /**
+       * 실패 시 에러 메시지 (필수)
+       */
+      error: string;
+      /**
+       * 실패 시 에러 코드 (필수)
+       * 클라이언트에서 에러 유형별 처리를 위해 사용
+       */
+      code: ErrorCode;
+    };
 
 /**
  * 성공 결과를 생성하는 헬퍼 함수
