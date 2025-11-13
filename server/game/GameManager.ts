@@ -369,14 +369,9 @@ export default class GameManager {
     const phaseResult = validatePhase(validGame, 'roleSelection', '역할 선택');
     if (!phaseResult.success) return false;
 
-    // 역할 번호 유효성 확인
+    // 역할 번호 유효성 확인 (1-13 범위)
     const roleNumberResult = validateRoleNumber(roleNumber);
     if (!roleNumberResult.success) return false;
-
-    // roleSelectionDeck 범위 확인
-    if (roleNumber > validGame.roleSelectionDeck.length) {
-      return false;
-    }
 
     // 플레이어 확인
     const playerResult = validatePlayer(validGame, playerId);
