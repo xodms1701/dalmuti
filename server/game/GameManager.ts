@@ -612,6 +612,10 @@ export default class GameManager {
       }
     }
 
+    const hasNoDoubleJoker = allDecksSelected && !game.players.some(
+      (p) => p.cards.filter((card) => card.isJoker).length === 2
+    );
+
     await this.db.updateGame(roomId, {
       players: game.players,
       phase: game.phase,
@@ -622,6 +626,25 @@ export default class GameManager {
       selectableDecks: game.selectableDecks,
       taxExchanges: game.taxExchanges,
     });
+
+    // 더블조커가 없는 경우 10초 후 playing 페이즈로 전환
+    if (hasNoDoubleJoker) {
+      setTimeout(async () => {
+        const updatedGame = await this.db.getGame(roomId);
+        if (!updatedGame || updatedGame.phase !== 'tax') {
+          return;
+        }
+
+        updatedGame.phase = 'playing';
+        await this.db.updateGame(roomId, {
+          phase: updatedGame.phase,
+        });
+
+        // 클라이언트에게 업데이트된 게임 상태 전송
+        const finalGameState = await this.db.getGame(roomId);
+        this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, finalGameState);
+      }, 10000);
+    }
 
     return true;
   }
@@ -935,8 +958,6 @@ export default class GameManager {
       this.initializeTaxExchanges(game);
 
       // 세금 교환 결과를 표시하기 위해 tax 페이즈로 설정
-      // 프론트엔드에서 5초 동안 결과를 보여준 후 자동으로 /play로 이동
-      // (게임 상태는 이미 playing 준비가 완료되어 있음)
       game.phase = 'tax';
     }
 
@@ -949,6 +970,25 @@ export default class GameManager {
       revolutionStatus: game.revolutionStatus,
       taxExchanges: game.taxExchanges,
     });
+
+    // 혁명을 선택하지 않은 경우 10초 후 playing 페이즈로 전환
+    if (!wantRevolution) {
+      setTimeout(async () => {
+        const updatedGame = await this.db.getGame(roomId);
+        if (!updatedGame || updatedGame.phase !== 'tax') {
+          return;
+        }
+
+        updatedGame.phase = 'playing';
+        await this.db.updateGame(roomId, {
+          phase: updatedGame.phase,
+        });
+
+        // 클라이언트에게 업데이트된 게임 상태 전송
+        const finalGameState = await this.db.getGame(roomId);
+        this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, finalGameState);
+      }, 10000);
+    }
 
     return true;
   }

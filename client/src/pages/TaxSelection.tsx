@@ -5,7 +5,7 @@ import { useGameStore } from "../store/gameStore";
 import styled from "styled-components";
 import HelpModal from "../components/HelpModal";
 
-const COUNTDOWN_SECONDS = 5;
+const COUNTDOWN_SECONDS = 10;
 
 const Container = styled.div`
   display: flex;
@@ -123,13 +123,19 @@ const TaxSelection: React.FC = () => {
 
   const myPlayer = game?.players.find((player) => player.id === socketId);
 
-  // 5초 카운트다운 후 플레이 페이지로 이동
+  // phase가 playing으로 변경되면 플레이 페이지로 이동
+  useEffect(() => {
+    if (game?.phase === "playing") {
+      navigate("/play");
+    }
+  }, [game?.phase, navigate]);
+
+  // 카운트다운 타이머 (UI 표시용)
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate("/play");
           return 0;
         }
         return prev - 1;
@@ -137,7 +143,7 @@ const TaxSelection: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, []);
 
   if (!myPlayer) {
     return (
