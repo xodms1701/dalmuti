@@ -290,6 +290,18 @@ describe('GameValidator', () => {
         expect(result.code).toBe(ErrorCode.CARD_NOT_IN_HAND);
       }
     });
+
+    it('플레이어가 중복된 카드를 가지고 있지 않은데 내려고 하면 에러를 반환해야 함', () => {
+      const player = createTestGame().players[0];
+      player.cards = [createCard(1), createCard(2)]; // hand: [1, 2]
+      const cardsToPlay = [createCard(1), createCard(1)]; // try to play two 1s
+
+      const result = validatePlayerHasCards(player, cardsToPlay);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.code).toBe(ErrorCode.CARD_NOT_IN_HAND);
+      }
+    });
   });
 
   describe('validateMinPlayers', () => {

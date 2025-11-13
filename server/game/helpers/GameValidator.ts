@@ -225,22 +225,25 @@ export function validateCardCount(
 
 /**
  * 플레이어가 해당 카드를 가지고 있는지 검증합니다.
+ * 중복된 카드를 내는 경우도 정확히 검증합니다.
  *
  * @param player - 플레이어 객체
  * @param cardsToPlay - 낼 카드 배열
  * @returns 카드를 가지고 있지 않으면 실패 결과, 가지고 있으면 성공 결과
  */
 export function validatePlayerHasCards(player: Player, cardsToPlay: Card[]): GameResult<void> {
+  const hand = [...player.cards];
   for (const cardToPlay of cardsToPlay) {
-    const hasCard = player.cards.some(
+    const cardIndex = hand.findIndex(
       (c) => c.rank === cardToPlay.rank && c.isJoker === cardToPlay.isJoker
     );
-    if (!hasCard) {
+    if (cardIndex === -1) {
       return failure(
         `플레이어가 해당 카드를 가지고 있지 않습니다: ${cardToPlay.isJoker ? '조커' : cardToPlay.rank}`,
         ErrorCode.CARD_NOT_IN_HAND
       );
     }
+    hand.splice(cardIndex, 1); // 카드를 "사용"하여 중복 체크
   }
   return success(undefined);
 }
