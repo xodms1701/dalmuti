@@ -133,7 +133,7 @@ export function validateNotPassed(player: Player): GameResult | null {
  */
 export function validateNotFinished(game: Game, playerId: string): GameResult | null {
   if (game.finishedPlayers.includes(playerId)) {
-    return failure('이미 게임을 완료한 플레이어입니다.', ErrorCode.GAME_ALREADY_STARTED);
+    return failure('이미 게임을 완료한 플레이어입니다.', ErrorCode.PLAYER_ALREADY_FINISHED);
   }
   return null;
 }
