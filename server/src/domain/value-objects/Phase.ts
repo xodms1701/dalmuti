@@ -7,14 +7,6 @@
 export class Phase {
   private readonly _value: PhaseType;
 
-  // Static constants for each phase
-  static readonly WAITING = new Phase('waiting');
-  static readonly ROLE_SELECTION = new Phase('roleSelection');
-  static readonly ROLE_SELECTION_COMPLETE = new Phase('roleSelectionComplete');
-  static readonly CARD_SELECTION = new Phase('cardSelection');
-  static readonly PLAYING = new Phase('playing');
-  static readonly GAME_END = new Phase('gameEnd');
-
   private static readonly VALID_PHASES: PhaseType[] = [
     'waiting',
     'roleSelection',
@@ -23,6 +15,14 @@ export class Phase {
     'playing',
     'gameEnd',
   ];
+
+  // Static constants for each phase
+  static readonly WAITING = new Phase('waiting');
+  static readonly ROLE_SELECTION = new Phase('roleSelection');
+  static readonly ROLE_SELECTION_COMPLETE = new Phase('roleSelectionComplete');
+  static readonly CARD_SELECTION = new Phase('cardSelection');
+  static readonly PLAYING = new Phase('playing');
+  static readonly GAME_END = new Phase('gameEnd');
 
   // Phase transition rules
   private static readonly PHASE_TRANSITIONS: Map<PhaseType, PhaseType[]> = new Map([
