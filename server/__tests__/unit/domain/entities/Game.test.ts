@@ -1,0 +1,657 @@
+/**
+ * Game Entity Unit Tests
+ */
+
+import { Game } from '../../../../src/domain/entities/Game';
+import { Player } from '../../../../src/domain/entities/Player';
+
+describe('Game', () => {
+  describe('create', () => {
+    it('should create a game with valid room id', () => {
+      // Arrange & Act
+      const game = Game.create('ROOM01');
+
+      // Assert
+      expect(game.roomId).toBe('ROOM01');
+      expect(game.players).toEqual([]);
+      expect(game.phase).toBe('waiting');
+      expect(game.currentTurn).toBeNull();
+      expect(game.lastPlay).toBeUndefined();
+      expect(game.deck).toEqual([]);
+      expect(game.round).toBe(0);
+      expect(game.finishedPlayers).toEqual([]);
+    });
+
+    it('should throw error when room id is empty', () => {
+      // Arrange & Act & Assert
+      expect(() => Game.create('')).toThrow('Room ID cannot be empty');
+    });
+
+    it('should throw error when room id is only whitespace', () => {
+      // Arrange & Act & Assert
+      expect(() => Game.create('   ')).toThrow('Room ID cannot be empty');
+    });
+  });
+
+  describe('addPlayer', () => {
+    it('should add a player to the game', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+
+      // Act
+      game.addPlayer(player);
+
+      // Assert
+      expect(game.players).toHaveLength(1);
+      expect(game.players[0].id).toBe('player1');
+    });
+
+    it('should add multiple players', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+
+      // Act
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+
+      // Assert
+      expect(game.players).toHaveLength(2);
+    });
+
+    it('should throw error when adding duplicate player', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+
+      // Act & Assert
+      expect(() => game.addPlayer(player)).toThrow('Player already exists in the game');
+    });
+  });
+
+  describe('removePlayer', () => {
+    it('should remove a player from the game', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+
+      // Act
+      game.removePlayer('player1');
+
+      // Assert
+      expect(game.players).toHaveLength(0);
+    });
+
+    it('should throw error when removing non-existent player', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act & Assert
+      expect(() => game.removePlayer('player1')).toThrow('Player not found');
+    });
+
+    it('should only remove specified player', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+
+      // Act
+      game.removePlayer('player1');
+
+      // Assert
+      expect(game.players).toHaveLength(1);
+      expect(game.players[0].id).toBe('player2');
+    });
+  });
+
+  describe('getPlayer', () => {
+    it('should return player when found', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+
+      // Act
+      const found = game.getPlayer('player1');
+
+      // Assert
+      expect(found).toBeDefined();
+      expect(found?.id).toBe('player1');
+    });
+
+    it('should return undefined when player not found', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      const found = game.getPlayer('player1');
+
+      // Assert
+      expect(found).toBeUndefined();
+    });
+  });
+
+  describe('canPlayCard', () => {
+    it('should return false when game is not in playing phase', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.setCurrentTurn('player1');
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 5, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when cards array is empty', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+
+      // Act
+      const result = game.canPlayCard('player1', []);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when not player turn', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player2');
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 5, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when player has finished', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 5, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when player has passed', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      player.pass();
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 5, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return true when all conditions are met', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 5, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should return false when card count does not match lastPlay', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+      game.setLastPlay({
+        playerId: 'player2',
+        cards: [{ rank: 7, isJoker: false }, { rank: 7, isJoker: false }],
+      });
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 5, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when cards are weaker than lastPlay', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+      game.setLastPlay({
+        playerId: 'player2',
+        cards: [{ rank: 3, isJoker: false }],
+      });
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 7, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(false); // 7 is weaker than 3
+    });
+
+    it('should return true when cards are stronger than lastPlay', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+      game.setCurrentTurn('player1');
+      game.setLastPlay({
+        playerId: 'player2',
+        cards: [{ rank: 7, isJoker: false }],
+      });
+
+      // Act
+      const result = game.canPlayCard('player1', [{ rank: 3, isJoker: false }]);
+
+      // Assert
+      expect(result).toBe(true); // 3 is stronger than 7
+    });
+  });
+
+  describe('isGameOver', () => {
+    it('should return true when only one active player remains', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const result = game.isGameOver();
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should return true when no active players remain', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      game.addPlayer(player1);
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const result = game.isGameOver();
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should return false when multiple active players remain', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+      const player3 = Player.create('player3', 'Charlie');
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+      game.addPlayer(player3);
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const result = game.isGameOver();
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when all players are active', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+
+      // Act
+      const result = game.isGameOver();
+
+      // Assert
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('isPlayerTurn', () => {
+    it('should return true when it is player turn', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      game.setCurrentTurn('player1');
+
+      // Act
+      const result = game.isPlayerTurn('player1');
+
+      // Assert
+      expect(result).toBe(true);
+    });
+
+    it('should return false when it is not player turn', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      game.setCurrentTurn('player2');
+
+      // Act
+      const result = game.isPlayerTurn('player1');
+
+      // Assert
+      expect(result).toBe(false);
+    });
+
+    it('should return false when current turn is null', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      const result = game.isPlayerTurn('player1');
+
+      // Assert
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getActivePlayerCount', () => {
+    it('should return count of active players', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+      const player3 = Player.create('player3', 'Charlie');
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+      game.addPlayer(player3);
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const count = game.getActivePlayerCount();
+
+      // Assert
+      expect(count).toBe(2);
+    });
+
+    it('should return 0 when all players are finished', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      game.addPlayer(player1);
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const count = game.getActivePlayerCount();
+
+      // Assert
+      expect(count).toBe(0);
+    });
+
+    it('should return total count when no players are finished', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player1 = Player.create('player1', 'Alice');
+      const player2 = Player.create('player2', 'Bob');
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+
+      // Act
+      const count = game.getActivePlayerCount();
+
+      // Assert
+      expect(count).toBe(2);
+    });
+  });
+
+  describe('state management', () => {
+    it('should change phase', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      game.changePhase('playing');
+
+      // Assert
+      expect(game.phase).toBe('playing');
+    });
+
+    it('should set current turn', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      game.setCurrentTurn('player1');
+
+      // Assert
+      expect(game.currentTurn).toBe('player1');
+    });
+
+    it('should set last play', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const lastPlay = {
+        playerId: 'player1',
+        cards: [{ rank: 5, isJoker: false }],
+      };
+
+      // Act
+      game.setLastPlay(lastPlay);
+
+      // Assert
+      expect(game.lastPlay).toEqual(lastPlay);
+    });
+
+    it('should increment round', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      game.incrementRound();
+      game.incrementRound();
+
+      // Assert
+      expect(game.round).toBe(2);
+    });
+
+    it('should add finished player', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      game.addFinishedPlayer('player1');
+
+      // Assert
+      expect(game.finishedPlayers).toContain('player1');
+    });
+
+    it('should not add duplicate finished player', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+
+      // Act
+      game.addFinishedPlayer('player1');
+      game.addFinishedPlayer('player1');
+
+      // Assert
+      expect(game.finishedPlayers).toHaveLength(1);
+    });
+
+    it('should set deck', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const deck = [{ rank: 5, isJoker: false }];
+
+      // Act
+      game.setDeck(deck);
+
+      // Assert
+      expect(game.deck).toEqual(deck);
+    });
+
+    it('should set selectable decks', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const decks = [{ cards: [], isSelected: false }];
+
+      // Act
+      game.setSelectableDecks(decks);
+
+      // Assert
+      expect(game.selectableDecks).toEqual(decks);
+    });
+
+    it('should set role selection cards', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const cards = [{ number: 1, isSelected: false }];
+
+      // Act
+      game.setRoleSelectionCards(cards);
+
+      // Assert
+      expect(game.roleSelectionCards).toEqual(cards);
+    });
+  });
+
+  describe('toPlainObject / fromPlainObject', () => {
+    it('should convert game to plain object', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+      game.changePhase('playing');
+
+      // Act
+      const plain = game.toPlainObject();
+
+      // Assert
+      expect(plain.roomId).toBe('ROOM01');
+      expect(plain.players).toHaveLength(1);
+      expect(plain.phase).toBe('playing');
+    });
+
+    it('should create game from plain object', () => {
+      // Arrange
+      const plain = {
+        roomId: 'ROOM01',
+        players: [
+          {
+            id: 'player1',
+            nickname: 'Alice',
+            cards: [],
+            role: null,
+            rank: null,
+            isPassed: false,
+            isReady: false,
+          },
+        ],
+        phase: 'playing',
+        currentTurn: 'player1',
+        lastPlay: undefined,
+        deck: [],
+        round: 1,
+        finishedPlayers: [],
+      };
+
+      // Act
+      const game = Game.fromPlainObject(plain);
+
+      // Assert
+      expect(game.roomId).toBe('ROOM01');
+      expect(game.players).toHaveLength(1);
+      expect(game.phase).toBe('playing');
+      expect(game.round).toBe(1);
+    });
+
+    it('should handle minimal plain object', () => {
+      // Arrange
+      const plain = { roomId: 'ROOM01' };
+
+      // Act
+      const game = Game.fromPlainObject(plain);
+
+      // Assert
+      expect(game.roomId).toBe('ROOM01');
+      expect(game.players).toEqual([]);
+      expect(game.phase).toBe('waiting');
+    });
+  });
+
+  describe('immutability', () => {
+    it('should return a copy of players array', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      const player = Player.create('player1', 'Alice');
+      game.addPlayer(player);
+
+      // Act
+      const players = game.players;
+      players.push(Player.create('player2', 'Bob'));
+
+      // Assert
+      expect(game.players).toHaveLength(1);
+    });
+
+    it('should return a copy of deck array', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      game.setDeck([{ rank: 5, isJoker: false }]);
+
+      // Act
+      const deck = game.deck;
+      deck.push({ rank: 7, isJoker: false });
+
+      // Assert
+      expect(game.deck).toHaveLength(1);
+    });
+
+    it('should return a copy of finished players array', () => {
+      // Arrange
+      const game = Game.create('ROOM01');
+      game.addFinishedPlayer('player1');
+
+      // Act
+      const finished = game.finishedPlayers;
+      finished.push('player2');
+
+      // Assert
+      expect(game.finishedPlayers).toHaveLength(1);
+    });
+  });
+});
