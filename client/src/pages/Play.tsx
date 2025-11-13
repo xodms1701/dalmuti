@@ -275,14 +275,14 @@ const PlayPage: React.FC = () => {
 
   const handlePass = async () => {
     if (!game?.roomId || !socketId) return;
-    try {
-      await pass(game.roomId, socketId);
+
+    const result = await pass(game.roomId, socketId);
+    if (result.success) {
       setSelectedIdxs([]);
-    } catch (error) {
-      console.error('[Pass Error]', error);
-      alert(
-        `패스할 수 없습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`
-      );
+    } else {
+      const errorMessage = result.error ?? "알 수 없는 오류";
+      console.error('[Pass Error]', errorMessage);
+      alert(`패스할 수 없습니다: ${errorMessage}`);
     }
   };
 
