@@ -103,22 +103,23 @@ describe('DeckService', () => {
       expect(shuffledRankCounts).toEqual(originalRankCounts);
     });
 
-    it('should randomize order across multiple shuffles', () => {
+    it('should change position of most cards when shuffled', () => {
       // Arrange
-      const deck1 = DeckService.initializeDeck();
-      const deck2 = DeckService.initializeDeck();
+      const original = DeckService.initializeDeck();
+      const deck = [...original]; // 복사본 생성
 
       // Act
-      DeckService.shuffleDeck(deck1);
-      DeckService.shuffleDeck(deck2);
+      const shuffled = DeckService.shuffleDeck(deck);
 
       // Assert
-      // Very unlikely to get same order (not impossible but negligible)
-      const isSameOrder = deck1.every(
+      // 적어도 대부분의 카드(75% 이상)가 원래 위치에서 이동했어야 함
+      const changedPositions = original.filter(
         (card, index) =>
-          card.rank === deck2[index].rank && card.isJoker === deck2[index].isJoker
+          card.rank !== shuffled[index].rank || card.isJoker !== shuffled[index].isJoker
       );
-      expect(isSameOrder).toBe(false);
+
+      // 54장 중 40장 이상이 위치 변경되어야 함 (약 75%)
+      expect(changedPositions.length).toBeGreaterThan(40);
     });
   });
 
