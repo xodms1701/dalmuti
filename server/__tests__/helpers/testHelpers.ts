@@ -239,3 +239,34 @@ export function createCards(rank: number, count: number, isJoker: boolean = fals
 export function createJoker(): Card {
   return createCard(13, true);
 }
+
+/**
+ * 테스트용 최소 게임 상태를 생성합니다
+ * 필요한 필드만 커스터마이즈하고 나머지는 기본값으로 설정됩니다
+ */
+export function createMinimalGame(overrides?: Partial<Game>): Game {
+  const defaultGame: Game = {
+    roomId: 'test-room',
+    ownerId: 'player1',
+    players: [],
+    phase: 'waiting',
+    currentTurn: null,
+    lastPlay: undefined,
+    deck: [],
+    round: 1,
+    roleSelectionDeck: [],
+    selectableDecks: [],
+    isVoting: false,
+    votes: {},
+    nextGameVotes: {},
+    finishedPlayers: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    gameNumber: 1,
+    gameHistories: [],
+    playerStats: {},
+    roundPlays: [],
+  };
+
+  return { ...defaultGame, ...overrides };
+}
