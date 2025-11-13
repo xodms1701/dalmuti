@@ -1,4 +1,5 @@
 import { Game } from '../../domain/entities/Game';
+import { RoomId } from '../../domain/value-objects/RoomId';
 
 /**
  * Game Repository Interface (Port)
@@ -9,10 +10,10 @@ import { Game } from '../../domain/entities/Game';
 export interface IGameRepository {
   /**
    * roomId로 게임을 조회합니다.
-   * @param roomId - 방 ID
+   * @param roomId - 방 ID (RoomId Value Object)
    * @returns 게임 Entity 또는 null
    */
-  findById(roomId: string): Promise<Game | null>;
+  findById(roomId: RoomId): Promise<Game | null>;
 
   /**
    * 새 게임을 저장합니다.
@@ -22,17 +23,17 @@ export interface IGameRepository {
 
   /**
    * 게임을 삭제합니다.
-   * @param roomId - 삭제할 방 ID
+   * @param roomId - 삭제할 방 ID (RoomId Value Object)
    */
-  delete(roomId: string): Promise<void>;
+  delete(roomId: RoomId): Promise<void>;
 
   /**
    * 게임을 부분 업데이트합니다.
-   * @param roomId - 업데이트할 방 ID
+   * @param roomId - 업데이트할 방 ID (RoomId Value Object)
    * @param updates - 업데이트할 필드들
    * @returns 업데이트된 게임 Entity 또는 null
    */
-  update(roomId: string, updates: Partial<Game>): Promise<Game | null>;
+  update(roomId: RoomId, updates: Partial<Game>): Promise<Game | null>;
 
   /**
    * 모든 게임을 조회합니다.

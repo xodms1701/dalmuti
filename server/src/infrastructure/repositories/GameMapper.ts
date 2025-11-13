@@ -98,10 +98,15 @@ export class GameMapper {
       updateDoc.phase = updates.phase;
     }
     if ('currentTurn' in updates && updates.currentTurn !== undefined) {
-      updateDoc.currentTurn = updates.currentTurn;
+      updateDoc.currentTurn = updates.currentTurn ? updates.currentTurn.value : null;
     }
     if ('lastPlay' in updates) {
-      updateDoc.lastPlay = updates.lastPlay;
+      updateDoc.lastPlay = updates.lastPlay
+        ? {
+            playerId: updates.lastPlay.playerId.value,
+            cards: updates.lastPlay.cards,
+          }
+        : undefined;
     }
     if ('deck' in updates && updates.deck !== undefined) {
       updateDoc.deck = updates.deck;
@@ -110,7 +115,7 @@ export class GameMapper {
       updateDoc.round = updates.round;
     }
     if ('finishedPlayers' in updates && updates.finishedPlayers !== undefined) {
-      updateDoc.finishedPlayers = updates.finishedPlayers;
+      updateDoc.finishedPlayers = updates.finishedPlayers.map((fp) => fp.value);
     }
     if ('selectableDecks' in updates) {
       updateDoc.selectableDecks = updates.selectableDecks;

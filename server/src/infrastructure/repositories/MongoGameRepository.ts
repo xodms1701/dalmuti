@@ -14,6 +14,7 @@ import {
   RepositoryError,
 } from '../../application/ports/RepositoryError';
 import { Game } from '../../domain/entities/Game';
+import { RoomId } from '../../domain/value-objects/RoomId';
 import { GameMapper, GameDocument } from './GameMapper';
 
 /**
@@ -75,12 +76,12 @@ export class MongoGameRepository implements IGameRepository {
   /**
    * ID로 게임 조회
    *
-   * @param roomId - 방 ID
+   * @param roomId - 방 ID (RoomId Value Object)
    * @returns Game Entity 또는 null
    */
-  async findById(roomId: string): Promise<Game | null> {
+  async findById(roomId: RoomId): Promise<Game | null> {
     try {
-      const document = await this.collection.findOne({ _id: roomId });
+      const document = await this.collection.findOne({ _id: roomId.value });
 
       if (!document) {
         return null;
@@ -89,7 +90,7 @@ export class MongoGameRepository implements IGameRepository {
       return GameMapper.toDomain(document);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to find game by id: ${roomId}`, message);
+      console.error(`Failed to find game by id: ${roomId.value}`, message);
       throw new RepositoryError(`Failed to find game: ${message}`);
     }
   }
@@ -116,12 +117,12 @@ export class MongoGameRepository implements IGameRepository {
     } catch (error) {
       // MongoDB duplicate key error (code 11000)
       if (error instanceof MongoError && error.code === 11000) {
-        console.error(`Duplicate game id: ${game.roomId}`);
-        throw new DuplicateError('Game', game.roomId);
+        console.error(`Duplicate game id: ${game.roomId.value}`);
+        throw new DuplicateError('Game', game.roomId.value);
       }
 
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to save game: ${game.roomId}`, message);
+      console.error(`Failed to save game: ${game.roomId.value}`, message);
       throw new RepositoryError(`Failed to save game: ${message}`);
     }
   }
@@ -129,15 +130,15 @@ export class MongoGameRepository implements IGameRepository {
   /**
    * 게임 삭제
    *
-   * @param roomId - 방 ID
+   * @param roomId - 방 ID (RoomId Value Object)
    * @throws NotFoundError - 게임이 존재하지 않는 경우
    */
-  async delete(roomId: string): Promise<void> {
+  async delete(roomId: RoomId): Promise<void> {
     try {
-      const result = await this.collection.deleteOne({ _id: roomId });
+      const result = await this.collection.deleteOne({ _id: roomId.value });
 
       if (result.deletedCount === 0) {
-        throw new NotFoundError('Game', roomId);
+        throw new NotFoundError('Game', roomId.value);
       }
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -145,7 +146,7 @@ export class MongoGameRepository implements IGameRepository {
       }
 
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to delete game: ${roomId}`, message);
+      console.error(`Failed to delete game: ${roomId.value}`, message);
       throw new RepositoryError(`Failed to delete game: ${message}`);
     }
   }
@@ -153,26 +154,26 @@ export class MongoGameRepository implements IGameRepository {
   /**
    * 게임 부분 업데이트
    *
-   * @param roomId - 방 ID
+   * @param roomId - 방 ID (RoomId Value Object)
    * @param updates - 업데이트할 필드들
    * @returns 업데이트된 Game Entity 또는 null
    * @throws NotFoundError - 게임이 존재하지 않는 경우
    */
   async update(
-    roomId: string,
+    roomId: RoomId,
     updates: Partial<Game>
   ): Promise<Game | null> {
     try {
       const updateDocument = GameMapper.toUpdateDocument(updates);
 
       const result = await this.collection.findOneAndUpdate(
-        { _id: roomId },
+        { _id: roomId.value },
         { $set: updateDocument },
         { returnDocument: 'after' }
       );
 
       if (!result) {
-        throw new NotFoundError('Game', roomId);
+        throw new NotFoundError('Game', roomId.value);
       }
 
       return GameMapper.toDomain(result);
@@ -182,7 +183,7 @@ export class MongoGameRepository implements IGameRepository {
       }
 
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Failed to update game: ${roomId}`, message);
+      console.error(`Failed to update game: ${roomId.value}`, message);
       throw new RepositoryError(`Failed to update game: ${message}`);
     }
   }
