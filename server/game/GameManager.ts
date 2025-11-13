@@ -13,6 +13,7 @@ import {
   validateSameRank,
   validateDeckIndex,
   validateDeckNotSelected,
+  validateRoleNumber,
 } from './helpers/GameValidator';
 import {
   findNextPlayer,
@@ -358,24 +359,36 @@ export default class GameManager {
 
   public async selectRole(roomId: string, playerId: string, roleNumber: number): Promise<boolean> {
     const game = await this.db.getGame(roomId);
-    if (!game) {
+
+    // 게임 존재 여부 확인
+    const gameResult = validateGameExists(game);
+    if (!gameResult.success) return false;
+    const validGame = gameResult.data;
+
+    // Phase 확인
+    const phaseResult = validatePhase(validGame, 'roleSelection', '역할 선택');
+    if (!phaseResult.success) return false;
+
+    // 역할 번호 유효성 확인
+    const roleNumberResult = validateRoleNumber(roleNumber);
+    if (!roleNumberResult.success) return false;
+
+    // roleSelectionDeck 범위 확인
+    if (roleNumber > validGame.roleSelectionDeck.length) {
       return false;
     }
 
-    if (
-      game.phase !== 'roleSelection' ||
-      roleNumber < 1 ||
-      roleNumber > game.roleSelectionDeck.length
-    ) {
+    // 플레이어 확인
+    const playerResult = validatePlayer(validGame, playerId);
+    if (!playerResult.success) return false;
+    const player = playerResult.data;
+
+    // 플레이어가 이미 역할을 선택했는지 확인
+    if (player.role !== null) {
       return false;
     }
 
-    const player = game.players.find((p) => p.id === playerId);
-    if (!player || player.role !== null) {
-      return false;
-    }
-
-    const roleSelectionCard = game.roleSelectionDeck.find((r) => r.number === roleNumber);
+    const roleSelectionCard = validGame.roleSelectionDeck.find((r) => r.number === roleNumber);
     if (!roleSelectionCard || roleSelectionCard.isSelected) {
       return false;
     }
@@ -384,23 +397,23 @@ export default class GameManager {
     roleSelectionCard.selectedBy = playerId;
     player.role = roleSelectionCard.number;
 
-    const allPlayersHaveRole = game.players.every((p) => p.role !== null);
+    const allPlayersHaveRole = validGame.players.every((p) => p.role !== null);
     if (allPlayersHaveRole) {
-      const sortedPlayers = [...game.players].sort((a, b) => (a.role || 0) - (b.role || 0));
+      const sortedPlayers = getSortedPlayers(validGame.players);
       sortedPlayers.forEach((p, index) => {
         p.rank = index + 1;
       });
 
       // 자동으로 카드 섞기 및 배분
-      this.initializeDeck(game);
-      this.shuffleDeck(game);
+      this.initializeDeck(validGame);
+      this.shuffleDeck(validGame);
 
       // 개발 환경에서 테스트를 위한 백도어: 조커 2장을 첫 번째 구간으로 이동
       if (process.env.NODE_ENV === 'development' || process.env.ENABLE_TEST_BACKDOOR === 'true') {
         console.log('[TEST BACKDOOR] Moving 2 jokers to first deck positions');
 
         const jokerIndices: number[] = [];
-        game.deck.forEach((card, index) => {
+        validGame.deck.forEach((card, index) => {
           if (card.isJoker) jokerIndices.push(index);
         });
 
@@ -408,13 +421,13 @@ export default class GameManager {
         if (jokerIndices.length >= 2) {
           // 첫 번째 조커를 0번 위치로
           if (jokerIndices[0] !== 0) {
-            [game.deck[0], game.deck[jokerIndices[0]]] = [game.deck[jokerIndices[0]], game.deck[0]];
+            [validGame.deck[0], validGame.deck[jokerIndices[0]]] = [validGame.deck[jokerIndices[0]], validGame.deck[0]];
           }
 
           // 두 번째 조커를 1번 위치로
           const secondJokerIndex = jokerIndices[1];
           if (secondJokerIndex !== 1) {
-            [game.deck[1], game.deck[secondJokerIndex]] = [game.deck[secondJokerIndex], game.deck[1]];
+            [validGame.deck[1], validGame.deck[secondJokerIndex]] = [validGame.deck[secondJokerIndex], validGame.deck[1]];
           }
 
           console.log('[TEST BACKDOOR] Jokers placed at positions 0 and 1');
@@ -422,27 +435,27 @@ export default class GameManager {
       }
 
       // 플레이어 수에 맞게 각 플레이어가 선택할 수 있는 덱 생성
-      game.players.forEach((player) => {
+      validGame.players.forEach((player) => {
         player.cards = [];
       });
 
-      game.selectableDecks = createSelectableDecks(game.deck, game.players.length);
+      validGame.selectableDecks = createSelectableDecks(validGame.deck, validGame.players.length);
 
       // rank가 낮을수록 높은 순위이므로 오름차순 정렬
-      const rankedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+      const rankedPlayers = getSortedPlayers(validGame.players);
 
       // 카드 선택 단계로 전환
-      game.phase = 'cardSelection';
-      game.currentTurn = rankedPlayers[0].id; // 가장 높은 순위의 플레이어부터 시작
+      validGame.phase = 'cardSelection';
+      validGame.currentTurn = rankedPlayers[0].id; // 가장 높은 순위의 플레이어부터 시작
     }
 
     await this.db.updateGame(roomId, {
-      players: game.players,
-      roleSelectionDeck: game.roleSelectionDeck,
-      phase: game.phase,
-      deck: game.deck,
-      currentTurn: game.currentTurn,
-      selectableDecks: game.selectableDecks,
+      players: validGame.players,
+      roleSelectionDeck: validGame.roleSelectionDeck,
+      phase: validGame.phase,
+      deck: validGame.deck,
+      currentTurn: validGame.currentTurn,
+      selectableDecks: validGame.selectableDecks,
     });
 
     return true;
@@ -896,7 +909,7 @@ export default class GameManager {
 
   private initializeTaxExchanges(game: Game): void {
     const playerCount = game.players.length;
-    const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
+    const sortedPlayers = getSortedPlayers(game.players);
 
     const exchangePairs: Array<{ fromIdx: number; toIdx: number; count: number }> = [];
 
