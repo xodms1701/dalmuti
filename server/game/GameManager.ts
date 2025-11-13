@@ -1,6 +1,29 @@
 import { Card, Game, Player, RoleSelectionCard, Database, GameHistory } from '../types';
 import { Server } from 'socket.io';
 import { SocketEvent } from '../socket/events';
+import {
+  validateGameExists,
+  validatePhase,
+  validatePlayer,
+  validateTurn,
+  validateNotFinished,
+  validatePlayerHasCards,
+  validateCardCount,
+  validateCardsStrongerThanLast,
+  validateSameRank,
+} from './helpers/GameValidator';
+import {
+  findNextPlayer,
+  getLastActivePlayer,
+  allPlayersPassedExceptLast,
+  startNewRound,
+} from './helpers/TurnHelper';
+import {
+  incrementCardsPlayed,
+  setFinishedAtRound,
+  incrementPasses,
+} from './helpers/PlayerStatsHelper';
+import { createSelectableDecks } from './helpers/DeckHelper';
 
 export default class GameManager {
   private readonly MIN_PLAYERS = 4;
@@ -148,49 +171,46 @@ export default class GameManager {
 
   public async playCard(roomId: string, playerId: string, cards: Card[]): Promise<Game | null> {
     const game = await this.db.getGame(roomId);
-    if (!game) return null;
+
+    // 게임 존재 여부 확인
+    const gameValidation = validateGameExists(game);
+    if (gameValidation) return null;
+
+    // Phase 확인 (playCard는 playing 페이즈에서만 가능)
+    const phaseValidation = validatePhase(game!, 'playing', '카드 내기');
+    if (phaseValidation) return game;
 
     // 게임이 이미 종료되었는지 확인
-    if (game.finishedPlayers.length === game.players.length) return game;
+    if (game!.finishedPlayers.length === game!.players.length) return game;
 
-    // 현재 턴이 아닌 플레이어가 카드를 내려고 하는 경우
-    if (game.currentTurn !== playerId) {
-      return game;
-    }
+    // 플레이어 존재 확인
+    const playerOrError = validatePlayer(game!, playerId);
+    if ('success' in playerOrError) return game;
+    const player = playerOrError as Player;
 
-    const player = game.players.find((p) => p.id === playerId);
-    if (!player) return game;
+    // 턴 확인
+    const turnValidation = validateTurn(game!, playerId);
+    if (turnValidation) return game;
+
+    // 게임 완료 여부 확인
+    const finishedValidation = validateNotFinished(game!, playerId);
+    if (finishedValidation) return game;
 
     // 카드가 플레이어의 손에 있는지 확인
-    const cardIndices = cards.map((card) =>
-      player.cards.findIndex((c) => c.rank === card.rank && c.isJoker === card.isJoker)
-    );
-    if (cardIndices.some((index) => index === -1)) return game;
+    const hasCardsValidation = validatePlayerHasCards(player, cards);
+    if (hasCardsValidation) return game;
 
-    // 마지막 플레이와 비교하여 유효한 카드인지 확인
-    if (game.lastPlay && game.lastPlay.cards.length > 0) {
-      // 1. 장수 체크
-      if (cards.length !== game.lastPlay.cards.length) {
-        return game;
-      }
-      // 2. 랭크 체크 (기존대로)
-      const lastCard = game.lastPlay.cards[0];
-      if (cards[0].rank >= lastCard.rank) {
-        return game;
-      }
-    }
+    // 카드 개수 확인 (이전 플레이와 같은 개수여야 함)
+    const cardCountValidation = validateCardCount(cards, game!.lastPlay);
+    if (cardCountValidation) return game;
 
-    // 3. 같은 숫자의 카드만 낼 수 있는지 체크
-    if (cards.length > 1) {
-      const firstNonJokerCard = cards.find((card) => !card.isJoker);
-      if (firstNonJokerCard) {
-        const firstCardRank = firstNonJokerCard.rank;
-        const hasDifferentRank = cards.some((card) => !card.isJoker && card.rank !== firstCardRank);
-        if (hasDifferentRank) {
-          return game;
-        }
-      }
-    }
+    // 카드 강도 확인 (이전 플레이보다 낮은 숫자여야 함)
+    const cardStrengthValidation = validateCardsStrongerThanLast(cards, game!.lastPlay);
+    if (cardStrengthValidation) return game;
+
+    // 같은 숫자의 카드만 낼 수 있는지 확인
+    const sameRankValidation = validateSameRank(cards);
+    if (sameRankValidation) return game;
 
     // 카드를 플레이
     const playedCards: Card[] = [];
@@ -201,100 +221,67 @@ export default class GameManager {
       }
     }
     // 모든 플레이어의 isPassed를 false로 초기화
-    game.players.forEach((p) => (p.isPassed = false));
-    game.lastPlay = {
+    game!.players.forEach((p) => (p.isPassed = false));
+    game!.lastPlay = {
       playerId,
       cards: playedCards,
     };
 
     // 플레이 기록 저장
-    game.roundPlays.push({
-      round: game.round,
+    game!.roundPlays.push({
+      round: game!.round,
       playerId,
       cards: playedCards,
       timestamp: new Date(),
     });
 
-    // 플레이어 통계 업데이트 (테스트에서 강제로 상태를 설정하는 경우를 대비)
-    if (!game.playerStats[playerId]) {
-      game.playerStats[playerId] = {
-        nickname: player.nickname,
-        totalCardsPlayed: 0,
-        totalPasses: 0,
-        finishedAtRound: 0,
-      };
-    }
-    game.playerStats[playerId].totalCardsPlayed += playedCards.length;
+    // 플레이어 통계 업데이트
+    incrementCardsPlayed(game!, playerId, player, playedCards.length);
 
     // 플레이어의 카드가 모두 소진되었는지 확인
     if (player.cards.length === 0) {
       // 플레이어를 완료 목록에 추가
-      if (!game.finishedPlayers.includes(playerId)) {
-        game.finishedPlayers.push(playerId);
+      if (!game!.finishedPlayers.includes(playerId)) {
+        game!.finishedPlayers.push(playerId);
         // 카드를 소진한 라운드 기록
-        game.playerStats[playerId].finishedAtRound = game.round;
+        setFinishedAtRound(game!, playerId, player, game!.round);
       }
 
       // 모든 플레이어의 카드가 소진되었는지 확인
-      if (game.finishedPlayers.length === game.players.length) {
+      if (game!.finishedPlayers.length === game!.players.length) {
         // 모든 플레이어의 카드가 소진되었으므로 게임 종료
-        game.isVoting = true;
-        game.votes = {};
-        game.nextGameVotes = {};
+        game!.isVoting = true;
+        game!.votes = {};
+        game!.nextGameVotes = {};
       } else {
         // 손에 카드가 남은 사람이 한 명만 남았는지 확인
-        const notFinished = game.players.filter(
-          (p) => !game.finishedPlayers.includes(p.id) && p.cards.length > 0
-        );
-        if (notFinished.length === 1) {
+        const lastPlayer = getLastActivePlayer(game!);
+        if (lastPlayer) {
           // 마지막 한 명도 자동으로 완료 처리
-          const lastPlayer = notFinished[0];
-          game.finishedPlayers.push(lastPlayer.id);
-          game.isVoting = true;
-          game.votes = {};
-          game.nextGameVotes = {};
+          game!.finishedPlayers.push(lastPlayer.id);
+          game!.isVoting = true;
+          game!.votes = {};
+          game!.nextGameVotes = {};
         } else {
-          // 다음 턴으로 넘어감 (rank 기준 정렬)
-          const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
-          const currentPlayerIndex = sortedPlayers.findIndex((p) => p.id === playerId);
-          let nextPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
-          // 카드가 있는 플레이어를 찾을 때까지 다음 플레이어로 이동
-          while (
-            sortedPlayers[nextPlayerIndex].cards.length === 0 ||
-            game.finishedPlayers.includes(sortedPlayers[nextPlayerIndex].id)
-          ) {
-            nextPlayerIndex = (nextPlayerIndex + 1) % sortedPlayers.length;
-            if (nextPlayerIndex === currentPlayerIndex) break;
-          }
-          game.currentTurn = sortedPlayers[nextPlayerIndex].id;
+          // 다음 턴으로 넘어감
+          game!.currentTurn = findNextPlayer(game!, playerId);
         }
       }
     } else {
-      // 다음 턴으로 넘어감 (rank 기준 정렬)
-      const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
-      const currentPlayerIndex = sortedPlayers.findIndex((p) => p.id === playerId);
-      let nextPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
-      // 카드가 있는 플레이어를 찾을 때까지 다음 플레이어로 이동
-      while (
-        sortedPlayers[nextPlayerIndex].cards.length === 0 ||
-        game.finishedPlayers.includes(sortedPlayers[nextPlayerIndex].id)
-      ) {
-        nextPlayerIndex = (nextPlayerIndex + 1) % sortedPlayers.length;
-        if (nextPlayerIndex === currentPlayerIndex) break;
-      }
-      game.currentTurn = sortedPlayers[nextPlayerIndex].id;
+      // 다음 턴으로 넘어감
+      game!.currentTurn = findNextPlayer(game!, playerId);
     }
 
     await this.db.updateGame(roomId, {
-      players: game.players,
-      currentTurn: game.currentTurn,
-      lastPlay: game.lastPlay,
-      round: game.round,
-      phase: game.phase,
-      finishedPlayers: game.finishedPlayers,
-      isVoting: game.isVoting,
-      roundPlays: game.roundPlays,
-      playerStats: game.playerStats,
+      players: game!.players,
+      currentTurn: game!.currentTurn,
+      lastPlay: game!.lastPlay,
+      round: game!.round,
+      phase: game!.phase,
+      finishedPlayers: game!.finishedPlayers,
+      isVoting: game!.isVoting,
+      roundPlays: game!.roundPlays,
+      playerStats: game!.playerStats,
     });
 
     return game;
@@ -302,26 +289,30 @@ export default class GameManager {
 
   public async passTurn(roomId: string, playerId: string): Promise<boolean> {
     const game = await this.db.getGame(roomId);
-    if (!game) {
-      return false;
-    }
 
-    if (game.phase !== 'playing' || playerId !== game.currentTurn) {
-      return false;
-    }
+    // 게임 존재 여부 확인
+    const gameValidation = validateGameExists(game);
+    if (gameValidation) return false;
 
-    const currentPlayer = game.players.find((p) => p.id === playerId);
-    if (!currentPlayer) {
-      return false;
-    }
+    // Phase 및 턴 확인
+    const phaseValidation = validatePhase(game!, 'playing', '패스');
+    if (phaseValidation) return false;
+
+    const turnValidation = validateTurn(game!, playerId);
+    if (turnValidation) return false;
+
+    // 플레이어 존재 확인
+    const playerOrError = validatePlayer(game!, playerId);
+    if ('success' in playerOrError) return false;
+    const currentPlayer = playerOrError as Player;
 
     // 아직 아무도 카드를 내지 않은 라운드에서는 패스 불가능 (첫 턴)
-    if (!game.lastPlay) {
+    if (!game!.lastPlay) {
       return false;
     }
 
     // 나를 제외한 다른 플레이어들이 모두 패스했는지 확인
-    const otherPlayersAllPassed = game.players
+    const otherPlayersAllPassed = game!.players
       .filter((p) => p.id !== playerId)
       .every((p) => p.isPassed);
 
@@ -331,88 +322,27 @@ export default class GameManager {
 
     currentPlayer.isPassed = true;
 
-    // 패스 횟수 기록 (테스트에서 강제로 상태를 설정하는 경우를 대비)
-    if (!game.playerStats[playerId]) {
-      game.playerStats[playerId] = {
-        nickname: currentPlayer.nickname,
-        totalCardsPlayed: 0,
-        totalPasses: 0,
-        finishedAtRound: 0,
-      };
-    }
-    game.playerStats[playerId].totalPasses++;
+    // 패스 횟수 기록
+    incrementPasses(game!, playerId, currentPlayer);
 
-    // 순위 순서대로 정렬된 플레이어 목록
-    const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
-
-    // 현재 플레이어의 인덱스 찾기
-    const currentIndex = sortedPlayers.findIndex((p) => p.id === playerId);
-
-    // 다음 플레이어 찾기 (카드가 있는 플레이어 중에서)
-    let nextIndex = (currentIndex + 1) % sortedPlayers.length;
-    let looped = false;
-    while (sortedPlayers[nextIndex].cards.length === 0) {
-      nextIndex = (nextIndex + 1) % sortedPlayers.length;
-      if (nextIndex === currentIndex) {
-        looped = true;
-        break;
-      }
-    }
-
-    // 모두가 cards가 0장인 경우, 현재 턴을 유지 (게임 종료는 pass에서 처리하지 않음)
-    if (looped) {
-      nextIndex = currentIndex;
-    }
-
-    // 모든 플레이어가 패스했을 때 라운드 넘김
-    // 게임을 완료하지 않은 플레이어 중에서, 마지막으로 카드를 낸 플레이어를 제외한 나머지가 모두 패스했는지 확인
-    let allPassed = false;
-    if (game.lastPlay && game.lastPlay.playerId) {
-      allPassed = game.players
-        .filter((p) => !game.finishedPlayers.includes(p.id) && p.id !== game.lastPlay!.playerId)
-        .every((p) => p.isPassed);
-    }
-
-    if (allPassed && game.lastPlay && game.lastPlay.playerId) {
+    // 모든 플레이어가 패스했는지 확인
+    if (allPlayersPassedExceptLast(game!)) {
       // 새로운 라운드 시작
-      const prevLastPlayerId = game.lastPlay.playerId;
-      game.round++;
-      game.lastPlay = undefined;
-      game.players.forEach((p) => {
-        if (!game.finishedPlayers.includes(p.id)) {
-          p.isPassed = false;
-        }
-      });
-
-      // rank가 낮을수록 높은 순위이므로 오름차순 정렬
-      const sortedPlayers = [...game.players].sort((a, b) => (a.rank || 0) - (b.rank || 0));
-
-      // 마지막으로 카드를 낸 플레이어의 인덱스 찾기
-      const lastPlayerIndex = sortedPlayers.findIndex((p) => p.id === prevLastPlayerId);
-
-      // 다음 라운드 시작 플레이어 찾기
-      let nextPlayerIndex = lastPlayerIndex;
-
-      // 카드가 있고 게임을 완료하지 않은 플레이어를 찾을 때까지 다음 플레이어로 이동
-      while (
-        sortedPlayers[nextPlayerIndex].cards.length === 0 ||
-        game.finishedPlayers.includes(sortedPlayers[nextPlayerIndex].id)
-      ) {
-        nextPlayerIndex = (nextPlayerIndex + 1) % sortedPlayers.length;
-        if (nextPlayerIndex === lastPlayerIndex) break;
-      }
-
-      game.currentTurn = sortedPlayers[nextPlayerIndex].id;
+      const roundUpdates = startNewRound(game!);
+      game!.round = roundUpdates.round;
+      game!.lastPlay = roundUpdates.lastPlay;
+      game!.currentTurn = roundUpdates.currentTurn;
     } else {
-      game.currentTurn = sortedPlayers[nextIndex].id;
+      // 다음 플레이어로 턴 넘김
+      game!.currentTurn = findNextPlayer(game!, playerId);
     }
 
     await this.db.updateGame(roomId, {
-      players: game.players,
-      currentTurn: game.currentTurn,
-      round: game.round,
-      lastPlay: game.lastPlay,
-      playerStats: game.playerStats,
+      players: game!.players,
+      currentTurn: game!.currentTurn,
+      round: game!.round,
+      lastPlay: game!.lastPlay,
+      playerStats: game!.playerStats,
     });
 
     return true;
