@@ -1,0 +1,225 @@
+/**
+ * Player Entity
+ *
+ * 달무티 게임의 플레이어를 나타내는 도메인 엔티티
+ */
+export class Player {
+  readonly id: string;
+  readonly nickname: string;
+  private _cards: any[];
+  private _role: number | null;
+  private _rank: number | null;
+  private _isPassed: boolean;
+  private _isReady: boolean;
+
+  /**
+   * Private constructor - factory method를 통해서만 생성 가능
+   */
+  private constructor(
+    id: string,
+    nickname: string,
+    cards: any[] = [],
+    role: number | null = null,
+    rank: number | null = null,
+    isPassed: boolean = false,
+    isReady: boolean = false
+  ) {
+    this.id = id;
+    this.nickname = nickname;
+    this._cards = cards;
+    this._role = role;
+    this._rank = rank;
+    this._isPassed = isPassed;
+    this._isReady = isReady;
+  }
+
+  /**
+   * Factory method - Player 인스턴스 생성
+   * @param id 플레이어 ID
+   * @param nickname 플레이어 닉네임
+   * @returns Player 인스턴스
+   */
+  static create(id: string, nickname: string): Player {
+    if (!id || id.trim() === '') {
+      throw new Error('Player id cannot be empty');
+    }
+    if (!nickname || nickname.trim() === '') {
+      throw new Error('Player nickname cannot be empty');
+    }
+    return new Player(id, nickname);
+  }
+
+  // Getters
+  get cards(): any[] {
+    return [...this._cards]; // 불변성 보장을 위해 복사본 반환
+  }
+
+  get role(): number | null {
+    return this._role;
+  }
+
+  get rank(): number | null {
+    return this._rank;
+  }
+
+  get isPassed(): boolean {
+    return this._isPassed;
+  }
+
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
+  /**
+   * 카드를 플레이
+   * @param cards 플레이할 카드들
+   */
+  playCards(cards: any[]): void {
+    if (!cards || cards.length === 0) {
+      throw new Error('Cannot play empty cards');
+    }
+
+    // 카드 보유 여부 확인
+    const cardRanks = cards.map((c) => c.rank);
+    for (const card of cards) {
+      const hasCard = this._cards.some(
+        (c) => c.rank === card.rank && c.isJoker === card.isJoker
+      );
+      if (!hasCard) {
+        throw new Error(`Player does not have card: ${card.rank}`);
+      }
+    }
+
+    // 카드 제거
+    for (const card of cards) {
+      const index = this._cards.findIndex(
+        (c) => c.rank === card.rank && c.isJoker === card.isJoker
+      );
+      if (index !== -1) {
+        this._cards.splice(index, 1);
+      }
+    }
+
+    // 패스 상태 초기화
+    this._isPassed = false;
+  }
+
+  /**
+   * 턴을 패스
+   */
+  pass(): void {
+    this._isPassed = true;
+  }
+
+  /**
+   * 패스 상태 초기화
+   */
+  resetPass(): void {
+    this._isPassed = false;
+  }
+
+  /**
+   * 준비 완료
+   */
+  ready(): void {
+    this._isReady = true;
+  }
+
+  /**
+   * 준비 취소
+   */
+  unready(): void {
+    this._isReady = false;
+  }
+
+  /**
+   * 역할 할당
+   * @param role 역할 번호
+   */
+  assignRole(role: number): void {
+    if (role < 1 || role > 13) {
+      throw new Error('Role must be between 1 and 13');
+    }
+    this._role = role;
+  }
+
+  /**
+   * 순위 할당
+   * @param rank 순위
+   */
+  assignRank(rank: number): void {
+    if (rank < 1) {
+      throw new Error('Rank must be greater than 0');
+    }
+    this._rank = rank;
+  }
+
+  /**
+   * 카드 할당
+   * @param cards 할당할 카드들
+   */
+  assignCards(cards: any[]): void {
+    this._cards = [...cards];
+  }
+
+  /**
+   * 카드 추가
+   * @param cards 추가할 카드들
+   */
+  addCards(cards: any[]): void {
+    this._cards.push(...cards);
+  }
+
+  /**
+   * 플레이어가 게임을 완료했는지 확인 (카드를 모두 냈는지)
+   */
+  hasFinished(): boolean {
+    return this._cards.length === 0;
+  }
+
+  /**
+   * 플레이어 상태를 플레인 객체로 변환
+   */
+  toPlainObject(): {
+    id: string;
+    nickname: string;
+    cards: any[];
+    role: number | null;
+    rank: number | null;
+    isPassed: boolean;
+    isReady: boolean;
+  } {
+    return {
+      id: this.id,
+      nickname: this.nickname,
+      cards: [...this._cards],
+      role: this._role,
+      rank: this._rank,
+      isPassed: this._isPassed,
+      isReady: this._isReady,
+    };
+  }
+
+  /**
+   * 플레인 객체로부터 Player 인스턴스 생성
+   */
+  static fromPlainObject(obj: {
+    id: string;
+    nickname: string;
+    cards?: any[];
+    role?: number | null;
+    rank?: number | null;
+    isPassed?: boolean;
+    isReady?: boolean;
+  }): Player {
+    return new Player(
+      obj.id,
+      obj.nickname,
+      obj.cards || [],
+      obj.role || null,
+      obj.rank || null,
+      obj.isPassed || false,
+      obj.isReady || false
+    );
+  }
+}
