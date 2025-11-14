@@ -78,7 +78,9 @@ export class SelectRevolutionUseCase
 
         // 세금 교환 후 playing 페이즈로 전환 준비
         // (Legacy에서는 10초 타이머 사용, 여기서는 클라이언트에서 처리)
-        game.setCurrentTurn(game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0].id);
+        game.setCurrentTurn(
+          game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0].id
+        );
         game.incrementRound();
       }
 
