@@ -385,18 +385,12 @@ export class SocketController {
       ) => {
         const gameState = await this.gameService.getGameState(roomId);
 
-        if (!gameState) {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: '게임 상태를 찾을 수 없습니다.',
-            });
-          }
-          return;
-        }
-
         if (typeof callback === 'function') {
-          callback({ success: true, data: gameState });
+          callback(
+            gameState
+              ? { success: true, data: gameState }
+              : { success: false, error: '게임 상태를 찾을 수 없습니다.' }
+          );
         }
       }
     );
