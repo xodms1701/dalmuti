@@ -9,12 +9,7 @@ import * as TaxService from '../../../../src/domain/services/TaxService';
 /**
  * 테스트용 Helper: Player를 카드와 rank와 함께 생성
  */
-function createPlayerWithCards(
-  id: string,
-  nickname: string,
-  cards: Card[],
-  rank: number
-): Player {
+function createPlayerWithCards(id: string, nickname: string, cards: Card[], rank: number): Player {
   const player = Player.create(PlayerId.create(id), nickname);
   player.assignCards(cards);
   player.assignRank(rank);
@@ -290,7 +285,11 @@ describe('TaxService', () => {
           createPlayerWithCards(
             `player${i + 1}`,
             `Player${i + 1}`,
-            [Card.create((i % 13) + 1), Card.create(((i + 1) % 13) + 1), Card.create(((i + 5) % 13) + 1)],
+            [
+              Card.create((i % 13) + 1),
+              Card.create(((i + 1) % 13) + 1),
+              Card.create(((i + 5) % 13) + 1),
+            ],
             i + 1
           )
         );
