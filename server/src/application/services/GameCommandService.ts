@@ -1,5 +1,5 @@
 /**
- * GameApplicationService.ts
+ * GameCommandService.ts
  *
  * CQRS Pattern - Command Service
  *
@@ -24,12 +24,12 @@ import { IGameRepository } from '../ports/IGameRepository';
 import { RoomId } from '../../domain/value-objects/RoomId';
 
 /**
- * GameApplicationService (Command Service)
+ * GameCommandService
  *
  * Use Case들을 조합하여 복잡한 비즈니스 시나리오를 처리합니다.
  * 트랜잭션 관리 및 보상 트랜잭션을 담당합니다.
  */
-export class GameApplicationService {
+export class GameCommandService {
   constructor(
     private readonly gameRepository: IGameRepository,
     private readonly createGameUseCase: CreateGameUseCase,

@@ -9,7 +9,7 @@ import MongoDB from './db/MongoDB';
 // Phase 4: New Architecture (DDD + Clean Architecture + CQRS)
 import { SocketController } from './src/presentation/controllers/SocketController';
 import { MongoGameRepository } from './src/infrastructure/repositories/MongoGameRepository';
-import { GameApplicationService } from './src/application/services/GameApplicationService';
+import { GameCommandService } from './src/application/services/GameCommandService';
 import { GameQueryService } from './src/application/services/GameQueryService';
 import { CreateGameUseCase } from './src/application/use-cases/game/CreateGameUseCase';
 import { JoinGameUseCase } from './src/application/use-cases/game/JoinGameUseCase';
@@ -59,7 +59,7 @@ const passTurnUseCase = new PassTurnUseCase(gameRepository);
 const voteNextGameUseCase = new VoteNextGameUseCase(gameRepository);
 
 // CQRS: Command Service (상태 변경)
-const gameCommandService = new GameApplicationService(
+const gameCommandService = new GameCommandService(
   gameRepository,
   createGameUseCase,
   joinGameUseCase,

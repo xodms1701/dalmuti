@@ -9,24 +9,24 @@
  * 3. 게임 상태 변경 시 브로드캐스트
  *
  * 의존성 (CQRS Pattern):
- * - GameApplicationService (Command): 상태 변경 작업
+ * - GameCommandService (Command): 상태 변경 작업
  * - GameQueryService (Query): 조회 작업
  * - Socket.IO Server: 실시간 통신
  */
 
 import { Server, Socket } from 'socket.io';
-import { GameApplicationService } from '../../application/services/GameApplicationService';
+import { GameCommandService } from '../../application/services/GameCommandService';
 import { GameQueryService } from '../../application/services/GameQueryService';
 import { SocketEvent } from '../../../socket/events';
 
 export class SocketController {
   private io: Server;
-  private commandService: GameApplicationService;
+  private commandService: GameCommandService;
   private queryService: GameQueryService;
 
   constructor(
     io: Server,
-    commandService: GameApplicationService,
+    commandService: GameCommandService,
     queryService: GameQueryService
   ) {
     this.io = io;
