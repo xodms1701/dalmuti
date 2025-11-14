@@ -14,7 +14,7 @@
  * - Socket.IO Server: 실시간 통신
  */
 
-import { Server, Socket } from 'socket.io';
+import { Server, Socket, Namespace } from 'socket.io';
 import { GameCommandService } from '../../application/services/GameCommandService';
 import { GameQueryService } from '../../application/services/GameQueryService';
 import { SocketEvent } from '../../../socket/events';
@@ -35,13 +35,13 @@ type SocketResponse<T = unknown> = {
 type SocketCallback<T = unknown> = (response: SocketResponse<T>) => void;
 
 export class SocketController {
-  private io: Server;
+  private io: Server | Namespace;
   private commandService: GameCommandService;
   private queryService: GameQueryService;
   private playerRooms: Map<string, string>; // playerId → roomId 매핑
 
   constructor(
-    io: Server,
+    io: Server | Namespace,
     commandService: GameCommandService,
     queryService: GameQueryService
   ) {

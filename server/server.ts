@@ -40,11 +40,13 @@ app.get('/api', (req, res) => {
 });
 
 // ===== Legacy Architecture (Phase 1-3) =====
+// 기본 네임스페이스 (/) 사용 - 기존 클라이언트와의 호환성 유지
 const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
 const gameManager = new GameManager(db, io);
 new SocketManager(io, gameManager);
 
 // ===== New Architecture (Phase 4+) - DDD + Clean Architecture + CQRS =====
+// /v2 네임스페이스 사용 - 신규 아키텍처 전용
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const gameRepository = new MongoGameRepository(mongoUri, 'dalmuti');
 
@@ -80,8 +82,10 @@ const gameQueryService = new GameQueryService(gameRepository);
 
 // SocketController 인스턴스 생성 (Presentation Layer)
 // CQRS 패턴: Command와 Query를 분리하여 주입
+// /v2 네임스페이스 사용 - Legacy와 충돌 방지
+const ioV2 = io.of('/v2');
 new SocketController(
-  io,
+  ioV2,
   gameCommandService,
   gameQueryService
 );
