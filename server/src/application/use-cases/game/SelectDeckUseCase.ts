@@ -26,6 +26,7 @@ import {
   ValidationError,
   BusinessRuleError,
 } from '../../errors/ApplicationError';
+import * as TaxService from '../../../domain/services/TaxService';
 
 /**
  * SelectDeckUseCase
@@ -86,10 +87,35 @@ export class SelectDeckUseCase
       // 선택된 덱의 카드 정보 변환
       const selectedCards = selectedDeck.cards.map((card) => card.toPlainObject());
 
-      // 4. 변경사항 영속화
+      // 4. 모든 덱이 선택되었는지 확인
+      const allDecksSelected = game.selectableDecks?.every((deck) => deck.isSelected) ?? false;
+
+      if (allDecksSelected) {
+        // 조커 2장 보유자 확인
+        const doubleJokerPlayer = game.checkDoubleJoker();
+
+        if (doubleJokerPlayer) {
+          // 조커 2장 보유자가 있으면 혁명 선택 페이즈로
+          game.changePhase('revolution');
+          game.setCurrentTurn(doubleJokerPlayer.id);
+        } else {
+          // 조커 2장 보유자가 없으면 바로 세금 교환
+          const taxExchanges = TaxService.initializeTaxExchanges(game.players);
+          game.setTaxExchanges(taxExchanges);
+          game.changePhase('tax');
+
+          // 세금 교환 후 게임 시작 준비
+          game.setCurrentTurn(
+            game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0].id
+          );
+          game.incrementRound();
+        }
+      }
+
+      // 5. 변경사항 영속화
       await this.gameRepository.update(roomId, game);
 
-      // 5. Response DTO 반환
+      // 6. Response DTO 반환
       return createSuccessResponse<SelectDeckResponse>({
         roomId: game.roomId.value,
         playerId: playerId.value,
