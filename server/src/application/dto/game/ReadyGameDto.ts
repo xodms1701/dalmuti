@@ -45,6 +45,11 @@ export interface ReadyGameResponse {
   isReady: boolean;
 
   /**
+   * 현재 플레이어 수
+   */
+  playerCount: number;
+
+  /**
    * 모든 플레이어가 준비 완료했는지 여부
    */
   allPlayersReady: boolean;

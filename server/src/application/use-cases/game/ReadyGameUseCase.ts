@@ -81,6 +81,7 @@ export class ReadyGameUseCase implements IUseCase<ReadyGameRequest, UseCaseRespo
         roomId: game.roomId.value,
         playerId: player.id.value,
         isReady: player.isReady,
+        playerCount: game.players.length,
         allPlayersReady,
       });
     } catch (error) {

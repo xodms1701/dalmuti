@@ -62,7 +62,7 @@ export class GameApplicationService {
       const createResult = await this.createGameUseCase.execute({ roomId });
 
       if (!createResult.success) {
-        return createResult as any;
+        return createResult;
       }
 
       // 2. 생성자를 게임에 자동 참가
@@ -75,7 +75,7 @@ export class GameApplicationService {
       if (!joinResult.success) {
         // 게임은 생성되었으나 참가 실패
         // 실제 환경에서는 생성된 게임을 삭제하거나 보상 트랜잭션 필요
-        return joinResult as any;
+        return joinResult;
       }
 
       // 3. 성공 응답 반환
@@ -126,12 +126,15 @@ export class GameApplicationService {
       });
 
       if (!readyResult.success) {
-        return readyResult as any;
+        return readyResult;
       }
 
       // 게임 시작 가능 여부 판단
       // (최소 4명 이상 & 모든 플레이어 준비 완료)
-      const canStartGame = readyResult.data.allPlayersReady;
+      const MIN_PLAYERS = 4;
+      const canStartGame =
+        readyResult.data.playerCount >= MIN_PLAYERS &&
+        readyResult.data.allPlayersReady;
 
       return createSuccessResponse({
         ...readyResult.data,
@@ -179,7 +182,7 @@ export class GameApplicationService {
         });
 
         if (!passResult.success) {
-          return passResult as any;
+          return passResult;
         }
 
         return createSuccessResponse({
@@ -199,7 +202,7 @@ export class GameApplicationService {
       });
 
       if (!playResult.success) {
-        return playResult as any;
+        return playResult;
       }
 
       return createSuccessResponse({
