@@ -98,8 +98,8 @@ describe('SocketCoordinator', () => {
       new SocketCoordinator(mockIo, mockCommandService, mockQueryService);
       connectionHandler(mockSocket);
 
-      const onCalls = mockSocket.on.mock.calls;
-      const disconnectCall = onCalls.find((call: any) => call[0] === 'disconnect');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const disconnectCall = onCalls.find((call) => call[0] === 'disconnect');
       disconnectHandler = disconnectCall![1];
     });
 
@@ -111,9 +111,8 @@ describe('SocketCoordinator', () => {
 
     it('플레이어가 게임에 참가한 경우 자동으로 나가야 한다', async () => {
       // 먼저 플레이어가 게임에 참가
-      const joinGameHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'joinGame'
-      )![1];
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const joinGameHandler = onCalls.find((call) => call[0] === 'joinGame')![1];
 
       const mockGameState = { roomId: 'room-123', phase: 'waiting' };
       mockCommandService.joinGame.mockResolvedValue({
@@ -140,9 +139,8 @@ describe('SocketCoordinator', () => {
 
     it('게임 상태가 없으면 브로드캐스트하지 않아야 한다', async () => {
       // 플레이어가 게임에 참가
-      const joinGameHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'joinGame'
-      )![1];
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const joinGameHandler = onCalls.find((call) => call[0] === 'joinGame')![1];
 
       mockCommandService.joinGame.mockResolvedValue({
         success: true,
@@ -169,9 +167,8 @@ describe('SocketCoordinator', () => {
 
     it('disconnect 처리 중 에러가 발생해도 앱이 중단되지 않아야 한다', async () => {
       // 플레이어가 게임에 참가
-      const joinGameHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'joinGame'
-      )![1];
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const joinGameHandler = onCalls.find((call) => call[0] === 'joinGame')![1];
 
       mockCommandService.joinGame.mockResolvedValue({
         success: true,
@@ -196,9 +193,8 @@ describe('SocketCoordinator', () => {
     });
 
     it('CREATE_GAME과 JOIN_GAME이 playerRooms를 올바르게 관리해야 한다', async () => {
-      const createGameHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'createGame'
-      )![1];
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const createGameHandler = onCalls.find((call) => call[0] === 'createGame')![1];
 
       const mockGameState = { roomId: 'room-123', phase: 'waiting' };
       mockCommandService.createAndJoinGame.mockResolvedValue({
@@ -210,9 +206,8 @@ describe('SocketCoordinator', () => {
       await createGameHandler({ nickname: 'Player1' }, jest.fn());
 
       // 이제 disconnect하면 playerRooms에서 제거되어야 함
-      const disconnectHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'disconnect'
-      )![1];
+      const onCalls2 = mockSocket.on.mock.calls as [string, Function][];
+      const disconnectHandler = onCalls2.find((call) => call[0] === 'disconnect')![1];
 
       mockCommandService.leaveGame.mockResolvedValue({
         success: true,
@@ -226,9 +221,8 @@ describe('SocketCoordinator', () => {
 
     it('LEAVE_GAME 후 disconnect 시 leaveGame이 중복 호출되지 않아야 한다', async () => {
       // 먼저 JOIN
-      const joinGameHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'joinGame'
-      )![1];
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const joinGameHandler = onCalls.find((call) => call[0] === 'joinGame')![1];
 
       mockCommandService.joinGame.mockResolvedValue({
         success: true,
@@ -239,9 +233,8 @@ describe('SocketCoordinator', () => {
       await joinGameHandler({ roomId: 'room-123', nickname: 'Player1' }, jest.fn());
 
       // LEAVE
-      const leaveGameHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'leaveGame'
-      )![1];
+      const onCalls2 = mockSocket.on.mock.calls as [string, Function][];
+      const leaveGameHandler = onCalls2.find((call) => call[0] === 'leaveGame')![1];
 
       mockCommandService.leaveGame.mockResolvedValue({
         success: true,
@@ -251,9 +244,8 @@ describe('SocketCoordinator', () => {
       await leaveGameHandler({ roomId: 'room-123' }, jest.fn());
 
       // disconnect
-      const disconnectHandler = mockSocket.on.mock.calls.find(
-        (call: any) => call[0] === 'disconnect'
-      )![1];
+      const onCalls3 = mockSocket.on.mock.calls as [string, Function][];
+      const disconnectHandler = onCalls3.find((call) => call[0] === 'disconnect')![1];
 
       mockCommandService.leaveGame.mockClear();
       await disconnectHandler();

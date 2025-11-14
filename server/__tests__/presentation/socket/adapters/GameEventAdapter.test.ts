@@ -72,8 +72,8 @@ describe('GameEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const createGameCall = onCalls.find((call: any) => call[0] === 'createGame');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const createGameCall = onCalls.find(call => call[0] === 'createGame');
       createGameHandler = createGameCall![1];
     });
 
@@ -122,8 +122,8 @@ describe('GameEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const joinGameCall = onCalls.find((call: any) => call[0] === 'joinGame');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const joinGameCall = onCalls.find(call => call[0] === 'joinGame');
       joinGameHandler = joinGameCall![1];
     });
 
@@ -170,8 +170,8 @@ describe('GameEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const leaveGameCall = onCalls.find((call: any) => call[0] === 'leaveGame');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const leaveGameCall = onCalls.find(call => call[0] === 'leaveGame');
       leaveGameHandler = leaveGameCall![1];
       playerRooms.set('socket-123', 'room-123');
     });
@@ -203,8 +203,8 @@ describe('GameEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const readyCall = onCalls.find((call: any) => call[0] === 'ready');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const readyCall = onCalls.find(call => call[0] === 'ready');
       readyHandler = readyCall![1];
     });
 
@@ -237,8 +237,8 @@ describe('GameEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const voteCall = onCalls.find((call: any) => call[0] === 'vote');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const voteCall = onCalls.find(call => call[0] === 'vote');
       voteHandler = voteCall![1];
     });
 
@@ -267,8 +267,8 @@ describe('GameEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const getGameStateCall = onCalls.find((call: any) => call[0] === 'getGameState');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const getGameStateCall = onCalls.find(call => call[0] === 'getGameState');
       getGameStateHandler = getGameStateCall![1];
     });
 

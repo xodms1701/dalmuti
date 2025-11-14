@@ -66,8 +66,8 @@ describe('RoleSelectionEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const selectRoleCall = onCalls.find((call: any) => call[0] === 'selectRole');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const selectRoleCall = onCalls.find((call) => call[0] === 'selectRole');
       selectRoleHandler = selectRoleCall![1];
     });
 

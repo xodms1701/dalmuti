@@ -138,4 +138,37 @@ export abstract class BaseEventAdapter implements ISocketEventPort {
       console.error('Failed to emit game state:', error);
     }
   }
+
+  /**
+   * Query 전용 Socket 이벤트 처리 헬퍼
+   *
+   * 조회(Query) 요청을 처리하고 결과를 콜백으로 전달합니다.
+   *
+   * @param queryFn - 실행할 Query 함수
+   * @param callback - Socket.IO acknowledgement 콜백
+   * @param notFoundMessage - 데이터를 찾을 수 없을 때 에러 메시지
+   */
+  protected async handleQueryEvent<T>(
+    queryFn: () => Promise<T | null>,
+    callback?: SocketCallback<T>,
+    notFoundMessage = '데이터를 찾을 수 없습니다.'
+  ): Promise<void> {
+    try {
+      const result = await queryFn();
+
+      if (typeof callback === 'function') {
+        callback(
+          result ? { success: true, data: result } : { success: false, error: notFoundMessage }
+        );
+      }
+    } catch (error) {
+      console.error('Query event handling error:', error);
+      if (typeof callback === 'function') {
+        callback({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+        });
+      }
+    }
+  }
 }

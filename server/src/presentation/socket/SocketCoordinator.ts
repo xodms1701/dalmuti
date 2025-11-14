@@ -20,6 +20,7 @@ import { GameQueryService } from '../../application/services/GameQueryService';
 import { GameEventAdapter } from './adapters/GameEventAdapter';
 import { CardEventAdapter } from './adapters/CardEventAdapter';
 import { RoleSelectionEventAdapter } from './adapters/RoleSelectionEventAdapter';
+import { ISocketEventPort } from './ports/ISocketEventPort';
 
 /**
  * SocketCoordinator
@@ -35,12 +36,8 @@ export class SocketCoordinator {
 
   private playerRooms: Map<string, string>; // playerId → roomId 매핑
 
-  // Primary Adapters
-  private gameEventAdapter: GameEventAdapter;
-
-  private cardEventAdapter: CardEventAdapter;
-
-  private roleSelectionEventAdapter: RoleSelectionEventAdapter;
+  // Primary Adapters - 배열로 관리하여 확장성 향상
+  private adapters: ISocketEventPort[];
 
   constructor(
     io: Server | Namespace,
@@ -52,24 +49,12 @@ export class SocketCoordinator {
     this.queryService = queryService;
     this.playerRooms = new Map();
 
-    // Adapter 인스턴스 생성
-    this.gameEventAdapter = new GameEventAdapter(
-      io,
-      commandService,
-      queryService,
-      this.playerRooms
-    );
-    this.cardEventAdapter = new CardEventAdapter(
-      io,
-      commandService,
-      queryService,
-      this.playerRooms
-    );
-    this.roleSelectionEventAdapter = new RoleSelectionEventAdapter(
-      io,
-      commandService,
-      queryService,
-      this.playerRooms
+    // Adapter 클래스 배열 정의
+    const adapterClasses = [GameEventAdapter, CardEventAdapter, RoleSelectionEventAdapter];
+
+    // Adapter 인스턴스 동적 생성
+    this.adapters = adapterClasses.map(
+      (AdapterClass) => new AdapterClass(io, commandService, queryService, this.playerRooms)
     );
 
     // Socket.IO 연결 처리 시작
@@ -84,10 +69,8 @@ export class SocketCoordinator {
       // eslint-disable-next-line no-console
       console.log('새로운 클라이언트가 연결되었습니다:', socket.id);
 
-      // 각 Adapter 등록
-      this.gameEventAdapter.register(socket);
-      this.cardEventAdapter.register(socket);
-      this.roleSelectionEventAdapter.register(socket);
+      // 모든 Adapter 등록
+      this.adapters.forEach((adapter) => adapter.register(socket));
 
       // 연결 해제 처리
       this.handleDisconnect(socket);

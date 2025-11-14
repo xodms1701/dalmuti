@@ -48,19 +48,20 @@ export class GameEventAdapter extends BaseEventAdapter {
       async ({ nickname }: { nickname: string }, callback?: SocketCallback) => {
         // Command: 게임 생성 및 참가
         const result = await this.commandService.createAndJoinGame(socket.id, nickname);
+        const roomId = result.success ? result.data.roomId : undefined;
 
         await this.handleSocketEvent(
           result,
           callback,
-          result.success ? result.data.roomId : undefined,
-          async () => {
-            if (result.success) {
-              // Socket 룸에 참가
-              socket.join(result.data.roomId);
-              // 플레이어-룸 매핑 저장
-              this.playerRooms.set(socket.id, result.data.roomId);
-            }
-          }
+          roomId,
+          roomId
+            ? async () => {
+                // Socket 룸에 참가
+                socket.join(roomId);
+                // 플레이어-룸 매핑 저장
+                this.playerRooms.set(socket.id, roomId);
+              }
+            : undefined
         );
       }
     );
@@ -86,10 +87,8 @@ export class GameEventAdapter extends BaseEventAdapter {
           callback,
           result.success ? roomId : undefined,
           async () => {
-            if (result.success) {
-              socket.join(roomId);
-              this.playerRooms.set(socket.id, roomId);
-            }
+            socket.join(roomId);
+            this.playerRooms.set(socket.id, roomId);
           }
         );
       }
@@ -113,10 +112,8 @@ export class GameEventAdapter extends BaseEventAdapter {
           callback,
           result.success ? roomId : undefined,
           async () => {
-            if (result.success) {
-              socket.leave(roomId);
-              this.playerRooms.delete(socket.id);
-            }
+            socket.leave(roomId);
+            this.playerRooms.delete(socket.id);
           }
         );
       }
@@ -168,26 +165,11 @@ export class GameEventAdapter extends BaseEventAdapter {
     socket.on(
       SocketEvent.GET_GAME_STATE,
       async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
-        try {
-          // Query: 게임 상태 조회
-          const gameState = await this.queryService.getGameState(roomId);
-
-          if (typeof callback === 'function') {
-            callback(
-              gameState
-                ? { success: true, data: gameState }
-                : { success: false, error: '게임 상태를 찾을 수 없습니다.' }
-            );
-          }
-        } catch (error) {
-          console.error('GET_GAME_STATE error:', error);
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: error instanceof Error ? error.message : 'Unknown error occurred',
-            });
-          }
-        }
+        await this.handleQueryEvent(
+          () => this.queryService.getGameState(roomId),
+          callback,
+          '게임 상태를 찾을 수 없습니다.'
+        );
       }
     );
   }

@@ -64,8 +64,8 @@ describe('CardEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const playCardCall = onCalls.find((call: any) => call[0] === 'playCard');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const playCardCall = onCalls.find(call => call[0] === 'playCard');
       playCardHandler = playCardCall![1];
     });
 
@@ -118,8 +118,8 @@ describe('CardEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const passCall = onCalls.find((call: any) => call[0] === 'pass');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const passCall = onCalls.find(call => call[0] === 'pass');
       passHandler = passCall![1];
     });
 
@@ -164,8 +164,8 @@ describe('CardEventAdapter', () => {
 
     beforeEach(() => {
       adapter.register(mockSocket);
-      const onCalls = mockSocket.on.mock.calls;
-      const selectDeckCall = onCalls.find((call: any) => call[0] === 'selectDeck');
+      const onCalls = mockSocket.on.mock.calls as [string, Function][];
+      const selectDeckCall = onCalls.find(call => call[0] === 'selectDeck');
       selectDeckHandler = selectDeckCall![1];
     });
 
