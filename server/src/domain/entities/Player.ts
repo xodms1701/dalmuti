@@ -1,3 +1,4 @@
+/* eslint-disable no-plusplus */
 import { Card } from './Card';
 import { PlayerId } from '../value-objects/PlayerId';
 
@@ -8,11 +9,17 @@ import { PlayerId } from '../value-objects/PlayerId';
  */
 export class Player {
   readonly id: PlayerId;
+
   readonly nickname: string;
+
   private _cards: Card[];
+
   private _role: number | null;
+
   private _rank: number | null;
+
   private _isPassed: boolean;
+
   private _isReady: boolean;
 
   /**

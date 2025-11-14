@@ -383,7 +383,9 @@ describe('TurnHelper', () => {
         round: 1,
       });
 
-      expect(() => startNewRound(game)).toThrow('Cannot start new round without previous last play');
+      expect(() => startNewRound(game)).toThrow(
+        'Cannot start new round without previous last play'
+      );
     });
   });
 

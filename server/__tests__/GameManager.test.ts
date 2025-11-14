@@ -1,13 +1,11 @@
+import { Server } from 'socket.io';
 import GameManager from '../game/GameManager';
 import MockDatabase from './mocks/MockDatabase';
-import { Server } from 'socket.io';
 import {
   setupGameWithPlayers,
   buildGameState,
   createCard,
   createCards,
-  createJoker,
-  initializePlayerStats,
 } from './helpers/testHelpers';
 
 describe('GameManager', () => {
@@ -533,7 +531,7 @@ describe('GameManager', () => {
       await gameManager.playCard(game.roomId, 'player1', createCards(10, 3));
 
       // 상태 확인
-      let updatedGame = await mockDb.getGame(game.roomId);
+      const updatedGame = await mockDb.getGame(game.roomId);
       expect(updatedGame?.lastPlay?.playerId).toBe('player1');
       expect(updatedGame?.currentTurn).toBe('player2');
 
@@ -597,7 +595,7 @@ describe('GameManager', () => {
       await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
 
       // 강제로 phase, rank, cards 설정
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'playing';
         updatedGame.currentTurn = 'player2';
@@ -650,7 +648,7 @@ describe('GameManager', () => {
       await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
 
       // 강제로 phase, rank, cards 설정
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'playing';
         updatedGame.currentTurn = 'player3';
@@ -857,7 +855,7 @@ describe('GameManager', () => {
       await gameManager.selectDeck(game!.roomId, 'player4', 3);
 
       // 5. 게임 종료 상태로 설정
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'playing';
         updatedGame.isVoting = true;
@@ -900,7 +898,7 @@ describe('GameManager', () => {
       await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
 
       // 강제로 phase, rank, cards 설정
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'playing';
         updatedGame.currentTurn = 'player1';
@@ -918,10 +916,30 @@ describe('GameManager', () => {
         updatedGame.players[3].cards = [{ rank: 5, isJoker: false }];
         // playerStats 초기화
         updatedGame.playerStats = {
-          player1: { nickname: '플레이어1', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player2: { nickname: '플레이어2', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player3: { nickname: '플레이어3', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player4: { nickname: '플레이어4', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player1: {
+            nickname: '플레이어1',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
+          player2: {
+            nickname: '플레이어2',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
+          player3: {
+            nickname: '플레이어3',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
+          player4: {
+            nickname: '플레이어4',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
         };
         updatedGame.roundPlays = [];
         await mockDb.updateGame(game!.roomId, updatedGame);
@@ -938,7 +956,7 @@ describe('GameManager', () => {
       expect(resultGame?.roundPlays[0].cards).toEqual([{ rank: 1, isJoker: false }]);
 
       // 4. playerStats가 업데이트되었는지 확인
-      expect(resultGame?.playerStats['player1'].totalCardsPlayed).toBe(1);
+      expect(resultGame?.playerStats.player1.totalCardsPlayed).toBe(1);
     });
 
     it('패스 횟수가 playerStats에 기록되어야 합니다', async () => {
@@ -950,7 +968,7 @@ describe('GameManager', () => {
       await gameManager.joinGame(game!.roomId, 'player4', 'Player4');
 
       // 강제로 phase, rank, cards 설정
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'playing';
         updatedGame.currentTurn = 'player1';
@@ -965,10 +983,30 @@ describe('GameManager', () => {
         updatedGame.players[2].cards = [{ rank: 4, isJoker: false }];
         updatedGame.players[3].cards = [{ rank: 5, isJoker: false }];
         updatedGame.playerStats = {
-          player1: { nickname: '플레이어1', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player2: { nickname: '플레이어2', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player3: { nickname: '플레이어3', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
-          player4: { nickname: '플레이어4', totalCardsPlayed: 0, totalPasses: 0, finishedAtRound: 0 },
+          player1: {
+            nickname: '플레이어1',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
+          player2: {
+            nickname: '플레이어2',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
+          player3: {
+            nickname: '플레이어3',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
+          player4: {
+            nickname: '플레이어4',
+            totalCardsPlayed: 0,
+            totalPasses: 0,
+            finishedAtRound: 0,
+          },
         };
         await mockDb.updateGame(game!.roomId, updatedGame);
       }
@@ -978,7 +1016,7 @@ describe('GameManager', () => {
 
       // 3. playerStats가 업데이트되었는지 확인
       const resultGame = await mockDb.getGame(game!.roomId);
-      expect(resultGame?.playerStats['player1'].totalPasses).toBe(1);
+      expect(resultGame?.playerStats.player1.totalPasses).toBe(1);
     });
   });
 
@@ -992,7 +1030,7 @@ describe('GameManager', () => {
       }
 
       // 2. revolution 페이즈로 설정 및 최하위 순위 플레이어에게 더블 조커 부여
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'revolution';
         updatedGame.players[0].rank = 4; // 최하위 순위
@@ -1033,7 +1071,7 @@ describe('GameManager', () => {
       }
 
       // 2. revolution 페이즈로 설정 및 2위 플레이어에게 더블 조커 부여
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'revolution';
         updatedGame.players[0].rank = 2; // 2위
@@ -1074,7 +1112,7 @@ describe('GameManager', () => {
       }
 
       // 2. revolution 페이즈로 설정 및 더블 조커 부여, 카드 추가
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'revolution';
         updatedGame.players[0].rank = 3;
@@ -1088,9 +1126,18 @@ describe('GameManager', () => {
         ];
         // 각 플레이어에게 테스트용 카드 추가
         updatedGame.players[0].cards.push({ rank: 5, isJoker: false }, { rank: 7, isJoker: false });
-        updatedGame.players[1].cards = [{ rank: 8, isJoker: false }, { rank: 9, isJoker: false }];
-        updatedGame.players[2].cards = [{ rank: 1, isJoker: false }, { rank: 2, isJoker: false }];
-        updatedGame.players[3].cards = [{ rank: 11, isJoker: false }, { rank: 12, isJoker: false }];
+        updatedGame.players[1].cards = [
+          { rank: 8, isJoker: false },
+          { rank: 9, isJoker: false },
+        ];
+        updatedGame.players[2].cards = [
+          { rank: 1, isJoker: false },
+          { rank: 2, isJoker: false },
+        ];
+        updatedGame.players[3].cards = [
+          { rank: 11, isJoker: false },
+          { rank: 12, isJoker: false },
+        ];
         updatedGame.currentTurn = 'owner1';
         await mockDb.updateGame(game!.roomId, updatedGame);
       }
@@ -1143,7 +1190,7 @@ describe('GameManager', () => {
       const ownerId = 'owner1';
       const game = await gameManager.createGame(ownerId, 'Owner');
 
-      let updatedGame = await mockDb.getGame(game!.roomId);
+      const updatedGame = await mockDb.getGame(game!.roomId);
       if (updatedGame) {
         updatedGame.phase = 'revolution';
         updatedGame.currentTurn = 'owner1';
@@ -1155,5 +1202,4 @@ describe('GameManager', () => {
       expect(success).toBe(false);
     });
   });
-
 });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, no-console */
 import { Server, Socket } from 'socket.io';
 import GameManager from '../game/GameManager';
 import { Card } from '../types';

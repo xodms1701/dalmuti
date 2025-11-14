@@ -43,20 +43,9 @@ describe('PlayCardUseCase', () => {
     const player3 = Player.create(PlayerId.create('player3'), 'Player 3');
 
     // 플레이어에게 카드 할당
-    player1.assignCards([
-      Card.create(3, false),
-      Card.create(3, false),
-      Card.create(5, false),
-    ]);
-    player2.assignCards([
-      Card.create(4, false),
-      Card.create(4, false),
-      Card.create(6, false),
-    ]);
-    player3.assignCards([
-      Card.create(7, false),
-      Card.create(8, false),
-    ]);
+    player1.assignCards([Card.create(3, false), Card.create(3, false), Card.create(5, false)]);
+    player2.assignCards([Card.create(4, false), Card.create(4, false), Card.create(6, false)]);
+    player3.assignCards([Card.create(7, false), Card.create(8, false)]);
 
     // 플레이어에게 순위 할당
     player1.assignRank(1);
@@ -135,11 +124,7 @@ describe('PlayCardUseCase', () => {
       // player1의 카드를 모두 같은 숫자로 변경 (3장 모두 3)
       const player1 = game.getPlayer(PlayerId.create('player1'));
       if (player1) {
-        player1.assignCards([
-          Card.create(3, false),
-          Card.create(3, false),
-          Card.create(3, false),
-        ]);
+        player1.assignCards([Card.create(3, false), Card.create(3, false), Card.create(3, false)]);
       }
 
       mockRepository.findById.mockResolvedValue(game);
@@ -262,10 +247,7 @@ describe('PlayCardUseCase', () => {
       // lastPlay 설정: player2가 4를 두 장 냄
       game.setLastPlay({
         playerId: PlayerId.create('player2'),
-        cards: [
-          Card.create(4, false),
-          Card.create(4, false),
-        ],
+        cards: [Card.create(4, false), Card.create(4, false)],
       });
 
       // player1의 턴으로 설정

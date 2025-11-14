@@ -36,8 +36,11 @@ type SocketCallback<T = unknown> = (response: SocketResponse<T>) => void;
 
 export class SocketController {
   private io: Server | Namespace;
+
   private commandService: GameCommandService;
+
   private queryService: GameQueryService;
+
   private playerRooms: Map<string, string>; // playerId → roomId 매핑
 
   constructor(
@@ -57,6 +60,7 @@ export class SocketController {
    */
   private setupSocketHandlers(): void {
     this.io.on('connection', (socket: Socket) => {
+      // eslint-disable-next-line no-console
       console.log('새로운 클라이언트가 연결되었습니다:', socket.id);
 
       // TODO: 각 이벤트 핸들러 구현
@@ -72,6 +76,7 @@ export class SocketController {
       this.handleGetGameState(socket);
 
       socket.on('disconnect', async () => {
+        // eslint-disable-next-line no-console
         console.log('클라이언트가 연결 해제되었습니다:', socket.id);
 
         // 플레이어가 게임 중이었다면 자동으로 나가기 처리
@@ -81,6 +86,7 @@ export class SocketController {
             await this.commandService.leaveGame(roomId, socket.id);
             this.playerRooms.delete(socket.id);
             await this.emitGameState(roomId);
+            // eslint-disable-next-line no-console
             console.log(`플레이어 ${socket.id}가 게임 ${roomId}에서 자동으로 나갔습니다.`);
           } catch (error) {
             console.error('Disconnect 처리 중 오류:', error);
@@ -96,10 +102,7 @@ export class SocketController {
   private handleCreateGame(socket: Socket): void {
     socket.on(
       SocketEvent.CREATE_GAME,
-      async (
-        { nickname }: { nickname: string },
-        callback?: SocketCallback
-      ) => {
+      async ({ nickname }: { nickname: string }, callback?: SocketCallback) => {
         // Command: 게임 생성 및 참가
         const result = await this.commandService.createAndJoinGame(socket.id, nickname);
 
@@ -153,10 +156,7 @@ export class SocketController {
   private handleLeaveGame(socket: Socket): void {
     socket.on(
       SocketEvent.LEAVE_GAME,
-      async (
-        { roomId }: { roomId: string },
-        callback?: SocketCallback
-      ) => {
+      async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
         const result = await this.commandService.leaveGame(roomId, socket.id);
 
         await this.handleSocketEvent(
@@ -184,10 +184,7 @@ export class SocketController {
   private handleReady(socket: Socket): void {
     socket.on(
       SocketEvent.READY,
-      async (
-        { roomId }: { roomId: string },
-        callback?: SocketCallback
-      ) => {
+      async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
         // Command: 준비 상태 토글 (현재 상태의 반대로 변경)
         const result = await this.commandService.toggleReadyAndCheckStart(roomId, socket.id);
 
@@ -253,10 +250,7 @@ export class SocketController {
   private handlePass(socket: Socket): void {
     socket.on(
       SocketEvent.PASS,
-      async (
-        { roomId }: { roomId: string },
-        callback?: SocketCallback
-      ) => {
+      async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
         const result = await this.commandService.playOrPass(
           roomId,
           socket.id,
@@ -274,10 +268,7 @@ export class SocketController {
   private handleVote(socket: Socket): void {
     socket.on(
       SocketEvent.VOTE,
-      async (
-        { roomId, vote }: { roomId: string; vote: boolean },
-        callback?: SocketCallback
-      ) => {
+      async ({ roomId, vote }: { roomId: string; vote: boolean }, callback?: SocketCallback) => {
         const result = await this.commandService.voteNextGame(roomId, socket.id, vote);
 
         await this.handleSocketEvent(result, callback, roomId);
@@ -291,10 +282,7 @@ export class SocketController {
   private handleGetGameState(socket: Socket): void {
     socket.on(
       SocketEvent.GET_GAME_STATE,
-      async (
-        { roomId }: { roomId: string },
-        callback?: SocketCallback
-      ) => {
+      async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
         try {
           // Query: 게임 상태 조회
           const gameState = await this.queryService.getGameState(roomId);
@@ -361,14 +349,12 @@ export class SocketController {
         if (roomId) {
           await this.emitGameState(roomId);
         }
-      } else {
+      } else if (typeof callback === 'function') {
         // 실패 시 콜백 호출
-        if (typeof callback === 'function') {
-          callback({
-            success: false,
-            error: useCaseResult.error.message,
-          });
-        }
+        callback({
+          success: false,
+          error: useCaseResult.error.message,
+        });
       }
     } catch (error) {
       // 예외 처리

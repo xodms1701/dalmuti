@@ -36,11 +36,11 @@ describe('PlayerStatsHelper', () => {
 
       ensurePlayerStats(game, 'player1', player);
 
-      expect(game.playerStats['player1']).toBeDefined();
-      expect(game.playerStats['player1'].nickname).toBe('Player1');
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(0);
-      expect(game.playerStats['player1'].totalPasses).toBe(0);
-      expect(game.playerStats['player1'].finishedAtRound).toBe(0);
+      expect(game.playerStats.player1).toBeDefined();
+      expect(game.playerStats.player1.nickname).toBe('Player1');
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(0);
+      expect(game.playerStats.player1.totalPasses).toBe(0);
+      expect(game.playerStats.player1.finishedAtRound).toBe(0);
     });
 
     it('플레이어 통계가 이미 있으면 유지해야 함', () => {
@@ -58,9 +58,9 @@ describe('PlayerStatsHelper', () => {
 
       ensurePlayerStats(game, 'player1', player);
 
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(10);
-      expect(game.playerStats['player1'].totalPasses).toBe(3);
-      expect(game.playerStats['player1'].finishedAtRound).toBe(5);
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(10);
+      expect(game.playerStats.player1.totalPasses).toBe(3);
+      expect(game.playerStats.player1.finishedAtRound).toBe(5);
     });
   });
 
@@ -71,7 +71,7 @@ describe('PlayerStatsHelper', () => {
 
       incrementCardsPlayed(game, 'player1', player, 3);
 
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(3);
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(3);
     });
 
     it('여러 번 호출 시 누적되어야 함', () => {
@@ -81,7 +81,7 @@ describe('PlayerStatsHelper', () => {
       incrementCardsPlayed(game, 'player1', player, 2);
       incrementCardsPlayed(game, 'player1', player, 3);
 
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(5);
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(5);
     });
 
     it('통계가 없으면 먼저 초기화해야 함', () => {
@@ -90,8 +90,8 @@ describe('PlayerStatsHelper', () => {
 
       incrementCardsPlayed(game, 'player1', player, 2);
 
-      expect(game.playerStats['player1']).toBeDefined();
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(2);
+      expect(game.playerStats.player1).toBeDefined();
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(2);
     });
   });
 
@@ -102,7 +102,7 @@ describe('PlayerStatsHelper', () => {
 
       incrementPasses(game, 'player1', player);
 
-      expect(game.playerStats['player1'].totalPasses).toBe(1);
+      expect(game.playerStats.player1.totalPasses).toBe(1);
     });
 
     it('여러 번 호출 시 누적되어야 함', () => {
@@ -113,7 +113,7 @@ describe('PlayerStatsHelper', () => {
       incrementPasses(game, 'player1', player);
       incrementPasses(game, 'player1', player);
 
-      expect(game.playerStats['player1'].totalPasses).toBe(3);
+      expect(game.playerStats.player1.totalPasses).toBe(3);
     });
 
     it('통계가 없으면 먼저 초기화해야 함', () => {
@@ -122,8 +122,8 @@ describe('PlayerStatsHelper', () => {
 
       incrementPasses(game, 'player1', player);
 
-      expect(game.playerStats['player1']).toBeDefined();
-      expect(game.playerStats['player1'].totalPasses).toBe(1);
+      expect(game.playerStats.player1).toBeDefined();
+      expect(game.playerStats.player1.totalPasses).toBe(1);
     });
   });
 
@@ -134,7 +134,7 @@ describe('PlayerStatsHelper', () => {
 
       setFinishedAtRound(game, 'player1', player, 5);
 
-      expect(game.playerStats['player1'].finishedAtRound).toBe(5);
+      expect(game.playerStats.player1.finishedAtRound).toBe(5);
     });
 
     it('통계가 없으면 먼저 초기화해야 함', () => {
@@ -143,8 +143,8 @@ describe('PlayerStatsHelper', () => {
 
       setFinishedAtRound(game, 'player1', player, 3);
 
-      expect(game.playerStats['player1']).toBeDefined();
-      expect(game.playerStats['player1'].finishedAtRound).toBe(3);
+      expect(game.playerStats.player1).toBeDefined();
+      expect(game.playerStats.player1.finishedAtRound).toBe(3);
     });
   });
 
@@ -159,9 +159,9 @@ describe('PlayerStatsHelper', () => {
       const stats = initializeAllPlayerStats(players);
 
       expect(Object.keys(stats).length).toBe(3);
-      expect(stats['player1'].nickname).toBe('Player1');
-      expect(stats['player2'].nickname).toBe('Player2');
-      expect(stats['player3'].nickname).toBe('Player3');
+      expect(stats.player1.nickname).toBe('Player1');
+      expect(stats.player2.nickname).toBe('Player2');
+      expect(stats.player3.nickname).toBe('Player3');
 
       // 모든 통계가 0으로 초기화되어야 함
       Object.values(stats).forEach((stat) => {
@@ -221,9 +221,9 @@ describe('PlayerStatsHelper', () => {
         totalPasses: 5,
       });
 
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(10);
-      expect(game.playerStats['player1'].totalPasses).toBe(5);
-      expect(game.playerStats['player1'].finishedAtRound).toBe(0); // 변경되지 않음
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(10);
+      expect(game.playerStats.player1.totalPasses).toBe(5);
+      expect(game.playerStats.player1.finishedAtRound).toBe(0); // 변경되지 않음
     });
 
     it('일부 필드만 업데이트할 수 있어야 함', () => {
@@ -243,9 +243,9 @@ describe('PlayerStatsHelper', () => {
         totalCardsPlayed: 10,
       });
 
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(10);
-      expect(game.playerStats['player1'].totalPasses).toBe(2); // 유지
-      expect(game.playerStats['player1'].finishedAtRound).toBe(0); // 유지
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(10);
+      expect(game.playerStats.player1.totalPasses).toBe(2); // 유지
+      expect(game.playerStats.player1.finishedAtRound).toBe(0); // 유지
     });
 
     it('통계가 없으면 먼저 초기화해야 함', () => {
@@ -256,8 +256,8 @@ describe('PlayerStatsHelper', () => {
         totalCardsPlayed: 5,
       });
 
-      expect(game.playerStats['player1']).toBeDefined();
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(5);
+      expect(game.playerStats.player1).toBeDefined();
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(5);
     });
   });
 
@@ -277,10 +277,10 @@ describe('PlayerStatsHelper', () => {
 
       resetPlayerStats(game, 'player1', player);
 
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(0);
-      expect(game.playerStats['player1'].totalPasses).toBe(0);
-      expect(game.playerStats['player1'].finishedAtRound).toBe(0);
-      expect(game.playerStats['player1'].nickname).toBe('Player1'); // 유지
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(0);
+      expect(game.playerStats.player1.totalPasses).toBe(0);
+      expect(game.playerStats.player1.finishedAtRound).toBe(0);
+      expect(game.playerStats.player1.nickname).toBe('Player1'); // 유지
     });
 
     it('통계가 없어도 에러 없이 초기화해야 함', () => {
@@ -289,8 +289,8 @@ describe('PlayerStatsHelper', () => {
 
       expect(() => resetPlayerStats(game, 'player1', player)).not.toThrow();
 
-      expect(game.playerStats['player1']).toBeDefined();
-      expect(game.playerStats['player1'].totalCardsPlayed).toBe(0);
+      expect(game.playerStats.player1).toBeDefined();
+      expect(game.playerStats.player1.totalCardsPlayed).toBe(0);
     });
   });
 });

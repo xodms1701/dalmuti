@@ -14,7 +14,11 @@
 import { IUseCase } from '../base/IUseCase';
 import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
 import { ValidationError, ResourceNotFoundError } from '../../errors/ApplicationError';
 import { NotFoundError } from '../../ports/RepositoryError';
 
@@ -44,7 +48,9 @@ export interface DeleteGameResponse {
  * 게임을 삭제합니다.
  * 주로 보상 트랜잭션에서 사용됩니다.
  */
-export class DeleteGameUseCase implements IUseCase<DeleteGameRequest, UseCaseResponse<DeleteGameResponse>> {
+export class DeleteGameUseCase
+  implements IUseCase<DeleteGameRequest, UseCaseResponse<DeleteGameResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: DeleteGameRequest): Promise<UseCaseResponse<DeleteGameResponse>> {

@@ -29,7 +29,10 @@ export class ApplicationError extends Error {
  * HTTP 400 Bad Request에 매핑
  */
 export class ValidationError extends ApplicationError {
-  constructor(message: string, public readonly field?: string) {
+  constructor(
+    message: string,
+    public readonly field?: string
+  ) {
     super(message, 'VALIDATION_ERROR', 400);
     this.name = 'ValidationError';
     Object.setPrototypeOf(this, ValidationError.prototype);

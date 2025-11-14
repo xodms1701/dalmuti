@@ -1,3 +1,4 @@
+/* eslint-disable default-param-last, no-plusplus */
 import { Player } from './Player';
 import { Card } from './Card';
 import { RoomId } from '../value-objects/RoomId';
@@ -12,15 +13,25 @@ import { SelectableDeck, RoleSelectionCard } from '../types/GameTypes';
  */
 export class Game {
   readonly roomId: RoomId;
+
   private _players: Player[];
+
   private _phase: string;
+
   private _currentTurn: PlayerId | null;
+
   private _lastPlay: { playerId: PlayerId; cards: Card[] } | undefined;
+
   private _deck: Card[];
+
   private _round: number;
+
   private _finishedPlayers: PlayerId[];
+
   private _selectableDecks?: SelectableDeck[];
+
   private _roleSelectionCards?: RoleSelectionCard[];
+
   private _votes: Map<string, boolean>; // playerId → vote (true: 찬성, false: 반대)
 
   /**
@@ -121,7 +132,7 @@ export class Game {
     }
 
     // 플레이어가 이미 게임을 완료했는지 확인
-    if (this._finishedPlayers.some(fp => fp.equals(playerId))) {
+    if (this._finishedPlayers.some((fp) => fp.equals(playerId))) {
       return false;
     }
 
@@ -159,7 +170,7 @@ export class Game {
   isGameOver(): boolean {
     // 활성 플레이어가 1명 이하면 게임 종료
     const activePlayers = this._players.filter(
-      (p) => !this._finishedPlayers.some(fp => fp.equals(p.id))
+      (p) => !this._finishedPlayers.some((fp) => fp.equals(p.id))
     );
     return activePlayers.length <= 1;
   }
@@ -178,8 +189,7 @@ export class Game {
    * @returns 활성 플레이어 수
    */
   getActivePlayerCount(): number {
-    return this._players.filter((p) => !this._finishedPlayers.some(fp => fp.equals(p.id)))
-      .length;
+    return this._players.filter((p) => !this._finishedPlayers.some((fp) => fp.equals(p.id))).length;
   }
 
   /**
@@ -250,7 +260,7 @@ export class Game {
    * @param playerId 플레이어 ID
    */
   addFinishedPlayer(playerId: PlayerId): void {
-    if (!this._finishedPlayers.some(fp => fp.equals(playerId))) {
+    if (!this._finishedPlayers.some((fp) => fp.equals(playerId))) {
       this._finishedPlayers.push(playerId);
     }
   }
@@ -549,9 +559,7 @@ export class Game {
     roleSelectionCards?: RoleSelectionCard[];
     votes?: Record<string, boolean>;
   }): Game {
-    const players = obj.players
-      ? obj.players.map((p) => Player.fromPlainObject(p))
-      : [];
+    const players = obj.players ? obj.players.map((p) => Player.fromPlainObject(p)) : [];
 
     const roomId = RoomId.from(obj.roomId); // string을 RoomId로 변환
     const currentTurn = obj.currentTurn ? PlayerId.create(obj.currentTurn) : null; // string을 PlayerId로 변환

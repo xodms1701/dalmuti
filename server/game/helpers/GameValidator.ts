@@ -257,10 +257,7 @@ export function validatePlayerHasCards(player: Player, cardsToPlay: Card[]): Gam
  */
 export function validateMinPlayers(game: Game, minPlayers: number): GameResult<void> {
   if (game.players.length < minPlayers) {
-    return failure(
-      `최소 ${minPlayers}명의 플레이어가 필요합니다.`,
-      ErrorCode.NOT_ENOUGH_PLAYERS
-    );
+    return failure(`최소 ${minPlayers}명의 플레이어가 필요합니다.`, ErrorCode.NOT_ENOUGH_PLAYERS);
   }
   return success(undefined);
 }

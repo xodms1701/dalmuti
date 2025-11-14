@@ -104,11 +104,7 @@ describe('GameApplicationService Integration Tests', () => {
       const roomId = 'CUSTOM';
 
       // Act
-      const result = await service.createAndJoinGame(
-        creatorId,
-        nickname,
-        roomId
-      );
+      const result = await service.createAndJoinGame(creatorId, nickname, roomId);
 
       // Assert
       expect(result.success).toBe(true);
@@ -128,11 +124,7 @@ describe('GameApplicationService Integration Tests', () => {
       const invalidRoomId = 'TOOLONG123';
 
       // Act
-      const result = await service.createAndJoinGame(
-        creatorId,
-        nickname,
-        invalidRoomId
-      );
+      const result = await service.createAndJoinGame(creatorId, nickname, invalidRoomId);
 
       // Assert
       expect(result.success).toBe(false);

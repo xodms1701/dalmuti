@@ -16,7 +16,11 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { ReadyGameRequest, ReadyGameResponse } from '../../dto/game/ReadyGameDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
 import { ResourceNotFoundError, ValidationError } from '../../errors/ApplicationError';
 
 /**
@@ -24,7 +28,9 @@ import { ResourceNotFoundError, ValidationError } from '../../errors/Application
  *
  * 플레이어의 게임 준비 상태를 변경합니다.
  */
-export class ReadyGameUseCase implements IUseCase<ReadyGameRequest, UseCaseResponse<ReadyGameResponse>> {
+export class ReadyGameUseCase
+  implements IUseCase<ReadyGameRequest, UseCaseResponse<ReadyGameResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: ReadyGameRequest): Promise<UseCaseResponse<ReadyGameResponse>> {
@@ -65,9 +71,7 @@ export class ReadyGameUseCase implements IUseCase<ReadyGameRequest, UseCaseRespo
 
       // 4. 준비 상태 결정
       // isReady가 undefined면 현재 상태를 토글, 값이 있으면 그 값 사용
-      const targetReadyState = request.isReady !== undefined
-        ? request.isReady
-        : !player.isReady;
+      const targetReadyState = request.isReady !== undefined ? request.isReady : !player.isReady;
 
       // 5. 준비 상태 변경
       if (targetReadyState) {

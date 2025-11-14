@@ -16,16 +16,25 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { SelectRoleRequest, SelectRoleResponse } from '../../dto/game/SelectRoleDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { NotFoundError } from '../../ports/RepositoryError';
-import { ValidationError, BusinessRuleError, ResourceNotFoundError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ValidationError,
+  BusinessRuleError,
+  ResourceNotFoundError,
+} from '../../errors/ApplicationError';
 
 /**
  * SelectRoleUseCase
  *
  * 플레이어가 역할을 선택합니다.
  */
-export class SelectRoleUseCase implements IUseCase<SelectRoleRequest, UseCaseResponse<SelectRoleResponse>> {
+export class SelectRoleUseCase
+  implements IUseCase<SelectRoleRequest, UseCaseResponse<SelectRoleResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: SelectRoleRequest): Promise<UseCaseResponse<SelectRoleResponse>> {
@@ -53,11 +62,12 @@ export class SelectRoleUseCase implements IUseCase<SelectRoleRequest, UseCaseRes
       }
 
       // roleNumber 검증
-      if (typeof request.roleNumber !== 'number' || request.roleNumber < 1 || request.roleNumber > 13) {
-        throw new ValidationError(
-          'Role number must be between 1 and 13',
-          'roleNumber'
-        );
+      if (
+        typeof request.roleNumber !== 'number' ||
+        request.roleNumber < 1 ||
+        request.roleNumber > 13
+      ) {
+        throw new ValidationError('Role number must be between 1 and 13', 'roleNumber');
       }
 
       // 2. Game Entity 조회
@@ -81,11 +91,8 @@ export class SelectRoleUseCase implements IUseCase<SelectRoleRequest, UseCaseRes
       // 4. Repository를 통해 업데이트
       try {
         await this.gameRepository.update(roomId, game);
-      } catch (error) {
-        throw new BusinessRuleError(
-          'Failed to update game state',
-          'UPDATE_GAME_FAILED'
-        );
+      } catch {
+        throw new BusinessRuleError('Failed to update game state', 'UPDATE_GAME_FAILED');
       }
 
       // 5. Response DTO 반환
@@ -98,18 +105,11 @@ export class SelectRoleUseCase implements IUseCase<SelectRoleRequest, UseCaseRes
     } catch (error) {
       // Application Layer 에러는 그대로 전달
       if (error instanceof ValidationError) {
-        return createErrorResponse(
-          error.code,
-          error.message,
-          { field: error.field }
-        );
+        return createErrorResponse(error.code, error.message, { field: error.field });
       }
 
       if (error instanceof ResourceNotFoundError || error instanceof BusinessRuleError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       // 예상치 못한 에러

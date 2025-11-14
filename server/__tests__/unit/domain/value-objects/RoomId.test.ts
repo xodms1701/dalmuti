@@ -30,8 +30,7 @@ describe('RoomId', () => {
 
       // Assert
       // At least one should be different (statistically very likely)
-      const allSame =
-        roomId1.value === roomId2.value && roomId2.value === roomId3.value;
+      const allSame = roomId1.value === roomId2.value && roomId2.value === roomId3.value;
       expect(allSame).toBe(false);
     });
 

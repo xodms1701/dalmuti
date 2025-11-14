@@ -16,9 +16,16 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { LeaveGameRequest, LeaveGameResponse } from '../../dto/game/LeaveGameDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { NotFoundError } from '../../ports/RepositoryError';
-import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  BusinessRuleError,
+} from '../../errors/ApplicationError';
 
 /**
  * LeaveGameUseCase
@@ -26,7 +33,9 @@ import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../..
  * 플레이어가 게임에서 나갑니다.
  * 마지막 플레이어가 나가면 게임이 삭제됩니다.
  */
-export class LeaveGameUseCase implements IUseCase<LeaveGameRequest, UseCaseResponse<LeaveGameResponse>> {
+export class LeaveGameUseCase
+  implements IUseCase<LeaveGameRequest, UseCaseResponse<LeaveGameResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: LeaveGameRequest): Promise<UseCaseResponse<LeaveGameResponse>> {
@@ -92,18 +101,11 @@ export class LeaveGameUseCase implements IUseCase<LeaveGameRequest, UseCaseRespo
     } catch (error) {
       // Application Layer 에러는 그대로 전달
       if (error instanceof ValidationError) {
-        return createErrorResponse(
-          error.code,
-          error.message,
-          { field: error.field }
-        );
+        return createErrorResponse(error.code, error.message, { field: error.field });
       }
 
       if (error instanceof ResourceNotFoundError || error instanceof BusinessRuleError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       // 예상치 못한 에러

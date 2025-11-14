@@ -188,9 +188,9 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should throw NotFoundError when updating non-existent game', async () => {
       // Act & Assert
-      await expect(
-        repository.update(RoomId.from('NOEX02'), { phase: 'playing' })
-      ).rejects.toThrow(NotFoundError);
+      await expect(repository.update(RoomId.from('NOEX02'), { phase: 'playing' })).rejects.toThrow(
+        NotFoundError
+      );
     });
 
     it('should return updated game entity', async () => {
@@ -247,9 +247,7 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should throw NotFoundError when deleting non-existent game', async () => {
       // Act & Assert
-      await expect(repository.delete(RoomId.from('NOEX03'))).rejects.toThrow(
-        NotFoundError
-      );
+      await expect(repository.delete(RoomId.from('NOEX03'))).rejects.toThrow(NotFoundError);
     });
 
     it('should not affect other games', async () => {
@@ -341,10 +339,7 @@ describe('MongoGameRepository Integration Tests', () => {
     // 실제 운영 환경에서는 MongoClient의 connectTimeoutMS 옵션으로 제어 가능
     it.skip('should handle connection errors gracefully', async () => {
       // Arrange
-      const badRepository = new MongoGameRepository(
-        'mongodb://invalid-host:27017',
-        'test-db'
-      );
+      const badRepository = new MongoGameRepository('mongodb://invalid-host:27017', 'test-db');
 
       // Act & Assert
       await expect(badRepository.connect()).rejects.toThrow(ConnectionError);
@@ -388,14 +383,10 @@ describe('MongoGameRepository Integration Tests', () => {
       const roomId = RoomId.from('FULL01');
       const playerId = PlayerId.create('p1');
       const game = Game.create(roomId);
-      game.setSelectableDecks([
-        { cards: [Card.create(1, false)], isSelected: false },
-      ]);
-      game.setRoleSelectionCards([
-        { number: 1, isSelected: false },
-      ]);
+      game.setSelectableDecks([{ cards: [Card.create(1, false)], isSelected: false }]);
+      game.setRoleSelectionCards([{ number: 1, isSelected: false }]);
       game.setLastPlay({
-        playerId: playerId,
+        playerId,
         cards: [Card.create(3, false)],
       });
 

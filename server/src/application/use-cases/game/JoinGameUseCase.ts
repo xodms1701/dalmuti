@@ -18,15 +18,25 @@ import { Player } from '../../../domain/entities/Player';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { JoinGameRequest, JoinGameResponse } from '../../dto/game/JoinGameDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  BusinessRuleError,
+} from '../../errors/ApplicationError';
 
 /**
  * JoinGameUseCase
  *
  * 플레이어가 기존 게임에 참가합니다.
  */
-export class JoinGameUseCase implements IUseCase<JoinGameRequest, UseCaseResponse<JoinGameResponse>> {
+export class JoinGameUseCase
+  implements IUseCase<JoinGameRequest, UseCaseResponse<JoinGameResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: JoinGameRequest): Promise<UseCaseResponse<JoinGameResponse>> {

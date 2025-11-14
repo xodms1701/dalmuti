@@ -1,6 +1,8 @@
 export default class GameEnded {
   readonly roomId: string;
+
   readonly finishedOrder: string[];
+
   readonly timestamp: Date;
 
   constructor(roomId: string, finishedOrder: string[]) {

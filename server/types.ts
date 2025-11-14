@@ -92,12 +92,15 @@ export interface Game {
   gameNumber: number;
   gameHistories: GameHistory[];
   currentGameStartedAt?: Date;
-  playerStats: Record<string, {
-    nickname: string;
-    totalCardsPlayed: number;
-    totalPasses: number;
-    finishedAtRound: number;
-  }>;
+  playerStats: Record<
+    string,
+    {
+      nickname: string;
+      totalCardsPlayed: number;
+      totalPasses: number;
+      finishedAtRound: number;
+    }
+  >;
   roundPlays: RoundPlay[];
   revolutionStatus?: {
     isRevolution: boolean;

@@ -1,5 +1,6 @@
-import { Card, Game, Player, RoleSelectionCard, Database, GameHistory } from '../types';
+/* eslint-disable no-param-reassign, no-console, no-shadow, no-return-assign, no-plusplus */
 import { Server } from 'socket.io';
+import { Card, Game, Player, RoleSelectionCard, Database, GameHistory } from '../types';
 import { SocketEvent } from '../socket/events';
 import {
   validateGameExists,
@@ -148,7 +149,10 @@ export default class GameManager {
     if (!gameResult.success) return false;
     const validGame = gameResult.data;
 
-    if (validGame.players.length < this.MIN_PLAYERS || validGame.players.length > this.MAX_PLAYERS) {
+    if (
+      validGame.players.length < this.MIN_PLAYERS ||
+      validGame.players.length > this.MAX_PLAYERS
+    ) {
       return false;
     }
 
@@ -416,13 +420,19 @@ export default class GameManager {
         if (jokerIndices.length >= 2) {
           // 첫 번째 조커를 0번 위치로
           if (jokerIndices[0] !== 0) {
-            [validGame.deck[0], validGame.deck[jokerIndices[0]]] = [validGame.deck[jokerIndices[0]], validGame.deck[0]];
+            [validGame.deck[0], validGame.deck[jokerIndices[0]]] = [
+              validGame.deck[jokerIndices[0]],
+              validGame.deck[0],
+            ];
           }
 
           // 두 번째 조커를 1번 위치로
           const secondJokerIndex = jokerIndices[1];
           if (secondJokerIndex !== 1) {
-            [validGame.deck[1], validGame.deck[secondJokerIndex]] = [validGame.deck[secondJokerIndex], validGame.deck[1]];
+            [validGame.deck[1], validGame.deck[secondJokerIndex]] = [
+              validGame.deck[secondJokerIndex],
+              validGame.deck[1],
+            ];
           }
 
           console.log('[TEST BACKDOOR] Jokers placed at positions 0 and 1');
@@ -540,9 +550,9 @@ export default class GameManager {
       }
     }
 
-    const hasNoDoubleJoker = allDecksSelected && !validGame.players.some(
-      (p) => p.cards.filter((card) => card.isJoker).length === 2
-    );
+    const hasNoDoubleJoker =
+      allDecksSelected &&
+      !validGame.players.some((p) => p.cards.filter((card) => card.isJoker).length === 2);
 
     await this.db.updateGame(roomId, {
       players: validGame.players,
@@ -912,7 +922,7 @@ export default class GameManager {
       // 4명: 1위 ↔ 4위 2장씩
       exchangePairs.push(
         { fromIdx: 3, toIdx: 0, count: 2 }, // 4위 → 1위
-        { fromIdx: 0, toIdx: 3, count: 2 }  // 1위 → 4위
+        { fromIdx: 0, toIdx: 3, count: 2 } // 1위 → 4위
       );
     } else if (playerCount >= 5) {
       // 5명 이상: 1위 ↔ 최하위 2장씩, 2위 ↔ 차하위 1장씩
@@ -920,7 +930,7 @@ export default class GameManager {
         { fromIdx: playerCount - 1, toIdx: 0, count: 2 }, // 최하위 → 1위
         { fromIdx: 0, toIdx: playerCount - 1, count: 2 }, // 1위 → 최하위
         { fromIdx: playerCount - 2, toIdx: 1, count: 1 }, // 차하위 → 2위
-        { fromIdx: 1, toIdx: playerCount - 2, count: 1 }  // 2위 → 차하위
+        { fromIdx: 1, toIdx: playerCount - 2, count: 1 } // 2위 → 차하위
       );
     }
 
@@ -964,7 +974,7 @@ export default class GameManager {
         fromPlayerId: fromPlayer.id,
         toPlayerId: toPlayer.id,
         cardCount: pair.count,
-        cardsGiven: cardsGiven,
+        cardsGiven,
       };
     });
 
@@ -990,5 +1000,4 @@ export default class GameManager {
     // 상위 count개 선택
     return sortedCards.slice(0, count);
   }
-
 }

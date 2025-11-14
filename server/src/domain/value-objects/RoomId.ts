@@ -6,7 +6,9 @@
  */
 export class RoomId {
   private readonly _value: string;
+
   private static readonly ROOM_ID_LENGTH = 6;
+
   private static readonly ALPHANUMERIC_PATTERN = /^[A-Za-z0-9]+$/;
 
   private constructor(value: string) {

@@ -17,9 +17,16 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { VoteNextGameRequest, VoteNextGameResponse } from '../../dto/game/VoteNextGameDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { NotFoundError } from '../../ports/RepositoryError';
-import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  BusinessRuleError,
+} from '../../errors/ApplicationError';
 
 /**
  * VoteNextGameUseCase
@@ -28,7 +35,9 @@ import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../..
  * 모든 플레이어가 찬성하면 다음 게임이 시작되고,
  * 한 명이라도 반대하면 게임이 종료됩니다.
  */
-export class VoteNextGameUseCase implements IUseCase<VoteNextGameRequest, UseCaseResponse<VoteNextGameResponse>> {
+export class VoteNextGameUseCase
+  implements IUseCase<VoteNextGameRequest, UseCaseResponse<VoteNextGameResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: VoteNextGameRequest): Promise<UseCaseResponse<VoteNextGameResponse>> {
@@ -112,10 +121,7 @@ export class VoteNextGameUseCase implements IUseCase<VoteNextGameRequest, UseCas
       }
 
       if (error instanceof BusinessRuleError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       // 예상치 못한 에러

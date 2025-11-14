@@ -52,10 +52,7 @@ describe('GameMapper', () => {
       const player = Player.create(PlayerId.create('p1'), 'TestPlayer');
       player.assignRole(5);
       player.assignRank(2);
-      player.assignCards([
-        Card.create(3, false),
-        Card.create(4, false),
-      ]);
+      player.assignCards([Card.create(3, false), Card.create(4, false)]);
       game.addPlayer(player);
 
       // Act
@@ -96,12 +93,8 @@ describe('GameMapper', () => {
     it('should handle optional fields', () => {
       // Arrange
       const game = Game.create(RoomId.from('ROOM05'));
-      game.setSelectableDecks([
-        { cards: [Card.create(1, false)], isSelected: false },
-      ]);
-      game.setRoleSelectionCards([
-        { number: 1, isSelected: false },
-      ]);
+      game.setSelectableDecks([{ cards: [Card.create(1, false)], isSelected: false }]);
+      game.setRoleSelectionCards([{ number: 1, isSelected: false }]);
 
       // Act
       const document = GameMapper.toDocument(game);
@@ -235,12 +228,8 @@ describe('GameMapper', () => {
         deck: [],
         round: 2,
         finishedPlayers: ['p2'],
-        selectableDecks: [
-          { cards: [], isSelected: true, selectedBy: 'p1' },
-        ],
-        roleSelectionCards: [
-          { number: 1, isSelected: true, selectedBy: 'p1' },
-        ],
+        selectableDecks: [{ cards: [], isSelected: true, selectedBy: 'p1' }],
+        roleSelectionCards: [{ number: 1, isSelected: true, selectedBy: 'p1' }],
       };
 
       // Act
@@ -251,7 +240,7 @@ describe('GameMapper', () => {
       expect(game.lastPlay?.cards).toEqual([{ rank: 5, isJoker: false }]);
       expect(game.selectableDecks).toBeDefined();
       expect(game.roleSelectionCards).toBeDefined();
-      expect(game.finishedPlayers.map(p => p.value)).toEqual(['p2']);
+      expect(game.finishedPlayers.map((p) => p.value)).toEqual(['p2']);
     });
   });
 
@@ -264,10 +253,7 @@ describe('GameMapper', () => {
 
       player1.assignRole(3);
       player1.assignRank(1);
-      player1.assignCards([
-        Card.create(1, false),
-        Card.create(2, false),
-      ]);
+      player1.assignCards([Card.create(1, false), Card.create(2, false)]);
 
       player2.assignRole(7);
       player2.assignRank(2);
@@ -292,7 +278,9 @@ describe('GameMapper', () => {
       expect(reconstructedGame.currentTurn?.value).toBe(originalGame.currentTurn?.value);
       expect(reconstructedGame.round).toBe(originalGame.round);
       expect(reconstructedGame.players).toHaveLength(originalGame.players.length);
-      expect(reconstructedGame.lastPlay?.playerId.value).toBe(originalGame.lastPlay?.playerId.value);
+      expect(reconstructedGame.lastPlay?.playerId.value).toBe(
+        originalGame.lastPlay?.playerId.value
+      );
       expect(reconstructedGame.lastPlay?.cards).toEqual(originalGame.lastPlay?.cards);
 
       // Player 상세 비교

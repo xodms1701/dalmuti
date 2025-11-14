@@ -34,7 +34,7 @@ export class GameQueryService {
    * @param roomId - 방 ID
    * @returns 게임 상태 (PlainObject 형태) 또는 null
    */
-  async getGameState(roomId: string): Promise<any | null> {
+  async getGameState(roomId: string) {
     try {
       const game = await this.gameRepository.findById(RoomId.from(roomId));
       return game ? game.toPlainObject() : null;

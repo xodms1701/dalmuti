@@ -54,18 +54,12 @@ describe('SelectDeckUseCase', () => {
     // 선택 가능한 덱 설정
     const selectableDecks = [
       {
-        cards: [
-          Card.create(1, false),
-          Card.create(2, false),
-        ],
+        cards: [Card.create(1, false), Card.create(2, false)],
         isSelected: false,
         selectedBy: undefined,
       },
       {
-        cards: [
-          Card.create(3, false),
-          Card.create(4, false),
-        ],
+        cards: [Card.create(3, false), Card.create(4, false)],
         isSelected: false,
         selectedBy: undefined,
       },

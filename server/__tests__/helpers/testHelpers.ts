@@ -28,9 +28,7 @@ export async function setupGameWithPlayers(
 /**
  * 플레이어 통계를 초기화합니다
  */
-export function initializePlayerStats(
-  players: Player[]
-): Record<
+export function initializePlayerStats(players: Player[]): Record<
   string,
   {
     nickname: string;
@@ -64,6 +62,7 @@ export function initializePlayerStats(
  */
 export class GameStateBuilder {
   private game: Game;
+
   private mockDb: MockDatabase;
 
   constructor(game: Game, mockDb: MockDatabase) {
@@ -182,7 +181,9 @@ export class GameStateBuilder {
   /**
    * 선택 가능한 덱을 설정합니다
    */
-  withSelectableDecks(decks: Array<{ cards: Card[]; isSelected: boolean; selectedBy?: string }>): this {
+  withSelectableDecks(
+    decks: Array<{ cards: Card[]; isSelected: boolean; selectedBy?: string }>
+  ): this {
     this.game.selectableDecks = decks;
     return this;
   }
@@ -248,7 +249,9 @@ export function createCard(rank: number, isJoker: boolean = false): Card {
  * 여러 개의 같은 카드를 생성합니다
  */
 export function createCards(rank: number, count: number, isJoker: boolean = false): Card[] {
-  return Array(count).fill(null).map(() => createCard(rank, isJoker));
+  return Array(count)
+    .fill(null)
+    .map(() => createCard(rank, isJoker));
 }
 
 /**

@@ -20,7 +20,11 @@ import { PlayCardUseCase } from '../use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../use-cases/game/DeleteGameUseCase';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../dto/common/BaseResponse';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../dto/common/BaseResponse';
 
 /**
  * GameCommandService
@@ -150,8 +154,7 @@ export class GameCommandService {
       // (최소 4명 이상 & 모든 플레이어 준비 완료)
       const MIN_PLAYERS = 4;
       const canStartGame =
-        readyResult.data.playerCount >= MIN_PLAYERS &&
-        readyResult.data.allPlayersReady;
+        readyResult.data.playerCount >= MIN_PLAYERS && readyResult.data.allPlayersReady;
 
       return createSuccessResponse({
         ...readyResult.data,
@@ -248,12 +251,8 @@ export class GameCommandService {
    * @param nickname - 플레이어 닉네임
    * @returns 참가 결과
    */
-  async joinGame(
-    roomId: string,
-    playerId: string,
-    nickname: string
-  ): Promise<UseCaseResponse<any>> {
-    return await this.joinGameUseCase.execute({
+  async joinGame(roomId: string, playerId: string, nickname: string) {
+    return this.joinGameUseCase.execute({
       roomId,
       playerId,
       nickname,
@@ -269,11 +268,8 @@ export class GameCommandService {
    * @param playerId - 플레이어 ID
    * @returns 퇴장 결과
    */
-  async leaveGame(
-    roomId: string,
-    playerId: string
-  ): Promise<UseCaseResponse<any>> {
-    return await this.leaveGameUseCase.execute({
+  async leaveGame(roomId: string, playerId: string) {
+    return this.leaveGameUseCase.execute({
       roomId,
       playerId,
     });
@@ -289,12 +285,8 @@ export class GameCommandService {
    * @param roleNumber - 역할 번호 (1-13)
    * @returns 역할 선택 결과
    */
-  async selectRole(
-    roomId: string,
-    playerId: string,
-    roleNumber: number
-  ): Promise<UseCaseResponse<any>> {
-    return await this.selectRoleUseCase.execute({
+  async selectRole(roomId: string, playerId: string, roleNumber: number) {
+    return this.selectRoleUseCase.execute({
       roomId,
       playerId,
       roleNumber,
@@ -311,12 +303,8 @@ export class GameCommandService {
    * @param deckIndex - 덱 인덱스
    * @returns 덱 선택 결과
    */
-  async selectDeck(
-    roomId: string,
-    playerId: string,
-    deckIndex: number
-  ): Promise<UseCaseResponse<any>> {
-    return await this.selectDeckUseCase.execute({
+  async selectDeck(roomId: string, playerId: string, deckIndex: number) {
+    return this.selectDeckUseCase.execute({
       roomId,
       playerId,
       deckIndex,
@@ -333,12 +321,8 @@ export class GameCommandService {
    * @param vote - 투표 (true: 찬성, false: 반대)
    * @returns 투표 결과
    */
-  async voteNextGame(
-    roomId: string,
-    playerId: string,
-    vote: boolean
-  ): Promise<UseCaseResponse<any>> {
-    return await this.voteNextGameUseCase.execute({
+  async voteNextGame(roomId: string, playerId: string, vote: boolean) {
+    return this.voteNextGameUseCase.execute({
       roomId,
       playerId,
       vote,

@@ -7,6 +7,7 @@
  */
 export class Card {
   readonly rank: number;
+
   readonly isJoker: boolean;
 
   /**

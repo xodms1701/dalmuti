@@ -18,9 +18,16 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { PassTurnRequest, PassTurnResponse } from '../../dto/game/PassTurnDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { NotFoundError } from '../../ports/RepositoryError';
-import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  BusinessRuleError,
+} from '../../errors/ApplicationError';
 import * as TurnService from '../../../domain/services/TurnService';
 
 /**
@@ -28,7 +35,9 @@ import * as TurnService from '../../../domain/services/TurnService';
  *
  * 플레이어의 턴을 패스하고 다음 턴으로 넘어갑니다.
  */
-export class PassTurnUseCase implements IUseCase<PassTurnRequest, UseCaseResponse<PassTurnResponse>> {
+export class PassTurnUseCase
+  implements IUseCase<PassTurnRequest, UseCaseResponse<PassTurnResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: PassTurnRequest): Promise<UseCaseResponse<PassTurnResponse>> {
@@ -63,9 +72,7 @@ export class PassTurnUseCase implements IUseCase<PassTurnRequest, UseCaseRespons
       try {
         player.pass();
       } catch (error) {
-        throw new BusinessRuleError(
-          error instanceof Error ? error.message : 'Failed to pass turn'
-        );
+        throw new BusinessRuleError(error instanceof Error ? error.message : 'Failed to pass turn');
       }
 
       // 5. 다음 턴 계산
@@ -101,25 +108,15 @@ export class PassTurnUseCase implements IUseCase<PassTurnRequest, UseCaseRespons
     } catch (error) {
       // Application Layer 에러는 그대로 전달
       if (error instanceof ValidationError) {
-        return createErrorResponse(
-          error.code,
-          error.message,
-          { field: error.field }
-        );
+        return createErrorResponse(error.code, error.message, { field: error.field });
       }
 
       if (error instanceof ResourceNotFoundError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       if (error instanceof BusinessRuleError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       // 예상치 못한 에러

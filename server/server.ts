@@ -84,11 +84,7 @@ const gameQueryService = new GameQueryService(gameRepository);
 // CQRS 패턴: Command와 Query를 분리하여 주입
 // /v2 네임스페이스 사용 - Legacy와 충돌 방지
 const ioV2 = io.of('/v2');
-new SocketController(
-  ioV2,
-  gameCommandService,
-  gameQueryService
-);
+new SocketController(ioV2, gameCommandService, gameQueryService);
 
 // MongoDB 연결
 gameRepository.connect().catch((error) => {
@@ -103,6 +99,7 @@ httpServer.listen(
     host: '0.0.0.0',
   },
   () => {
+    // eslint-disable-next-line no-console
     console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
   }
 );

@@ -16,15 +16,25 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { SelectDeckRequest, SelectDeckResponse } from '../../dto/game/SelectDeckDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  BusinessRuleError,
+} from '../../errors/ApplicationError';
 
 /**
  * SelectDeckUseCase
  *
  * 플레이어가 카드 덱을 선택합니다.
  */
-export class SelectDeckUseCase implements IUseCase<SelectDeckRequest, UseCaseResponse<SelectDeckResponse>> {
+export class SelectDeckUseCase
+  implements IUseCase<SelectDeckRequest, UseCaseResponse<SelectDeckResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: SelectDeckRequest): Promise<UseCaseResponse<SelectDeckResponse>> {
@@ -88,25 +98,15 @@ export class SelectDeckUseCase implements IUseCase<SelectDeckRequest, UseCaseRes
     } catch (error) {
       // Application Layer 에러는 그대로 전달
       if (error instanceof ValidationError) {
-        return createErrorResponse(
-          error.code,
-          error.message,
-          { field: error.field }
-        );
+        return createErrorResponse(error.code, error.message, { field: error.field });
       }
 
       if (error instanceof ResourceNotFoundError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       if (error instanceof BusinessRuleError) {
-        return createErrorResponse(
-          error.code,
-          error.message
-        );
+        return createErrorResponse(error.code, error.message);
       }
 
       // 예상치 못한 에러
