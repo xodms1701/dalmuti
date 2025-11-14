@@ -45,6 +45,7 @@ describe('GameApplicationService Integration Tests', () => {
 
     // Application Service 생성
     service = new GameApplicationService(
+      repository,
       createGameUseCase,
       joinGameUseCase,
       leaveGameUseCase,
@@ -141,6 +142,11 @@ describe('GameApplicationService Integration Tests', () => {
       const games = await repository.findAll();
       expect(games).toHaveLength(0);
     });
+
+    // TODO: 보상 트랜잭션 테스트 추가
+    // join이 실패했을 때 생성된 게임이 삭제되는지 검증하는 테스트 필요
+    // Mock을 사용하여 joinGameUseCase.execute()가 실패하도록 만들고,
+    // repository.findById()로 게임이 삭제되었는지 확인
   });
 
   describe('toggleReadyAndCheckStart', () => {

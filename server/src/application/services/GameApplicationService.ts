@@ -17,14 +17,18 @@ import { PlayCardUseCase } from '../use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../use-cases/game/VoteNextGameUseCase';
 import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../dto/common/BaseResponse';
+import { IGameRepository } from '../ports/IGameRepository';
+import { RoomId } from '../../domain/value-objects/RoomId';
 
 /**
  * GameApplicationService
  *
  * Use Case들을 조합하여 복잡한 비즈니스 시나리오를 처리합니다.
+ * 트랜잭션 관리 및 보상 트랜잭션을 담당합니다.
  */
 export class GameApplicationService {
   constructor(
+    private readonly gameRepository: IGameRepository,
     private readonly createGameUseCase: CreateGameUseCase,
     private readonly joinGameUseCase: JoinGameUseCase,
     private readonly leaveGameUseCase: LeaveGameUseCase,
@@ -73,8 +77,17 @@ export class GameApplicationService {
       });
 
       if (!joinResult.success) {
-        // 게임은 생성되었으나 참가 실패
-        // 실제 환경에서는 생성된 게임을 삭제하거나 보상 트랜잭션 필요
+        // 보상 트랜잭션: 참가 실패 시 생성된 게임을 삭제하여 원자성 보장
+        try {
+          await this.gameRepository.delete(RoomId.from(createResult.data.roomId));
+        } catch (deleteError) {
+          // 삭제 실패 시 로그만 남기고 원래 에러를 반환
+          // 실제 운영 환경에서는 모니터링/알림 필요
+          console.error(
+            `Failed to rollback game creation: ${createResult.data.roomId}`,
+            deleteError
+          );
+        }
         return joinResult;
       }
 
