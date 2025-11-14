@@ -63,8 +63,8 @@ export function startNewRound(game: Game): void {
   game.setLastPlay(undefined);
 
   // 모든 활성 플레이어의 패스 상태 초기화
-  const players = game.players;
-  const finishedPlayers = game.finishedPlayers;
+  const { players } = game;
+  const { finishedPlayers } = game;
 
   players.forEach((player) => {
     if (!finishedPlayers.some((fp) => fp.equals(player.id))) {
@@ -75,7 +75,10 @@ export function startNewRound(game: Game): void {
   // 마지막으로 카드를 낸 플레이어부터 다음 활성 플레이어 찾기
   if (prevLastPlayerId) {
     const gamePlain = game.toPlainObject();
-    const nextPlayerIdString = TurnHelper.findNextPlayerFrom(gamePlain as LegacyGame, prevLastPlayerId.value);
+    const nextPlayerIdString = TurnHelper.findNextPlayerFrom(
+      gamePlain as LegacyGame,
+      prevLastPlayerId.value
+    );
     game.setCurrentTurn(PlayerId.create(nextPlayerIdString));
   }
 }

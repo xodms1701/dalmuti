@@ -164,7 +164,11 @@ export function shuffleDeck<T>(deck: T[]): T[] {
  * const roleCards = createRoleSelectionDeck();
  * // [{number: 5, isSelected: false}, ...]
  */
-export function createRoleSelectionDeck(): Array<{ number: number; isSelected: boolean; selectedBy?: string }> {
+export function createRoleSelectionDeck(): Array<{
+  number: number;
+  isSelected: boolean;
+  selectedBy?: string;
+}> {
   const numbers = Array.from({ length: 13 }, (_, i) => i + 1);
   const shuffled = shuffleDeck(numbers);
 

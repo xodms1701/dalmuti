@@ -127,9 +127,7 @@ describe('CreateGameUseCase', () => {
 
     it('should return conflict error when roomId already exists', async () => {
       // Arrange
-      mockRepository.save.mockRejectedValue(
-        new DuplicateError('Game', 'ROOM01')
-      );
+      mockRepository.save.mockRejectedValue(new DuplicateError('Game', 'ROOM01'));
       const request: CreateGameRequest = { roomId: 'ROOM01' };
 
       // Act

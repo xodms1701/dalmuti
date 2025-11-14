@@ -45,9 +45,7 @@ export interface ErrorResponse extends BaseResponse {
  *
  * @template TData - 성공 시 반환할 데이터의 타입
  */
-export type UseCaseResponse<TData = void> =
-  | SuccessResponse<TData>
-  | ErrorResponse;
+export type UseCaseResponse<TData = void> = SuccessResponse<TData> | ErrorResponse;
 
 /**
  * 성공 응답 생성 헬퍼 함수

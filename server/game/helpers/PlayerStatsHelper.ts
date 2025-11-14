@@ -5,6 +5,7 @@
  * playCard와 passTurn에서 중복되는 통계 초기화 및 업데이트 로직을 통합합니다.
  */
 
+/* eslint-disable no-param-reassign, no-plusplus */
 import { Game, Player } from '../../types';
 
 /**

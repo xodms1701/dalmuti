@@ -20,9 +20,16 @@ import { RoomId } from '../../../domain/value-objects/RoomId';
 import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { Card } from '../../../domain/entities/Card';
 import { PlayCardRequest, PlayCardResponse } from '../../dto/game/PlayCardDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
-import { NotFoundError } from '../../ports/RepositoryError';
-import { ResourceNotFoundError, ValidationError, BusinessRuleError } from '../../errors/ApplicationError';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  BusinessRuleError,
+} from '../../errors/ApplicationError';
 import * as ValidationService from '../../../domain/services/ValidationService';
 import * as TurnService from '../../../domain/services/TurnService';
 
@@ -31,7 +38,9 @@ import * as TurnService from '../../../domain/services/TurnService';
  *
  * 플레이어가 카드를 플레이합니다.
  */
-export class PlayCardUseCase implements IUseCase<PlayCardRequest, UseCaseResponse<PlayCardResponse>> {
+export class PlayCardUseCase
+  implements IUseCase<PlayCardRequest, UseCaseResponse<PlayCardResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: PlayCardRequest): Promise<UseCaseResponse<PlayCardResponse>> {
@@ -78,19 +87,28 @@ export class PlayCardUseCase implements IUseCase<PlayCardRequest, UseCaseRespons
       // 4. 게임 상태 검증 (playing 페이즈여야 함)
       const gameStateValidation = ValidationService.validateGameState(game, 'playing');
       if (!gameStateValidation.success) {
-        throw new BusinessRuleError(gameStateValidation.error || 'Invalid game state', 'INVALID_GAME_STATE');
+        throw new BusinessRuleError(
+          gameStateValidation.error || 'Invalid game state',
+          'INVALID_GAME_STATE'
+        );
       }
 
       // 5. 플레이어 액션 검증 (턴, 패스 상태 등)
       const playerActionValidation = ValidationService.validatePlayerAction(game, playerId.value);
       if (!playerActionValidation.success) {
-        throw new BusinessRuleError(playerActionValidation.error || 'Invalid player action', 'INVALID_PLAYER_ACTION');
+        throw new BusinessRuleError(
+          playerActionValidation.error || 'Invalid player action',
+          'INVALID_PLAYER_ACTION'
+        );
       }
 
       // 6. 플레이어가 카드를 보유하는지 검증
       const hasCardsValidation = ValidationService.validatePlayerHasCards(game, playerId, cards);
       if (!hasCardsValidation.success) {
-        throw new BusinessRuleError(hasCardsValidation.error || 'Player does not have cards', 'PLAYER_DOES_NOT_HAVE_CARDS');
+        throw new BusinessRuleError(
+          hasCardsValidation.error || 'Player does not have cards',
+          'PLAYER_DOES_NOT_HAVE_CARDS'
+        );
       }
 
       // 7. 카드 유효성 검증 (같은 숫자인지, lastPlay보다 강한지 등)

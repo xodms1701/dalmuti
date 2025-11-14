@@ -503,7 +503,7 @@ describe('Game', () => {
       game.addFinishedPlayer(PlayerId.create('player1'));
 
       // Assert
-      expect(game.finishedPlayers.some(p => p.value === 'player1')).toBe(true);
+      expect(game.finishedPlayers.some((p) => p.value === 'player1')).toBe(true);
     });
 
     it('should not add duplicate finished player', () => {
@@ -628,7 +628,7 @@ describe('Game', () => {
       game.addPlayer(player);
 
       // Act
-      const players = game.players;
+      const { players } = game;
       players.push(Player.create(PlayerId.create('player2'), 'Bob'));
 
       // Assert
@@ -641,7 +641,7 @@ describe('Game', () => {
       game.setDeck([Card.create(5, false)]);
 
       // Act
-      const deck = game.deck;
+      const { deck } = game;
       deck.push(Card.create(7, false));
 
       // Assert

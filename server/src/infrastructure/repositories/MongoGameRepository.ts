@@ -25,7 +25,9 @@ import { GameMapper, GameDocument } from './GameMapper';
  */
 export class MongoGameRepository implements IGameRepository {
   private client: MongoClient;
+
   private db: Db;
+
   private collection: Collection<GameDocument>;
 
   /**
@@ -35,11 +37,7 @@ export class MongoGameRepository implements IGameRepository {
    * @param dbName - 데이터베이스 이름
    * @param collectionName - 컬렉션 이름 (기본값: 'games')
    */
-  constructor(
-    uri: string,
-    dbName: string,
-    collectionName: string = 'games'
-  ) {
+  constructor(uri: string, dbName: string, collectionName: string = 'games') {
     this.client = new MongoClient(uri);
     this.db = this.client.db(dbName);
     this.collection = this.db.collection<GameDocument>(collectionName);
@@ -159,10 +157,7 @@ export class MongoGameRepository implements IGameRepository {
    * @returns 업데이트된 Game Entity 또는 null
    * @throws NotFoundError - 게임이 존재하지 않는 경우
    */
-  async update(
-    roomId: RoomId,
-    updates: Partial<Game>
-  ): Promise<Game | null> {
+  async update(roomId: RoomId, updates: Partial<Game>): Promise<Game | null> {
     try {
       const updateDocument = GameMapper.toUpdateDocument(updates);
 

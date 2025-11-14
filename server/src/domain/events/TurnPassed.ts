@@ -1,6 +1,8 @@
 export default class TurnPassed {
   readonly roomId: string;
+
   readonly playerId: string;
+
   readonly timestamp: Date;
 
   constructor(roomId: string, playerId: string) {

@@ -1,11 +1,11 @@
 /**
- * GameApplicationService Integration Tests
+ * GameCommandService Integration Tests
  *
  * 실제 MongoDB와 연결하여 전체 게임 플로우를 테스트합니다.
  * Use Case들이 실제 Repository와 함께 작동하는지 검증합니다.
  */
 
-import { GameApplicationService } from '../../../src/application/services/GameApplicationService';
+import { GameCommandService } from '../../../src/application/services/GameCommandService';
 import { MongoGameRepository } from '../../../src/infrastructure/repositories/MongoGameRepository';
 import { CreateGameUseCase } from '../../../src/application/use-cases/game/CreateGameUseCase';
 import { JoinGameUseCase } from '../../../src/application/use-cases/game/JoinGameUseCase';
@@ -16,6 +16,7 @@ import { SelectDeckUseCase } from '../../../src/application/use-cases/game/Selec
 import { PlayCardUseCase } from '../../../src/application/use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../../src/application/use-cases/game/VoteNextGameUseCase';
+import { DeleteGameUseCase } from '../../../src/application/use-cases/game/DeleteGameUseCase';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
 import { Card } from '../../../src/domain/entities/Card';
 
@@ -23,8 +24,8 @@ import { Card } from '../../../src/domain/entities/Card';
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'dalmuti-test';
 
-describe('GameApplicationService Integration Tests', () => {
-  let service: GameApplicationService;
+describe('GameCommandService Integration Tests', () => {
+  let service: GameCommandService;
   let repository: MongoGameRepository;
 
   beforeAll(async () => {
@@ -42,10 +43,10 @@ describe('GameApplicationService Integration Tests', () => {
     const playCardUseCase = new PlayCardUseCase(repository);
     const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
+    const deleteGameUseCase = new DeleteGameUseCase(repository);
 
     // Application Service 생성
-    service = new GameApplicationService(
-      repository,
+    service = new GameCommandService(
       createGameUseCase,
       joinGameUseCase,
       leaveGameUseCase,
@@ -54,7 +55,8 @@ describe('GameApplicationService Integration Tests', () => {
       selectDeckUseCase,
       playCardUseCase,
       passTurnUseCase,
-      voteNextGameUseCase
+      voteNextGameUseCase,
+      deleteGameUseCase
     );
   });
 
@@ -65,6 +67,12 @@ describe('GameApplicationService Integration Tests', () => {
 
   beforeEach(async () => {
     // 각 테스트 전에 컬렉션 정리
+    const collection = repository.getCollection();
+    await collection.deleteMany({});
+  });
+
+  afterEach(async () => {
+    // 각 테스트 후에도 컬렉션 정리 (테스트 격리 보장)
     const collection = repository.getCollection();
     await collection.deleteMany({});
   });
@@ -102,11 +110,7 @@ describe('GameApplicationService Integration Tests', () => {
       const roomId = 'CUSTOM';
 
       // Act
-      const result = await service.createAndJoinGame(
-        creatorId,
-        nickname,
-        roomId
-      );
+      const result = await service.createAndJoinGame(creatorId, nickname, roomId);
 
       // Assert
       expect(result.success).toBe(true);
@@ -126,11 +130,7 @@ describe('GameApplicationService Integration Tests', () => {
       const invalidRoomId = 'TOOLONG123';
 
       // Act
-      const result = await service.createAndJoinGame(
-        creatorId,
-        nickname,
-        invalidRoomId
-      );
+      const result = await service.createAndJoinGame(creatorId, nickname, invalidRoomId);
 
       // Assert
       expect(result.success).toBe(false);
@@ -161,10 +161,10 @@ describe('GameApplicationService Integration Tests', () => {
       await joinUseCase.execute({ roomId, playerId: 'p4', nickname: 'David' });
 
       // Act - 모든 플레이어 준비
-      const result1 = await service.toggleReadyAndCheckStart(roomId, 'p1', true);
-      const result2 = await service.toggleReadyAndCheckStart(roomId, 'p2', true);
-      const result3 = await service.toggleReadyAndCheckStart(roomId, 'p3', true);
-      const result4 = await service.toggleReadyAndCheckStart(roomId, 'p4', true);
+      const result1 = await service.toggleReadyAndCheckStart(roomId, 'p1');
+      const result2 = await service.toggleReadyAndCheckStart(roomId, 'p2');
+      const result3 = await service.toggleReadyAndCheckStart(roomId, 'p3');
+      const result4 = await service.toggleReadyAndCheckStart(roomId, 'p4');
 
       // Assert
       expect(result1.success).toBe(true);
@@ -187,7 +187,7 @@ describe('GameApplicationService Integration Tests', () => {
       await joinUseCase.execute({ roomId, playerId: 'p2', nickname: 'Bob' });
 
       // Act - 1명만 준비
-      const result = await service.toggleReadyAndCheckStart(roomId, 'p1', true);
+      const result = await service.toggleReadyAndCheckStart(roomId, 'p1');
 
       // Assert
       expect(result.success).toBe(true);
@@ -202,10 +202,10 @@ describe('GameApplicationService Integration Tests', () => {
       const roomId = RoomId.generate().value;
       await service.createAndJoinGame('p1', 'Alice', roomId);
 
-      await service.toggleReadyAndCheckStart(roomId, 'p1', true);
+      await service.toggleReadyAndCheckStart(roomId, 'p1');
 
-      // Act - 준비 취소
-      const result = await service.toggleReadyAndCheckStart(roomId, 'p1', false);
+      // Act - 준비 취소 (toggle이므로 한 번 더 호출)
+      const result = await service.toggleReadyAndCheckStart(roomId, 'p1');
 
       // Assert
       expect(result.success).toBe(true);
@@ -227,14 +227,17 @@ describe('GameApplicationService Integration Tests', () => {
 
       // 게임을 playing 상태로 변경하고 카드 할당 (실제로는 더 복잡한 플로우)
       const game = await repository.findById(RoomId.from(roomId));
-      game!.changePhase('playing');
-      game!.setCurrentTurn(game!.players[0].id);
+      expect(game).not.toBeNull();
+      if (!game) throw new Error(`Game not found: ${roomId}`);
+
+      game.changePhase('playing');
+      game.setCurrentTurn(game.players[0].id);
 
       // 플레이어에게 카드 할당
       const cards = [Card.create(5, false)];
-      game!.players[0].assignCards(cards);
+      game.players[0].assignCards(cards);
 
-      await repository.update(RoomId.from(roomId), game!);
+      await repository.update(RoomId.from(roomId), game);
 
       // Act
       const result = await service.playOrPass(roomId, 'p1', [{ rank: 5, isJoker: false }]);
@@ -258,9 +261,12 @@ describe('GameApplicationService Integration Tests', () => {
 
       // 게임을 playing 상태로 변경
       const game = await repository.findById(RoomId.from(roomId));
-      game!.changePhase('playing');
-      game!.setCurrentTurn(game!.players[0].id);
-      await repository.update(RoomId.from(roomId), game!);
+      expect(game).not.toBeNull();
+      if (!game) throw new Error(`Game not found: ${roomId}`);
+
+      game.changePhase('playing');
+      game.setCurrentTurn(game.players[0].id);
+      await repository.update(RoomId.from(roomId), game);
 
       // Act
       const result = await service.playOrPass(roomId, 'p1', []);
@@ -305,10 +311,10 @@ describe('GameApplicationService Integration Tests', () => {
       expect(join4.success).toBe(true);
 
       // 3. 모든 플레이어 준비
-      const ready1 = await service.toggleReadyAndCheckStart(roomId, 'p1', true);
-      const ready2 = await service.toggleReadyAndCheckStart(roomId, 'p2', true);
-      const ready3 = await service.toggleReadyAndCheckStart(roomId, 'p3', true);
-      const ready4 = await service.toggleReadyAndCheckStart(roomId, 'p4', true);
+      const ready1 = await service.toggleReadyAndCheckStart(roomId, 'p1');
+      const ready2 = await service.toggleReadyAndCheckStart(roomId, 'p2');
+      const ready3 = await service.toggleReadyAndCheckStart(roomId, 'p3');
+      const ready4 = await service.toggleReadyAndCheckStart(roomId, 'p4');
 
       expect(ready1.success).toBe(true);
       expect(ready2.success).toBe(true);

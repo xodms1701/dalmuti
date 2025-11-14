@@ -341,7 +341,10 @@ describe('GameValidator', () => {
   describe('validateAllPlayersReady', () => {
     it('모든 플레이어가 준비 상태면 성공 결과를 반환해야 함', () => {
       const game = createTestGame();
-      game.players.forEach((p) => (p.isReady = true));
+      game.players.forEach((p) => {
+        // eslint-disable-next-line no-param-reassign
+        p.isReady = true;
+      });
       const result = validateAllPlayersReady(game);
       expect(result.success).toBe(true);
     });

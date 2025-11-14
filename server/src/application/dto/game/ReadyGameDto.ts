@@ -19,10 +19,12 @@ export interface ReadyGameRequest {
   playerId: string;
 
   /**
-   * 준비 상태
-   * true: 준비 완료, false: 준비 취소
+   * 준비 상태 (optional)
+   * - true: 준비 완료
+   * - false: 준비 취소
+   * - undefined: 현재 상태를 토글 (준비 ↔ 취소)
    */
-  isReady: boolean;
+  isReady?: boolean;
 }
 
 /**

@@ -1,4 +1,15 @@
 /**
+ * Valid phase types for the game
+ */
+export type PhaseType =
+  | 'waiting'
+  | 'roleSelection'
+  | 'roleSelectionComplete'
+  | 'cardSelection'
+  | 'playing'
+  | 'gameEnd';
+
+/**
  * Phase Value Object
  *
  * Represents the current phase of the game.
@@ -18,10 +29,15 @@ export class Phase {
 
   // Static constants for each phase
   static readonly WAITING = new Phase('waiting');
+
   static readonly ROLE_SELECTION = new Phase('roleSelection');
+
   static readonly ROLE_SELECTION_COMPLETE = new Phase('roleSelectionComplete');
+
   static readonly CARD_SELECTION = new Phase('cardSelection');
+
   static readonly PLAYING = new Phase('playing');
+
   static readonly GAME_END = new Phase('gameEnd');
 
   // Phase transition rules
@@ -95,14 +111,3 @@ export class Phase {
     return this._value;
   }
 }
-
-/**
- * Valid phase types for the game
- */
-export type PhaseType =
-  | 'waiting'
-  | 'roleSelection'
-  | 'roleSelectionComplete'
-  | 'cardSelection'
-  | 'playing'
-  | 'gameEnd';

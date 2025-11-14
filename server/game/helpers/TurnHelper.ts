@@ -5,6 +5,7 @@
  * playCard와 passTurn에서 중복되는 다음 플레이어 찾기 로직을 통합합니다.
  */
 
+/* eslint-disable no-param-reassign, no-plusplus, no-use-before-define */
 import { Game, Player } from '../../types';
 
 /**

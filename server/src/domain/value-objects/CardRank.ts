@@ -6,7 +6,9 @@
  */
 export class CardRank {
   private readonly _value: number;
+
   private static readonly MIN_RANK = 1;
+
   private static readonly MAX_RANK = 13;
 
   private constructor(value: number) {

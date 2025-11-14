@@ -86,13 +86,7 @@ describe('DeckHelper', () => {
     });
 
     it('남은 카드를 순서대로 배분해야 함', () => {
-      const cards = [
-        createCard(1),
-        createCard(2),
-        createCard(3),
-        createCard(4),
-        createCard(5),
-      ];
+      const cards = [createCard(1), createCard(2), createCard(3), createCard(4), createCard(5)];
 
       const decks = createSelectableDecks(cards, 3);
 
@@ -127,12 +121,8 @@ describe('DeckHelper', () => {
     it('플레이어 수가 0 이하면 에러를 던져야 함', () => {
       const cards = [createCard(1)];
 
-      expect(() => createSelectableDecks(cards, 0)).toThrow(
-        'Player count must be greater than 0'
-      );
-      expect(() => createSelectableDecks(cards, -1)).toThrow(
-        'Player count must be greater than 0'
-      );
+      expect(() => createSelectableDecks(cards, 0)).toThrow('Player count must be greater than 0');
+      expect(() => createSelectableDecks(cards, -1)).toThrow('Player count must be greater than 0');
     });
 
     it('카드가 없으면 에러를 던져야 함', () => {
@@ -213,8 +203,9 @@ describe('DeckHelper', () => {
       const shuffled2 = shuffleDeck(deck);
 
       // 적어도 하나의 위치에서 다른 카드여야 함
-      const isDifferent = shuffled1.some((card, index) =>
-        card.rank !== shuffled2[index].rank || card.isJoker !== shuffled2[index].isJoker
+      const isDifferent = shuffled1.some(
+        (card, index) =>
+          card.rank !== shuffled2[index].rank || card.isJoker !== shuffled2[index].isJoker
       );
 
       expect(isDifferent).toBe(true);

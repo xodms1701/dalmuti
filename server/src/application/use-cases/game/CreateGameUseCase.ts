@@ -15,7 +15,11 @@ import { IGameRepository } from '../../ports/IGameRepository';
 import { Game } from '../../../domain/entities/Game';
 import { RoomId } from '../../../domain/value-objects/RoomId';
 import { CreateGameRequest, CreateGameResponse } from '../../dto/game/CreateGameDto';
-import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../../dto/common/BaseResponse';
+import {
+  UseCaseResponse,
+  createSuccessResponse,
+  createErrorResponse,
+} from '../../dto/common/BaseResponse';
 import { DuplicateError } from '../../ports/RepositoryError';
 import { ConflictError, ValidationError } from '../../errors/ApplicationError';
 
@@ -24,7 +28,9 @@ import { ConflictError, ValidationError } from '../../errors/ApplicationError';
  *
  * 새로운 게임을 생성합니다.
  */
-export class CreateGameUseCase implements IUseCase<CreateGameRequest, UseCaseResponse<CreateGameResponse>> {
+export class CreateGameUseCase
+  implements IUseCase<CreateGameRequest, UseCaseResponse<CreateGameResponse>>
+{
   constructor(private readonly gameRepository: IGameRepository) {}
 
   async execute(request: CreateGameRequest): Promise<UseCaseResponse<CreateGameResponse>> {

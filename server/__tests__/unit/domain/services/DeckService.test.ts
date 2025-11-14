@@ -431,9 +431,22 @@ describe('DeckService', () => {
     it('should count all cards across multiple decks', () => {
       // Arrange
       const decks: DeckService.SelectableDeck[] = [
-        { cards: [{ rank: 5, isJoker: false }, { rank: 7, isJoker: false }], isSelected: false },
+        {
+          cards: [
+            { rank: 5, isJoker: false },
+            { rank: 7, isJoker: false },
+          ],
+          isSelected: false,
+        },
         { cards: [{ rank: 3, isJoker: false }], isSelected: false },
-        { cards: [{ rank: 1, isJoker: false }, { rank: 2, isJoker: false }, { rank: 4, isJoker: false }], isSelected: false },
+        {
+          cards: [
+            { rank: 1, isJoker: false },
+            { rank: 2, isJoker: false },
+            { rank: 4, isJoker: false },
+          ],
+          isSelected: false,
+        },
       ];
 
       // Act

@@ -34,7 +34,7 @@ export default class MongoDB implements Database {
   }
 
   async getGame(roomId: string): Promise<Game | null> {
-    return await this.games.findOne({ roomId });
+    return this.games.findOne({ roomId });
   }
 
   async updateGame(roomId: string, game: Partial<Game>): Promise<Game | null> {
@@ -52,6 +52,6 @@ export default class MongoDB implements Database {
   }
 
   async listGames(): Promise<Game[]> {
-    return await this.games.find().toArray();
+    return this.games.find().toArray();
   }
 }

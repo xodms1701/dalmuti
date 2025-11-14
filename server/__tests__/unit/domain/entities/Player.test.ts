@@ -34,12 +34,16 @@ describe('Player', () => {
 
     it('should throw error when nickname is empty', () => {
       // Arrange & Act & Assert
-      expect(() => Player.create(PlayerId.create('player1'), '')).toThrow('Player nickname cannot be empty');
+      expect(() => Player.create(PlayerId.create('player1'), '')).toThrow(
+        'Player nickname cannot be empty'
+      );
     });
 
     it('should throw error when nickname is only whitespace', () => {
       // Arrange & Act & Assert
-      expect(() => Player.create(PlayerId.create('player1'), '   ')).toThrow('Player nickname cannot be empty');
+      expect(() => Player.create(PlayerId.create('player1'), '   ')).toThrow(
+        'Player nickname cannot be empty'
+      );
     });
   });
 
@@ -47,10 +51,7 @@ describe('Player', () => {
     it('should remove played cards from player hand', () => {
       // Arrange
       const player = Player.create(PlayerId.create('player1'), 'Alice');
-      const cards = [
-        Card.create(5, false),
-        Card.create(5, false),
-      ];
+      const cards = [Card.create(5, false), Card.create(5, false)];
       player.assignCards(cards);
 
       // Act
@@ -96,18 +97,11 @@ describe('Player', () => {
     it('should handle playing multiple cards of same rank', () => {
       // Arrange
       const player = Player.create(PlayerId.create('player1'), 'Alice');
-      const cards = [
-        Card.create(5, false),
-        Card.create(5, false),
-        Card.create(5, false),
-      ];
+      const cards = [Card.create(5, false), Card.create(5, false), Card.create(5, false)];
       player.assignCards(cards);
 
       // Act
-      player.playCards([
-        Card.create(5, false),
-        Card.create(5, false),
-      ]);
+      player.playCards([Card.create(5, false), Card.create(5, false)]);
 
       // Assert
       expect(player.cards).toHaveLength(1);
@@ -273,10 +267,7 @@ describe('Player', () => {
     it('should assign cards to player', () => {
       // Arrange
       const player = Player.create(PlayerId.create('player1'), 'Alice');
-      const cards = [
-        Card.create(5, false),
-        Card.create(7, false),
-      ];
+      const cards = [Card.create(5, false), Card.create(7, false)];
 
       // Act
       player.assignCards(cards);

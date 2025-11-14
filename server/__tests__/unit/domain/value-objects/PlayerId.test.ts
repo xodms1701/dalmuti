@@ -40,7 +40,9 @@ describe('PlayerId', () => {
 
     it('should throw error when value is undefined', () => {
       // Arrange & Act & Assert
-      expect(() => PlayerId.create(undefined as unknown as string)).toThrow('PlayerId cannot be empty');
+      expect(() => PlayerId.create(undefined as unknown as string)).toThrow(
+        'PlayerId cannot be empty'
+      );
     });
 
     it('should accept value with special characters', () => {

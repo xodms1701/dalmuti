@@ -297,10 +297,7 @@ describe('ValidationService', () => {
       // Arrange
       const game = Game.create(RoomId.from('ROOM01'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
-      player.assignCards([
-        Card.create(5, false),
-        Card.create(7, false),
-      ]);
+      player.assignCards([Card.create(5, false), Card.create(7, false)]);
       game.addPlayer(player);
 
       // Act
