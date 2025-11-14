@@ -5,10 +5,10 @@
  *
  * 책임:
  * 1. RoomId, PlayerId를 Value Object로 변환
- * 2. Game Entity 조회
- * 3. 투표 처리 및 결과 확인
- * 4. 투표 결과에 따른 게임 상태 변경 (다음 게임 시작 또는 게임 종료)
- * 5. Repository를 통한 영속화
+ * 2. Game Repository에서 게임 조회
+ * 3. 도메인 로직(Game.registerVote) 실행
+ * 4. 투표 결과 확인 및 게임 상태 변경 (다음 게임 시작 또는 게임 종료)
+ * 5. 변경사항 영속화
  * 6. Response DTO 반환
  */
 
@@ -61,60 +61,40 @@ export class VoteNextGameUseCase implements IUseCase<VoteNextGameRequest, UseCas
         throw new ResourceNotFoundError('Game', roomId.value);
       }
 
-      // 3. 플레이어 존재 확인
-      const player = game.getPlayer(playerId);
-      if (!player) {
-        throw new ResourceNotFoundError('Player', playerId.value);
+      // 3. 도메인 로직 실행 - 투표 등록
+      try {
+        game.registerVote(playerId, request.vote);
+      } catch (error) {
+        throw new BusinessRuleError(
+          error instanceof Error ? error.message : 'Failed to register vote'
+        );
       }
 
-      // 4. 투표 처리
-      // Game 엔티티에 vote 메서드가 없으므로 Use Case에서 투표 추적
-      // 투표 상태를 플레이어의 isReady 필드를 활용하여 추적
-      // (간단한 구현: 찬성 = ready(), 반대 = unready())
-
-      if (request.vote) {
-        player.ready(); // 찬성
-      } else {
-        player.unready(); // 반대
-      }
-
-      // 5. 모든 플레이어의 투표 확인
-      const allPlayers = game.players;
-      const totalPlayers = allPlayers.length;
-      const votedPlayers = allPlayers.filter(p => p.isReady).length;
-      const rejectedPlayers = allPlayers.filter(p => !p.isReady).length;
+      // 4. 투표 결과 확인
+      const voteResult = game.getVoteResult();
 
       let votePassed = false;
       let nextGameStarted = false;
 
-      // 6. 투표 결과에 따른 처리
-      // 한 명이라도 반대했고 모든 플레이어가 투표했으면 게임 종료
-      if (rejectedPlayers > 0 && (votedPlayers + rejectedPlayers) === totalPlayers) {
-        game.changePhase('gameEnd');
-        votePassed = false;
-        nextGameStarted = false;
-      }
-      // 모든 플레이어가 찬성했으면 다음 게임 시작
-      else if (votedPlayers === totalPlayers && totalPlayers > 0) {
-        // 다음 게임 시작 로직
-        // 라운드 증가, 페이즈 변경, 플레이어 상태 초기화 등
-        game.incrementRound();
-        game.changePhase('roleSelection');
-
-        // 플레이어 상태 초기화
-        allPlayers.forEach(p => {
-          p.unready();
-          p.resetPass();
-        });
-
-        votePassed = true;
-        nextGameStarted = true;
+      // 5. 투표 결과에 따른 처리
+      if (voteResult.allVoted) {
+        if (voteResult.approved) {
+          // 모든 플레이어가 찬성 - 다음 게임 시작
+          game.startNextGame();
+          votePassed = true;
+          nextGameStarted = true;
+        } else {
+          // 한 명이라도 반대 - 게임 종료
+          game.endGame();
+          votePassed = false;
+          nextGameStarted = false;
+        }
       }
 
-      // 7. Repository를 통해 업데이트
+      // 6. Repository를 통해 업데이트
       await this.gameRepository.update(game.roomId, game);
 
-      // 8. Response DTO 반환
+      // 7. Response DTO 반환
       return createSuccessResponse<VoteNextGameResponse>({
         roomId: game.roomId.value,
         playerId: playerId.value,

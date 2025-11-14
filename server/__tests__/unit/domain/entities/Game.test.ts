@@ -661,4 +661,160 @@ describe('Game', () => {
       expect(game.finishedPlayers).toHaveLength(1);
     });
   });
+
+  describe('vote management', () => {
+    describe('registerVote', () => {
+      it('should register vote for player', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const playerId = PlayerId.create('player1');
+        const player = Player.create(playerId, 'Alice');
+        game.addPlayer(player);
+
+        // Act
+        game.registerVote(playerId, true);
+        const result = game.getVoteResult();
+
+        // Assert
+        expect(result.approvalCount).toBe(1);
+        expect(result.rejectionCount).toBe(0);
+      });
+
+      it('should register rejection vote', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const playerId = PlayerId.create('player1');
+        const player = Player.create(playerId, 'Alice');
+        game.addPlayer(player);
+
+        // Act
+        game.registerVote(playerId, false);
+        const result = game.getVoteResult();
+
+        // Assert
+        expect(result.approvalCount).toBe(0);
+        expect(result.rejectionCount).toBe(1);
+      });
+
+      it('should throw error when player not found', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const playerId = PlayerId.create('nonexistent');
+
+        // Act & Assert
+        expect(() => game.registerVote(playerId, true)).toThrow('Player not found in game');
+      });
+    });
+
+    describe('getVoteResult', () => {
+      it('should return all voted when all players voted', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const playerId1 = PlayerId.create('player1');
+        const playerId2 = PlayerId.create('player2');
+        const player1 = Player.create(playerId1, 'Alice');
+        const player2 = Player.create(playerId2, 'Bob');
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+        game.registerVote(playerId1, true);
+        game.registerVote(playerId2, true);
+
+        // Act
+        const result = game.getVoteResult();
+
+        // Assert
+        expect(result.allVoted).toBe(true);
+        expect(result.approved).toBe(true);
+        expect(result.approvalCount).toBe(2);
+        expect(result.rejectionCount).toBe(0);
+      });
+
+      it('should return not approved when one player rejects', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const playerId1 = PlayerId.create('player1');
+        const playerId2 = PlayerId.create('player2');
+        const player1 = Player.create(playerId1, 'Alice');
+        const player2 = Player.create(playerId2, 'Bob');
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+        game.registerVote(playerId1, true);
+        game.registerVote(playerId2, false);
+
+        // Act
+        const result = game.getVoteResult();
+
+        // Assert
+        expect(result.allVoted).toBe(true);
+        expect(result.approved).toBe(false);
+        expect(result.approvalCount).toBe(1);
+        expect(result.rejectionCount).toBe(1);
+      });
+
+      it('should return not all voted when some players have not voted', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const playerId1 = PlayerId.create('player1');
+        const playerId2 = PlayerId.create('player2');
+        const player1 = Player.create(playerId1, 'Alice');
+        const player2 = Player.create(playerId2, 'Bob');
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+        game.registerVote(playerId1, true);
+
+        // Act
+        const result = game.getVoteResult();
+
+        // Assert
+        expect(result.allVoted).toBe(false);
+        expect(result.approved).toBe(false);
+      });
+    });
+
+    describe('startNextGame', () => {
+      it('should increment round and reset game state', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        const player1 = Player.create(PlayerId.create('player1'), 'Alice');
+        const player2 = Player.create(PlayerId.create('player2'), 'Bob');
+        player1.ready();
+        player2.ready();
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+        game.registerVote(PlayerId.create('player1'), true);
+        game.registerVote(PlayerId.create('player2'), true);
+        game.changePhase('voting');
+
+        // Act
+        game.startNextGame();
+
+        // Assert
+        expect(game.round).toBe(1);
+        expect(game.phase).toBe('roleSelection');
+        expect(game.currentTurn).toBeNull();
+        expect(game.lastPlay).toBeUndefined();
+        expect(game.finishedPlayers).toEqual([]);
+        expect(player1.isReady).toBe(false);
+        expect(player2.isReady).toBe(false);
+
+        const voteResult = game.getVoteResult();
+        expect(voteResult.approvalCount).toBe(0);
+        expect(voteResult.rejectionCount).toBe(0);
+      });
+    });
+
+    describe('endGame', () => {
+      it('should change phase to gameEnd', () => {
+        // Arrange
+        const game = Game.create(RoomId.from('ROOM01'));
+        game.changePhase('playing');
+
+        // Act
+        game.endGame();
+
+        // Assert
+        expect(game.phase).toBe('gameEnd');
+      });
+    });
+  });
 });
