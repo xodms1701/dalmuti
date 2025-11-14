@@ -6,7 +6,8 @@
  * 책임:
  * 1. 역할 선택 관련 Socket.IO 이벤트 처리
  * 2. 플레이어의 순위(역할) 선택
- * 3. Use Case 호출 및 응답 처리
+ * 3. 혁명 선택 처리
+ * 4. Use Case 호출 및 응답 처리
  *
  * 헥사고날 아키텍처:
  * - Primary Adapter (Driving Adapter)
@@ -30,6 +31,7 @@ export class RoleSelectionEventAdapter extends BaseEventAdapter {
    */
   register(socket: Socket): void {
     this.handleSelectRole(socket);
+    this.handleSelectRevolution(socket);
   }
 
   /**
@@ -47,6 +49,32 @@ export class RoleSelectionEventAdapter extends BaseEventAdapter {
       ) => {
         // Command: 역할 선택
         const result = await this.commandService.selectRole(roomId, socket.id, roleNumber);
+
+        await this.handleSocketEvent(result, callback, roomId);
+      }
+    );
+  }
+
+  /**
+   * SELECT_REVOLUTION 이벤트 핸들러
+   *
+   * 조커 2장 보유 플레이어가 혁명 여부를 선택합니다.
+   * - 혁명 선택 시: 대혁명(꼴찌면 순위 반전) 또는 일반혁명 → playing 페이즈
+   * - 혁명 거부 시: 세금 교환 → tax 페이즈
+   */
+  private handleSelectRevolution(socket: Socket): void {
+    socket.on(
+      SocketEvent.SELECT_REVOLUTION,
+      async (
+        { roomId, wantRevolution }: { roomId: string; wantRevolution: boolean },
+        callback?: SocketCallback
+      ) => {
+        // Command: 혁명 선택
+        const result = await this.commandService.selectRevolution(
+          roomId,
+          socket.id,
+          wantRevolution
+        );
 
         await this.handleSocketEvent(result, callback, roomId);
       }

@@ -211,6 +211,19 @@ export class Player {
   }
 
   /**
+   * 카드 제거
+   * @param card 제거할 카드
+   * @throws Error 카드를 찾을 수 없는 경우
+   */
+  removeCard(card: Card): void {
+    const index = this._cards.findIndex((c) => c.rank === card.rank && c.isJoker === card.isJoker);
+    if (index === -1) {
+      throw new Error('Card not found in player cards');
+    }
+    this._cards.splice(index, 1);
+  }
+
+  /**
    * 플레이어가 게임을 완료했는지 확인 (카드를 모두 냈는지)
    */
   hasFinished(): boolean {

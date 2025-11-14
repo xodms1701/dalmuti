@@ -26,3 +26,14 @@ export interface RoleSelectionCard {
   isSelected: boolean;
   selectedBy?: string;
 }
+
+/**
+ * 세금 교환 정보
+ * 세금 페이즈에서 사용
+ */
+export interface TaxExchange {
+  fromPlayerId: string;
+  toPlayerId: string;
+  cardCount: number;
+  cardsGiven: ReturnType<Card['toPlainObject']>[];
+}

@@ -65,7 +65,7 @@ describe('CardEventAdapter', () => {
     beforeEach(() => {
       adapter.register(mockSocket);
       const onCalls = mockSocket.on.mock.calls as [string, Function][];
-      const playCardCall = onCalls.find(call => call[0] === 'playCard');
+      const playCardCall = onCalls.find((call) => call[0] === 'playCard');
       playCardHandler = playCardCall![1];
     });
 
@@ -92,7 +92,7 @@ describe('CardEventAdapter', () => {
         data: mockGameState,
       });
       expect(mockIo.to).toHaveBeenCalledWith('room-123');
-      expect(mockIo.emit).toHaveBeenCalledWith('GAME_STATE_UPDATED', { game: mockGameState });
+      expect(mockIo.emit).toHaveBeenCalledWith('GAME_STATE_UPDATED', mockGameState);
     });
 
     it('실패 시 에러를 반환해야 한다', async () => {
@@ -119,7 +119,7 @@ describe('CardEventAdapter', () => {
     beforeEach(() => {
       adapter.register(mockSocket);
       const onCalls = mockSocket.on.mock.calls as [string, Function][];
-      const passCall = onCalls.find(call => call[0] === 'pass');
+      const passCall = onCalls.find((call) => call[0] === 'pass');
       passHandler = passCall![1];
     });
 
@@ -165,7 +165,7 @@ describe('CardEventAdapter', () => {
     beforeEach(() => {
       adapter.register(mockSocket);
       const onCalls = mockSocket.on.mock.calls as [string, Function][];
-      const selectDeckCall = onCalls.find(call => call[0] === 'selectDeck');
+      const selectDeckCall = onCalls.find((call) => call[0] === 'selectDeck');
       selectDeckHandler = selectDeckCall![1];
     });
 

@@ -11,8 +11,10 @@ import { CreateGameUseCase } from '../../../src/application/use-cases/game/Creat
 import { JoinGameUseCase } from '../../../src/application/use-cases/game/JoinGameUseCase';
 import { LeaveGameUseCase } from '../../../src/application/use-cases/game/LeaveGameUseCase';
 import { ReadyGameUseCase } from '../../../src/application/use-cases/game/ReadyGameUseCase';
+import { StartGameUseCase } from '../../../src/application/use-cases/game/StartGameUseCase';
 import { SelectRoleUseCase } from '../../../src/application/use-cases/game/SelectRoleUseCase';
 import { SelectDeckUseCase } from '../../../src/application/use-cases/game/SelectDeckUseCase';
+import { SelectRevolutionUseCase } from '../../../src/application/use-cases/game/SelectRevolutionUseCase';
 import { PlayCardUseCase } from '../../../src/application/use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../../src/application/use-cases/game/VoteNextGameUseCase';
@@ -38,8 +40,10 @@ describe('GameCommandService Integration Tests', () => {
     const joinGameUseCase = new JoinGameUseCase(repository);
     const leaveGameUseCase = new LeaveGameUseCase(repository);
     const readyGameUseCase = new ReadyGameUseCase(repository);
+    const startGameUseCase = new StartGameUseCase(repository);
     const selectRoleUseCase = new SelectRoleUseCase(repository);
     const selectDeckUseCase = new SelectDeckUseCase(repository);
+    const selectRevolutionUseCase = new SelectRevolutionUseCase(repository);
     const playCardUseCase = new PlayCardUseCase(repository);
     const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
@@ -51,8 +55,10 @@ describe('GameCommandService Integration Tests', () => {
       joinGameUseCase,
       leaveGameUseCase,
       readyGameUseCase,
+      startGameUseCase,
       selectRoleUseCase,
       selectDeckUseCase,
+      selectRevolutionUseCase,
       playCardUseCase,
       passTurnUseCase,
       voteNextGameUseCase,

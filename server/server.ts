@@ -15,8 +15,10 @@ import { CreateGameUseCase } from './src/application/use-cases/game/CreateGameUs
 import { JoinGameUseCase } from './src/application/use-cases/game/JoinGameUseCase';
 import { LeaveGameUseCase } from './src/application/use-cases/game/LeaveGameUseCase';
 import { ReadyGameUseCase } from './src/application/use-cases/game/ReadyGameUseCase';
+import { StartGameUseCase } from './src/application/use-cases/game/StartGameUseCase';
 import { SelectRoleUseCase } from './src/application/use-cases/game/SelectRoleUseCase';
 import { SelectDeckUseCase } from './src/application/use-cases/game/SelectDeckUseCase';
+import { SelectRevolutionUseCase } from './src/application/use-cases/game/SelectRevolutionUseCase';
 import { PlayCardUseCase } from './src/application/use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from './src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from './src/application/use-cases/game/VoteNextGameUseCase';
@@ -55,8 +57,10 @@ const createGameUseCase = new CreateGameUseCase(gameRepository);
 const joinGameUseCase = new JoinGameUseCase(gameRepository);
 const leaveGameUseCase = new LeaveGameUseCase(gameRepository);
 const readyGameUseCase = new ReadyGameUseCase(gameRepository);
+const startGameUseCase = new StartGameUseCase(gameRepository);
 const selectRoleUseCase = new SelectRoleUseCase(gameRepository);
 const selectDeckUseCase = new SelectDeckUseCase(gameRepository);
+const selectRevolutionUseCase = new SelectRevolutionUseCase(gameRepository);
 const playCardUseCase = new PlayCardUseCase(gameRepository);
 const passTurnUseCase = new PassTurnUseCase(gameRepository);
 const voteNextGameUseCase = new VoteNextGameUseCase(gameRepository);
@@ -69,8 +73,10 @@ const gameCommandService = new GameCommandService(
   joinGameUseCase,
   leaveGameUseCase,
   readyGameUseCase,
+  startGameUseCase,
   selectRoleUseCase,
   selectDeckUseCase,
+  selectRevolutionUseCase,
   playCardUseCase,
   passTurnUseCase,
   voteNextGameUseCase,

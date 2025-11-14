@@ -14,8 +14,10 @@ import { CreateGameUseCase } from '../use-cases/game/CreateGameUseCase';
 import { JoinGameUseCase } from '../use-cases/game/JoinGameUseCase';
 import { LeaveGameUseCase } from '../use-cases/game/LeaveGameUseCase';
 import { ReadyGameUseCase } from '../use-cases/game/ReadyGameUseCase';
+import { StartGameUseCase } from '../use-cases/game/StartGameUseCase';
 import { SelectRoleUseCase } from '../use-cases/game/SelectRoleUseCase';
 import { SelectDeckUseCase } from '../use-cases/game/SelectDeckUseCase';
+import { SelectRevolutionUseCase } from '../use-cases/game/SelectRevolutionUseCase';
 import { PlayCardUseCase } from '../use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../use-cases/game/VoteNextGameUseCase';
@@ -38,8 +40,10 @@ export class GameCommandService {
     private readonly joinGameUseCase: JoinGameUseCase,
     private readonly leaveGameUseCase: LeaveGameUseCase,
     private readonly readyGameUseCase: ReadyGameUseCase,
+    private readonly startGameUseCase: StartGameUseCase,
     private readonly selectRoleUseCase: SelectRoleUseCase,
     private readonly selectDeckUseCase: SelectDeckUseCase,
+    private readonly selectRevolutionUseCase: SelectRevolutionUseCase,
     private readonly playCardUseCase: PlayCardUseCase,
     private readonly passTurnUseCase: PassTurnUseCase,
     private readonly voteNextGameUseCase: VoteNextGameUseCase,
@@ -276,6 +280,23 @@ export class GameCommandService {
   }
 
   /**
+   * 게임 시작
+   *
+   * 대기 중인 게임을 시작하여 역할 선택 단계로 진입합니다.
+   * - 플레이어 수 검증 (4-8명)
+   * - 덱 및 역할 선택 카드 초기화
+   * - phase를 'roleSelection'으로 변경
+   *
+   * @param roomId - 방 ID
+   * @returns 게임 시작 결과
+   */
+  async startGame(roomId: string) {
+    return this.startGameUseCase.execute({
+      roomId,
+    });
+  }
+
+  /**
    * 역할 선택
    *
    * 플레이어가 역할(순위)을 선택합니다.
@@ -308,6 +329,26 @@ export class GameCommandService {
       roomId,
       playerId,
       deckIndex,
+    });
+  }
+
+  /**
+   * 혁명 선택
+   *
+   * 조커 2장 보유 플레이어가 혁명 여부를 선택합니다.
+   * - 혁명 선택 시: 대혁명(꼴찌면 순위 반전) 또는 일반혁명 → playing 페이즈
+   * - 혁명 거부 시: 세금 교환 → tax 페이즈
+   *
+   * @param roomId - 방 ID
+   * @param playerId - 플레이어 ID
+   * @param wantRevolution - 혁명 여부 (true: 혁명, false: 거부)
+   * @returns 혁명 선택 결과
+   */
+  async selectRevolution(roomId: string, playerId: string, wantRevolution: boolean) {
+    return this.selectRevolutionUseCase.execute({
+      roomId,
+      playerId,
+      wantRevolution,
     });
   }
 
