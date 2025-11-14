@@ -702,7 +702,7 @@ describe('Game', () => {
         const playerId = PlayerId.create('nonexistent');
 
         // Act & Assert
-        expect(() => game.registerVote(playerId, true)).toThrow('Player not found');
+        expect(() => game.registerVote(playerId, true)).toThrow('Player not found in game');
       });
     });
 
@@ -710,12 +710,14 @@ describe('Game', () => {
       it('should return all voted when all players voted', () => {
         // Arrange
         const game = Game.create(RoomId.from('ROOM01'));
-        const player1 = Player.create(PlayerId.create('player1'), 'Alice');
-        const player2 = Player.create(PlayerId.create('player2'), 'Bob');
+        const playerId1 = PlayerId.create('player1');
+        const playerId2 = PlayerId.create('player2');
+        const player1 = Player.create(playerId1, 'Alice');
+        const player2 = Player.create(playerId2, 'Bob');
         game.addPlayer(player1);
         game.addPlayer(player2);
-        game.registerVote(PlayerId.create('player1'), true);
-        game.registerVote(PlayerId.create('player2'), true);
+        game.registerVote(playerId1, true);
+        game.registerVote(playerId2, true);
 
         // Act
         const result = game.getVoteResult();
@@ -730,12 +732,14 @@ describe('Game', () => {
       it('should return not approved when one player rejects', () => {
         // Arrange
         const game = Game.create(RoomId.from('ROOM01'));
-        const player1 = Player.create(PlayerId.create('player1'), 'Alice');
-        const player2 = Player.create(PlayerId.create('player2'), 'Bob');
+        const playerId1 = PlayerId.create('player1');
+        const playerId2 = PlayerId.create('player2');
+        const player1 = Player.create(playerId1, 'Alice');
+        const player2 = Player.create(playerId2, 'Bob');
         game.addPlayer(player1);
         game.addPlayer(player2);
-        game.registerVote(PlayerId.create('player1'), true);
-        game.registerVote(PlayerId.create('player2'), false);
+        game.registerVote(playerId1, true);
+        game.registerVote(playerId2, false);
 
         // Act
         const result = game.getVoteResult();
@@ -750,11 +754,13 @@ describe('Game', () => {
       it('should return not all voted when some players have not voted', () => {
         // Arrange
         const game = Game.create(RoomId.from('ROOM01'));
-        const player1 = Player.create(PlayerId.create('player1'), 'Alice');
-        const player2 = Player.create(PlayerId.create('player2'), 'Bob');
+        const playerId1 = PlayerId.create('player1');
+        const playerId2 = PlayerId.create('player2');
+        const player1 = Player.create(playerId1, 'Alice');
+        const player2 = Player.create(playerId2, 'Bob');
         game.addPlayer(player1);
         game.addPlayer(player2);
-        game.registerVote(PlayerId.create('player1'), true);
+        game.registerVote(playerId1, true);
 
         // Act
         const result = game.getVoteResult();

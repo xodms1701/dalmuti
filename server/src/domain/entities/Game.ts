@@ -501,10 +501,7 @@ export class Game {
     votes: Record<string, boolean>;
   } {
     // Map을 Record로 변환
-    const votesRecord: Record<string, boolean> = {};
-    for (const [playerId, vote] of this._votes.entries()) {
-      votesRecord[playerId] = vote;
-    }
+    const votesRecord: Record<string, boolean> = Object.fromEntries(this._votes);
 
     return {
       roomId: this.roomId.value, // RoomId를 string으로 변환
@@ -579,12 +576,7 @@ export class Game {
       : undefined;
 
     // Record를 Map으로 변환
-    const votes = new Map<string, boolean>();
-    if (obj.votes) {
-      for (const [playerId, vote] of Object.entries(obj.votes)) {
-        votes.set(playerId, vote);
-      }
-    }
+    const votes = new Map<string, boolean>(Object.entries(obj.votes ?? {}));
 
     return new Game(
       roomId,
