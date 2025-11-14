@@ -62,9 +62,10 @@ export class SelectDeckUseCase implements IUseCase<SelectDeckRequest, UseCaseRes
         throw new ResourceNotFoundError('Game', roomId.value);
       }
 
-      // 3. 도메인 로직 실행
+      // 3. 도메인 로직 실행 - 선택된 덱 반환
+      let selectedDeck;
       try {
-        game.selectDeck(playerId, request.deckIndex);
+        selectedDeck = game.selectDeck(playerId, request.deckIndex);
       } catch (error) {
         // 도메인 에러를 비즈니스 규칙 에러로 변환
         throw new BusinessRuleError(
@@ -72,12 +73,7 @@ export class SelectDeckUseCase implements IUseCase<SelectDeckRequest, UseCaseRes
         );
       }
 
-      // 선택된 덱의 카드 정보 가져오기
-      const selectedDeck = game.selectableDecks?.[request.deckIndex];
-      if (!selectedDeck || !selectedDeck.cards) {
-        throw new BusinessRuleError('Selected deck not found');
-      }
-
+      // 선택된 덱의 카드 정보 변환
       const selectedCards = selectedDeck.cards.map((card) => card.toPlainObject());
 
       // 4. 변경사항 영속화

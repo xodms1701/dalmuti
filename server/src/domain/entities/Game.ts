@@ -340,13 +340,14 @@ export class Game {
    * 플레이어가 덱을 선택
    * @param playerId 플레이어 ID
    * @param deckIndex 선택할 덱 인덱스
+   * @returns 선택된 덱
    * @throws Error 게임 페이즈가 cardSelection이 아닌 경우
    * @throws Error 플레이어의 턴이 아닌 경우
    * @throws Error 덱 인덱스가 유효하지 않은 경우
    * @throws Error 이미 선택된 덱인 경우
    * @throws Error 플레이어를 찾을 수 없는 경우
    */
-  selectDeck(playerId: PlayerId, deckIndex: number): void {
+  selectDeck(playerId: PlayerId, deckIndex: number): SelectableDeck {
     // 페이즈 확인
     if (this._phase !== 'cardSelection') {
       throw new Error('Cannot select deck. Game is not in cardSelection phase');
@@ -386,6 +387,9 @@ export class Game {
 
     // 플레이어에게 카드 추가
     player.addCards(selectedDeck.cards);
+
+    // 선택된 덱 반환
+    return selectedDeck;
   }
 
   /**
