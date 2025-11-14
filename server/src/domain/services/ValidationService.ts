@@ -9,6 +9,7 @@
 
 import { Game } from '../entities/Game';
 import { Card } from '../entities/Card';
+import { PlayerId } from '../value-objects/PlayerId';
 import * as GameValidator from '../../../game/helpers/GameValidator';
 
 /**
@@ -145,7 +146,7 @@ export function validateSameRank(cards: any[]): ValidationResult {
  */
 export function validatePlayerHasCards(
   game: Game,
-  playerId: string,
+  playerId: PlayerId,
   cards: any[]
 ): ValidationResult {
   const player = game.getPlayer(playerId);

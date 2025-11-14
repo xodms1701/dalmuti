@@ -1,4 +1,6 @@
 import { Player } from './Player';
+import { RoomId } from '../value-objects/RoomId';
+import { PlayerId } from '../value-objects/PlayerId';
 
 /**
  * Game Entity
@@ -7,14 +9,14 @@ import { Player } from './Player';
  * 게임의 상태와 비즈니스 로직을 캡슐화
  */
 export class Game {
-  readonly roomId: string;
+  readonly roomId: RoomId;
   private _players: Player[];
   private _phase: string;
-  private _currentTurn: string | null;
-  private _lastPlay: { playerId: string; cards: any[] } | undefined;
+  private _currentTurn: PlayerId | null;
+  private _lastPlay: { playerId: PlayerId; cards: any[] } | undefined;
   private _deck: any[];
   private _round: number;
-  private _finishedPlayers: string[];
+  private _finishedPlayers: PlayerId[];
   private _selectableDecks?: any[];
   private _roleSelectionCards?: any[];
 
@@ -22,14 +24,14 @@ export class Game {
    * Private constructor - factory method를 통해서만 생성 가능
    */
   private constructor(
-    roomId: string,
+    roomId: RoomId,
     players: Player[] = [],
     phase: string = 'waiting',
-    currentTurn: string | null = null,
-    lastPlay: { playerId: string; cards: any[] } | undefined = undefined,
+    currentTurn: PlayerId | null = null,
+    lastPlay: { playerId: PlayerId; cards: any[] } | undefined = undefined,
     deck: any[] = [],
     round: number = 0,
-    finishedPlayers: string[] = [],
+    finishedPlayers: PlayerId[] = [],
     selectableDecks?: any[],
     roleSelectionCards?: any[]
   ) {
@@ -47,13 +49,10 @@ export class Game {
 
   /**
    * Factory method - Game 인스턴스 생성
-   * @param roomId 방 ID
+   * @param roomId 방 ID (RoomId Value Object)
    * @returns Game 인스턴스
    */
-  static create(roomId: string): Game {
-    if (!roomId || roomId.trim() === '') {
-      throw new Error('Room ID cannot be empty');
-    }
+  static create(roomId: RoomId): Game {
     return new Game(roomId);
   }
 
@@ -66,11 +65,11 @@ export class Game {
     return this._phase;
   }
 
-  get currentTurn(): string | null {
+  get currentTurn(): PlayerId | null {
     return this._currentTurn;
   }
 
-  get lastPlay(): { playerId: string; cards: any[] } | undefined {
+  get lastPlay(): { playerId: PlayerId; cards: any[] } | undefined {
     return this._lastPlay;
   }
 
@@ -82,7 +81,7 @@ export class Game {
     return this._round;
   }
 
-  get finishedPlayers(): string[] {
+  get finishedPlayers(): PlayerId[] {
     return [...this._finishedPlayers];
   }
 
@@ -100,7 +99,7 @@ export class Game {
    * @param cards 낼 카드들
    * @returns 카드를 낼 수 있으면 true
    */
-  canPlayCard(playerId: string, cards: any[]): boolean {
+  canPlayCard(playerId: PlayerId, cards: any[]): boolean {
     // 게임이 플레이 중인지 확인
     if (this._phase !== 'playing') {
       return false;
@@ -112,17 +111,17 @@ export class Game {
     }
 
     // 플레이어의 턴인지 확인
-    if (this._currentTurn !== playerId) {
+    if (!this._currentTurn || !this._currentTurn.equals(playerId)) {
       return false;
     }
 
     // 플레이어가 이미 게임을 완료했는지 확인
-    if (this._finishedPlayers.includes(playerId)) {
+    if (this._finishedPlayers.some(fp => fp.equals(playerId))) {
       return false;
     }
 
     // 플레이어가 패스했는지 확인
-    const player = this._players.find((p) => p.id === playerId);
+    const player = this._players.find((p) => p.id.equals(playerId));
     if (player && player.isPassed) {
       return false;
     }
@@ -155,7 +154,7 @@ export class Game {
   isGameOver(): boolean {
     // 활성 플레이어가 1명 이하면 게임 종료
     const activePlayers = this._players.filter(
-      (p) => !this._finishedPlayers.includes(p.id)
+      (p) => !this._finishedPlayers.some(fp => fp.equals(p.id))
     );
     return activePlayers.length <= 1;
   }
@@ -165,8 +164,8 @@ export class Game {
    * @param playerId 플레이어 ID
    * @returns 해당 플레이어의 턴이면 true
    */
-  isPlayerTurn(playerId: string): boolean {
-    return this._currentTurn === playerId;
+  isPlayerTurn(playerId: PlayerId): boolean {
+    return this._currentTurn !== null && this._currentTurn.equals(playerId);
   }
 
   /**
@@ -174,7 +173,7 @@ export class Game {
    * @returns 활성 플레이어 수
    */
   getActivePlayerCount(): number {
-    return this._players.filter((p) => !this._finishedPlayers.includes(p.id))
+    return this._players.filter((p) => !this._finishedPlayers.some(fp => fp.equals(p.id)))
       .length;
   }
 
@@ -183,7 +182,7 @@ export class Game {
    * @param player 추가할 플레이어
    */
   addPlayer(player: Player): void {
-    if (this._players.some((p) => p.id === player.id)) {
+    if (this._players.some((p) => p.id.equals(player.id))) {
       throw new Error('Player already exists in the game');
     }
     this._players.push(player);
@@ -193,8 +192,8 @@ export class Game {
    * 플레이어 제거
    * @param playerId 제거할 플레이어 ID
    */
-  removePlayer(playerId: string): void {
-    const index = this._players.findIndex((p) => p.id === playerId);
+  removePlayer(playerId: PlayerId): void {
+    const index = this._players.findIndex((p) => p.id.equals(playerId));
     if (index === -1) {
       throw new Error('Player not found');
     }
@@ -206,8 +205,8 @@ export class Game {
    * @param playerId 플레이어 ID
    * @returns Player 인스턴스 또는 undefined
    */
-  getPlayer(playerId: string): Player | undefined {
-    return this._players.find((p) => p.id === playerId);
+  getPlayer(playerId: PlayerId): Player | undefined {
+    return this._players.find((p) => p.id.equals(playerId));
   }
 
   /**
@@ -222,7 +221,7 @@ export class Game {
    * 현재 턴 설정
    * @param playerId 플레이어 ID
    */
-  setCurrentTurn(playerId: string | null): void {
+  setCurrentTurn(playerId: PlayerId | null): void {
     this._currentTurn = playerId;
   }
 
@@ -230,7 +229,7 @@ export class Game {
    * 마지막 플레이 설정
    * @param play 플레이 정보
    */
-  setLastPlay(play: { playerId: string; cards: any[] } | undefined): void {
+  setLastPlay(play: { playerId: PlayerId; cards: any[] } | undefined): void {
     this._lastPlay = play;
   }
 
@@ -245,8 +244,8 @@ export class Game {
    * 플레이어를 완료 목록에 추가
    * @param playerId 플레이어 ID
    */
-  addFinishedPlayer(playerId: string): void {
-    if (!this._finishedPlayers.includes(playerId)) {
+  addFinishedPlayer(playerId: PlayerId): void {
+    if (!this._finishedPlayers.some(fp => fp.equals(playerId))) {
       this._finishedPlayers.push(playerId);
     }
   }
@@ -291,14 +290,19 @@ export class Game {
     roleSelectionCards?: any[];
   } {
     return {
-      roomId: this.roomId,
+      roomId: this.roomId.value, // RoomId를 string으로 변환
       players: this._players.map((p) => p.toPlainObject()),
       phase: this._phase,
-      currentTurn: this._currentTurn,
-      lastPlay: this._lastPlay,
+      currentTurn: this._currentTurn ? this._currentTurn.value : null, // PlayerId를 string으로 변환
+      lastPlay: this._lastPlay
+        ? {
+            playerId: this._lastPlay.playerId.value, // PlayerId를 string으로 변환
+            cards: this._lastPlay.cards,
+          }
+        : undefined,
       deck: [...this._deck],
       round: this._round,
-      finishedPlayers: [...this._finishedPlayers],
+      finishedPlayers: this._finishedPlayers.map((fp) => fp.value), // PlayerId[]를 string[]로 변환
       selectableDecks: this._selectableDecks,
       roleSelectionCards: this._roleSelectionCards,
     };
@@ -323,15 +327,27 @@ export class Game {
       ? obj.players.map((p) => Player.fromPlainObject(p))
       : [];
 
+    const roomId = RoomId.from(obj.roomId); // string을 RoomId로 변환
+    const currentTurn = obj.currentTurn ? PlayerId.create(obj.currentTurn) : null; // string을 PlayerId로 변환
+    const lastPlay = obj.lastPlay
+      ? {
+          playerId: PlayerId.create(obj.lastPlay.playerId), // string을 PlayerId로 변환
+          cards: obj.lastPlay.cards,
+        }
+      : undefined;
+    const finishedPlayers = obj.finishedPlayers
+      ? obj.finishedPlayers.map((fp) => PlayerId.create(fp)) // string[]을 PlayerId[]로 변환
+      : [];
+
     return new Game(
-      obj.roomId,
+      roomId,
       players,
       obj.phase || 'waiting',
-      obj.currentTurn || null,
-      obj.lastPlay,
+      currentTurn,
+      lastPlay,
       obj.deck || [],
       obj.round || 0,
-      obj.finishedPlayers || [],
+      finishedPlayers,
       obj.selectableDecks,
       obj.roleSelectionCards
     );

@@ -4,15 +4,16 @@
 
 import { Player } from '../../../../src/domain/entities/Player';
 import { Card } from '../../../../src/domain/entities/Card';
+import { PlayerId } from '../../../../src/domain/value-objects/PlayerId';
 
 describe('Player', () => {
   describe('create', () => {
     it('should create a player with valid id and nickname', () => {
       // Arrange & Act
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Assert
-      expect(player.id).toBe('player1');
+      expect(player.id.value).toBe('player1');
       expect(player.nickname).toBe('Alice');
       expect(player.cards).toEqual([]);
       expect(player.role).toBeNull();
@@ -23,29 +24,29 @@ describe('Player', () => {
 
     it('should throw error when id is empty', () => {
       // Arrange & Act & Assert
-      expect(() => Player.create('', 'Alice')).toThrow('Player id cannot be empty');
+      expect(() => Player.create(PlayerId.create(''), 'Alice')).toThrow();
     });
 
     it('should throw error when id is only whitespace', () => {
       // Arrange & Act & Assert
-      expect(() => Player.create('   ', 'Alice')).toThrow('Player id cannot be empty');
+      expect(() => Player.create(PlayerId.create('   '), 'Alice')).toThrow();
     });
 
     it('should throw error when nickname is empty', () => {
       // Arrange & Act & Assert
-      expect(() => Player.create('player1', '')).toThrow('Player nickname cannot be empty');
+      expect(() => Player.create(PlayerId.create('player1'), '')).toThrow('Player nickname cannot be empty');
     });
 
     it('should throw error when nickname is only whitespace', () => {
       // Arrange & Act & Assert
-      expect(() => Player.create('player1', '   ')).toThrow('Player nickname cannot be empty');
+      expect(() => Player.create(PlayerId.create('player1'), '   ')).toThrow('Player nickname cannot be empty');
     });
   });
 
   describe('playCards', () => {
     it('should remove played cards from player hand', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       const cards = [
         Card.create(5, false),
         Card.create(5, false),
@@ -62,7 +63,7 @@ describe('Player', () => {
 
     it('should reset pass status when playing cards', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
       player.pass();
 
@@ -75,7 +76,7 @@ describe('Player', () => {
 
     it('should throw error when playing empty cards array', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act & Assert
       expect(() => player.playCards([])).toThrow('Cannot play empty cards');
@@ -83,7 +84,7 @@ describe('Player', () => {
 
     it('should throw error when playing cards player does not have', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
 
       // Act & Assert
@@ -94,7 +95,7 @@ describe('Player', () => {
 
     it('should handle playing multiple cards of same rank', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       const cards = [
         Card.create(5, false),
         Card.create(5, false),
@@ -114,7 +115,7 @@ describe('Player', () => {
 
     it('should handle playing joker', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(13, true)]);
 
       // Act
@@ -128,7 +129,7 @@ describe('Player', () => {
   describe('pass', () => {
     it('should set isPassed to true', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.pass();
@@ -141,7 +142,7 @@ describe('Player', () => {
   describe('resetPass', () => {
     it('should set isPassed to false', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.pass();
 
       // Act
@@ -155,7 +156,7 @@ describe('Player', () => {
   describe('ready / unready', () => {
     it('should set isReady to true when ready is called', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.ready();
@@ -166,7 +167,7 @@ describe('Player', () => {
 
     it('should set isReady to false when unready is called', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.ready();
 
       // Act
@@ -180,7 +181,7 @@ describe('Player', () => {
   describe('assignRole', () => {
     it('should assign valid role (1-13)', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.assignRole(5);
@@ -191,7 +192,7 @@ describe('Player', () => {
 
     it('should assign role 1', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.assignRole(1);
@@ -202,7 +203,7 @@ describe('Player', () => {
 
     it('should assign role 13', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.assignRole(13);
@@ -213,7 +214,7 @@ describe('Player', () => {
 
     it('should throw error when role is less than 1', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act & Assert
       expect(() => player.assignRole(0)).toThrow('Role must be between 1 and 13');
@@ -221,7 +222,7 @@ describe('Player', () => {
 
     it('should throw error when role is greater than 13', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act & Assert
       expect(() => player.assignRole(14)).toThrow('Role must be between 1 and 13');
@@ -231,7 +232,7 @@ describe('Player', () => {
   describe('assignRank', () => {
     it('should assign valid rank', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.assignRank(3);
@@ -242,7 +243,7 @@ describe('Player', () => {
 
     it('should assign rank 1 (highest rank)', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
       player.assignRank(1);
@@ -253,7 +254,7 @@ describe('Player', () => {
 
     it('should throw error when rank is less than 1', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act & Assert
       expect(() => player.assignRank(0)).toThrow('Rank must be greater than 0');
@@ -261,7 +262,7 @@ describe('Player', () => {
 
     it('should throw error when rank is negative', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act & Assert
       expect(() => player.assignRank(-1)).toThrow('Rank must be greater than 0');
@@ -271,7 +272,7 @@ describe('Player', () => {
   describe('assignCards / addCards', () => {
     it('should assign cards to player', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       const cards = [
         Card.create(5, false),
         Card.create(7, false),
@@ -287,7 +288,7 @@ describe('Player', () => {
 
     it('should replace existing cards when assigning', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(3, false)]);
 
       // Act
@@ -300,7 +301,7 @@ describe('Player', () => {
 
     it('should add cards to existing hand', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(3, false)]);
 
       // Act
@@ -316,7 +317,7 @@ describe('Player', () => {
   describe('hasFinished', () => {
     it('should return true when player has no cards', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([]);
 
       // Act
@@ -328,7 +329,7 @@ describe('Player', () => {
 
     it('should return false when player has cards', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
 
       // Act
@@ -340,7 +341,7 @@ describe('Player', () => {
 
     it('should return true after playing all cards', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
 
       // Act
@@ -355,7 +356,7 @@ describe('Player', () => {
   describe('toPlainObject', () => {
     it('should convert player to plain object', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
       player.assignRole(3);
       player.assignRank(2);
@@ -394,7 +395,7 @@ describe('Player', () => {
       const player = Player.fromPlainObject(plain);
 
       // Assert
-      expect(player.id).toBe('player1');
+      expect(player.id.value).toBe('player1');
       expect(player.nickname).toBe('Alice');
       expect(player.cards).toHaveLength(1);
       expect(player.role).toBe(3);
@@ -414,7 +415,7 @@ describe('Player', () => {
       const player = Player.fromPlainObject(plain);
 
       // Assert
-      expect(player.id).toBe('player1');
+      expect(player.id.value).toBe('player1');
       expect(player.nickname).toBe('Alice');
       expect(player.cards).toEqual([]);
       expect(player.role).toBeNull();
@@ -427,7 +428,7 @@ describe('Player', () => {
   describe('immutability', () => {
     it('should return a copy of cards array', () => {
       // Arrange
-      const player = Player.create('player1', 'Alice');
+      const player = Player.create(PlayerId.create('player1'), 'Alice');
       const cards = [Card.create(5, false)];
       player.assignCards(cards);
 

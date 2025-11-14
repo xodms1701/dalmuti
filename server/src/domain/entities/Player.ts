@@ -1,4 +1,5 @@
 import { Card } from './Card';
+import { PlayerId } from '../value-objects/PlayerId';
 
 /**
  * Player Entity
@@ -6,7 +7,7 @@ import { Card } from './Card';
  * 달무티 게임의 플레이어를 나타내는 도메인 엔티티
  */
 export class Player {
-  readonly id: string;
+  readonly id: PlayerId;
   readonly nickname: string;
   private _cards: Card[];
   private _role: number | null;
@@ -18,7 +19,7 @@ export class Player {
    * Private constructor - factory method를 통해서만 생성 가능
    */
   private constructor(
-    id: string,
+    id: PlayerId,
     nickname: string,
     cards: Card[] = [],
     role: number | null = null,
@@ -37,14 +38,11 @@ export class Player {
 
   /**
    * Factory method - Player 인스턴스 생성
-   * @param id 플레이어 ID
+   * @param id 플레이어 ID (PlayerId Value Object)
    * @param nickname 플레이어 닉네임
    * @returns Player 인스턴스
    */
-  static create(id: string, nickname: string): Player {
-    if (!id || id.trim() === '') {
-      throw new Error('Player id cannot be empty');
-    }
+  static create(id: PlayerId, nickname: string): Player {
     if (!nickname || nickname.trim() === '') {
       throw new Error('Player nickname cannot be empty');
     }
@@ -187,7 +185,7 @@ export class Player {
     isReady: boolean;
   } {
     return {
-      id: this.id,
+      id: this.id.value, // PlayerId를 string으로 변환
       nickname: this.nickname,
       cards: [...this._cards],
       role: this._role,
@@ -209,8 +207,9 @@ export class Player {
     isPassed?: boolean;
     isReady?: boolean;
   }): Player {
+    const playerId = PlayerId.create(obj.id); // string을 PlayerId로 변환
     return new Player(
-      obj.id,
+      playerId,
       obj.nickname,
       obj.cards || [],
       obj.role || null,

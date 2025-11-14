@@ -9,6 +9,7 @@
 
 import { Game } from '../entities/Game';
 import { Player } from '../entities/Player';
+import { PlayerId } from '../value-objects/PlayerId';
 import * as TurnHelper from '../../../game/helpers/TurnHelper';
 
 /**
@@ -65,7 +66,7 @@ export function startNewRound(game: Game): void {
   const finishedPlayers = game.finishedPlayers;
 
   players.forEach((player) => {
-    if (!finishedPlayers.includes(player.id)) {
+    if (!finishedPlayers.some((fp) => fp.equals(player.id))) {
       player.resetPass();
     }
   });
@@ -73,8 +74,8 @@ export function startNewRound(game: Game): void {
   // 마지막으로 카드를 낸 플레이어부터 다음 활성 플레이어 찾기
   if (prevLastPlayerId) {
     const gamePlain = game.toPlainObject();
-    const nextPlayerId = TurnHelper.findNextPlayerFrom(gamePlain as any, prevLastPlayerId);
-    game.setCurrentTurn(nextPlayerId);
+    const nextPlayerIdString = TurnHelper.findNextPlayerFrom(gamePlain as any, prevLastPlayerId.value);
+    game.setCurrentTurn(PlayerId.create(nextPlayerIdString));
   }
 }
 
