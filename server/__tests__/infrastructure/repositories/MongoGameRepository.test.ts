@@ -40,6 +40,12 @@ describe('MongoGameRepository Integration Tests', () => {
     await collection.deleteMany({});
   });
 
+  afterEach(async () => {
+    // 각 테스트 후에도 컬렉션 정리 (테스트 격리 보장)
+    const collection = repository.getCollection();
+    await collection.deleteMany({});
+  });
+
   describe('save', () => {
     it('should save a new game', async () => {
       // Arrange

@@ -71,6 +71,12 @@ describe('GameApplicationService Integration Tests', () => {
     await collection.deleteMany({});
   });
 
+  afterEach(async () => {
+    // 각 테스트 후에도 컬렉션 정리 (테스트 격리 보장)
+    const collection = repository.getCollection();
+    await collection.deleteMany({});
+  });
+
   describe('createAndJoinGame', () => {
     it('should create game and join creator in one flow', async () => {
       // Arrange
@@ -221,14 +227,17 @@ describe('GameApplicationService Integration Tests', () => {
 
       // 게임을 playing 상태로 변경하고 카드 할당 (실제로는 더 복잡한 플로우)
       const game = await repository.findById(RoomId.from(roomId));
-      game!.changePhase('playing');
-      game!.setCurrentTurn(game!.players[0].id);
+      expect(game).not.toBeNull();
+      if (!game) throw new Error(`Game not found: ${roomId}`);
+
+      game.changePhase('playing');
+      game.setCurrentTurn(game.players[0].id);
 
       // 플레이어에게 카드 할당
       const cards = [Card.create(5, false)];
-      game!.players[0].assignCards(cards);
+      game.players[0].assignCards(cards);
 
-      await repository.update(RoomId.from(roomId), game!);
+      await repository.update(RoomId.from(roomId), game);
 
       // Act
       const result = await service.playOrPass(roomId, 'p1', [{ rank: 5, isJoker: false }]);
@@ -252,9 +261,12 @@ describe('GameApplicationService Integration Tests', () => {
 
       // 게임을 playing 상태로 변경
       const game = await repository.findById(RoomId.from(roomId));
-      game!.changePhase('playing');
-      game!.setCurrentTurn(game!.players[0].id);
-      await repository.update(RoomId.from(roomId), game!);
+      expect(game).not.toBeNull();
+      if (!game) throw new Error(`Game not found: ${roomId}`);
+
+      game.changePhase('playing');
+      game.setCurrentTurn(game.players[0].id);
+      await repository.update(RoomId.from(roomId), game);
 
       // Act
       const result = await service.playOrPass(roomId, 'p1', []);
