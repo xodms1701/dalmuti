@@ -34,7 +34,7 @@ export interface ErrorResponse extends BaseResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -70,7 +70,7 @@ export function createSuccessResponse<TData>(
 export function createErrorResponse(
   code: string,
   message: string,
-  details?: any
+  details?: unknown
 ): ErrorResponse {
   return {
     success: false,

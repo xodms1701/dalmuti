@@ -7,6 +7,7 @@
 import { GameMapper, GameDocument } from '../../../src/infrastructure/repositories/GameMapper';
 import { Game } from '../../../src/domain/entities/Game';
 import { Player } from '../../../src/domain/entities/Player';
+import { Card } from '../../../src/domain/entities/Card';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
 import { PlayerId } from '../../../src/domain/value-objects/PlayerId';
 
@@ -52,9 +53,9 @@ describe('GameMapper', () => {
       player.assignRole(5);
       player.assignRank(2);
       player.assignCards([
-        { rank: 3, isJoker: false },
-        { rank: 4, isJoker: false },
-      ] as any[]);
+        Card.create(3, false),
+        Card.create(4, false),
+      ]);
       game.addPlayer(player);
 
       // Act
@@ -80,24 +81,23 @@ describe('GameMapper', () => {
       const game = Game.create(RoomId.from('ROOM04'));
       game.setLastPlay({
         playerId: PlayerId.create('player1'),
-        cards: [{ rank: 5, isJoker: false }],
+        cards: [Card.create(5, false)],
       });
 
       // Act
       const document = GameMapper.toDocument(game);
 
       // Assert
-      expect(document.lastPlay).toEqual({
-        playerId: 'player1',
-        cards: [{ rank: 5, isJoker: false }],
-      });
+      expect(document.lastPlay?.playerId).toBe('player1');
+      expect(document.lastPlay?.cards).toHaveLength(1);
+      expect(document.lastPlay?.cards[0].rank).toBe(5);
     });
 
     it('should handle optional fields', () => {
       // Arrange
       const game = Game.create(RoomId.from('ROOM05'));
       game.setSelectableDecks([
-        { cards: [{ rank: 1, isJoker: false }], isSelected: false },
+        { cards: [Card.create(1, false)], isSelected: false },
       ]);
       game.setRoleSelectionCards([
         { number: 1, isSelected: false },
@@ -265,9 +265,9 @@ describe('GameMapper', () => {
       player1.assignRole(3);
       player1.assignRank(1);
       player1.assignCards([
-        { rank: 1, isJoker: false },
-        { rank: 2, isJoker: false },
-      ] as any[]);
+        Card.create(1, false),
+        Card.create(2, false),
+      ]);
 
       player2.assignRole(7);
       player2.assignRank(2);
@@ -279,7 +279,7 @@ describe('GameMapper', () => {
       originalGame.incrementRound();
       originalGame.setLastPlay({
         playerId: PlayerId.create('p1'),
-        cards: [{ rank: 1, isJoker: false }],
+        cards: [Card.create(1, false)],
       });
 
       // Act
@@ -343,7 +343,7 @@ describe('GameMapper', () => {
       const updates = {
         lastPlay: {
           playerId: PlayerId.create('p1'),
-          cards: [{ rank: 3, isJoker: false }],
+          cards: [Card.create(3, false)],
         },
       };
 
@@ -351,10 +351,9 @@ describe('GameMapper', () => {
       const updateDoc = GameMapper.toUpdateDocument(updates);
 
       // Assert
-      expect(updateDoc.lastPlay).toEqual({
-        playerId: 'p1',
-        cards: [{ rank: 3, isJoker: false }],
-      });
+      expect(updateDoc.lastPlay?.playerId).toBe('p1');
+      expect(updateDoc.lastPlay?.cards).toHaveLength(1);
+      expect(updateDoc.lastPlay?.cards[0].rank).toBe(3);
     });
 
     it('should handle all updatable fields', () => {
@@ -364,7 +363,7 @@ describe('GameMapper', () => {
         phase: 'gameEnd',
         currentTurn: PlayerId.create('p2'),
         lastPlay: { playerId: PlayerId.create('p1'), cards: [] },
-        deck: [{ rank: 5, isJoker: false }],
+        deck: [Card.create(5, false)],
         round: 3,
         finishedPlayers: [PlayerId.create('p1'), PlayerId.create('p2')],
         selectableDecks: [{ cards: [], isSelected: true }],

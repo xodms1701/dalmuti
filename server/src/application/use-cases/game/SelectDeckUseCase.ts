@@ -78,10 +78,7 @@ export class SelectDeckUseCase implements IUseCase<SelectDeckRequest, UseCaseRes
         throw new BusinessRuleError('Selected deck not found');
       }
 
-      const selectedCards = selectedDeck.cards.map((card: any) => ({
-        rank: card.rank,
-        isJoker: card.isJoker,
-      }));
+      const selectedCards = selectedDeck.cards.map((card) => card.toPlainObject());
 
       // 4. 변경사항 영속화
       await this.gameRepository.update(roomId, game);

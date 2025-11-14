@@ -307,7 +307,7 @@ describe('SelectRoleUseCase', () => {
       expect(response.success).toBe(false);
       if (!response.success) {
         expect(response.error.code).toBe('VALIDATION_ERROR');
-        expect(response.error.details?.field).toBe('roomId');
+        expect((response.error.details as { field?: string })?.field).toBe('roomId');
       }
       expect(mockRepository.findById).not.toHaveBeenCalled();
     });
@@ -327,7 +327,7 @@ describe('SelectRoleUseCase', () => {
       expect(response.success).toBe(false);
       if (!response.success) {
         expect(response.error.code).toBe('VALIDATION_ERROR');
-        expect(response.error.details?.field).toBe('playerId');
+        expect((response.error.details as { field?: string })?.field).toBe('playerId');
       }
     });
 

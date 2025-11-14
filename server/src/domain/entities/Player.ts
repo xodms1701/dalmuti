@@ -178,7 +178,7 @@ export class Player {
   toPlainObject(): {
     id: string;
     nickname: string;
-    cards: any[];
+    cards: ReturnType<Card['toPlainObject']>[];
     role: number | null;
     rank: number | null;
     isPassed: boolean;
@@ -187,7 +187,7 @@ export class Player {
     return {
       id: this.id.value, // PlayerId를 string으로 변환
       nickname: this.nickname,
-      cards: [...this._cards],
+      cards: this._cards.map((c) => c.toPlainObject()), // Card[]를 plain object로 변환
       role: this._role,
       rank: this._rank,
       isPassed: this._isPassed,
@@ -201,17 +201,20 @@ export class Player {
   static fromPlainObject(obj: {
     id: string;
     nickname: string;
-    cards?: any[];
+    cards?: ReturnType<Card['toPlainObject']>[];
     role?: number | null;
     rank?: number | null;
     isPassed?: boolean;
     isReady?: boolean;
   }): Player {
     const playerId = PlayerId.create(obj.id); // string을 PlayerId로 변환
+    const cards = obj.cards
+      ? obj.cards.map((c) => Card.fromPlainObject(c)) // plain object를 Card[]로 변환
+      : [];
     return new Player(
       playerId,
       obj.nickname,
-      obj.cards || [],
+      cards,
       obj.role || null,
       obj.rank || null,
       obj.isPassed || false,

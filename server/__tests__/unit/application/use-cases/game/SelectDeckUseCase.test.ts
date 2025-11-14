@@ -9,6 +9,7 @@ import { IGameRepository } from '../../../../../src/application/ports/IGameRepos
 import { SelectDeckRequest } from '../../../../../src/application/dto/game/SelectDeckDto';
 import { Game } from '../../../../../src/domain/entities/Game';
 import { Player } from '../../../../../src/domain/entities/Player';
+import { Card } from '../../../../../src/domain/entities/Card';
 import { RoomId } from '../../../../../src/domain/value-objects/RoomId';
 import { PlayerId } from '../../../../../src/domain/value-objects/PlayerId';
 
@@ -54,19 +55,19 @@ describe('SelectDeckUseCase', () => {
     const selectableDecks = [
       {
         cards: [
-          { rank: 1, isJoker: false },
-          { rank: 2, isJoker: false },
+          Card.create(1, false),
+          Card.create(2, false),
         ],
         isSelected: false,
-        selectedBy: null,
+        selectedBy: undefined,
       },
       {
         cards: [
-          { rank: 3, isJoker: false },
-          { rank: 4, isJoker: false },
+          Card.create(3, false),
+          Card.create(4, false),
         ],
         isSelected: false,
-        selectedBy: null,
+        selectedBy: undefined,
       },
     ];
     game.setSelectableDecks(selectableDecks);

@@ -91,8 +91,8 @@ export function validatePlayerAction(game: Game, playerId: string): ValidationRe
  * @returns 검증 결과
  */
 export function validateCards(
-  cards: any[],
-  lastPlay?: { playerId: string; cards: any[] }
+  cards: ReturnType<Card['toPlainObject']>[],
+  lastPlay?: { playerId: string; cards: ReturnType<Card['toPlainObject']>[] }
 ): ValidationResult {
   if (!cards || cards.length === 0) {
     return { success: false, error: '카드를 선택해주세요.' };
@@ -128,7 +128,7 @@ export function validateCards(
  * @param cards - 검증할 카드 배열
  * @returns 검증 결과
  */
-export function validateSameRank(cards: any[]): ValidationResult {
+export function validateSameRank(cards: ReturnType<Card['toPlainObject']>[]): ValidationResult {
   const result = GameValidator.validateSameRank(cards);
   if (!result.success) {
     return { success: false, error: result.error };
@@ -147,7 +147,7 @@ export function validateSameRank(cards: any[]): ValidationResult {
 export function validatePlayerHasCards(
   game: Game,
   playerId: PlayerId,
-  cards: any[]
+  cards: ReturnType<Card['toPlainObject']>[]
 ): ValidationResult {
   const player = game.getPlayer(playerId);
   if (!player) {

@@ -85,9 +85,9 @@ describe('DeckService', () => {
     it('should contain same cards after shuffle', () => {
       // Arrange
       const deck = DeckService.initializeDeck();
-      const originalRankCounts: { [key: number]: number } = {};
+      const originalRankCounts: { [key: string]: number } = {};
       deck.forEach((card) => {
-        const key = card.isJoker ? 'joker' : card.rank;
+        const key = card.isJoker ? 'joker' : String(card.rank);
         originalRankCounts[key] = (originalRankCounts[key] || 0) + 1;
       });
 
@@ -95,9 +95,9 @@ describe('DeckService', () => {
       DeckService.shuffleDeck(deck);
 
       // Assert
-      const shuffledRankCounts: { [key: number]: number } = {};
+      const shuffledRankCounts: { [key: string]: number } = {};
       deck.forEach((card) => {
-        const key = card.isJoker ? 'joker' : card.rank;
+        const key = card.isJoker ? 'joker' : String(card.rank);
         shuffledRankCounts[key] = (shuffledRankCounts[key] || 0) + 1;
       });
       expect(shuffledRankCounts).toEqual(originalRankCounts);

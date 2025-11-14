@@ -13,7 +13,10 @@ import {
 describe('GameManager', () => {
   let gameManager: GameManager;
   let mockDb: MockDatabase;
-  let mockIo: any;
+  let mockIo: {
+    to: jest.Mock;
+    emit: jest.Mock;
+  };
 
   beforeEach(() => {
     mockDb = new MockDatabase();

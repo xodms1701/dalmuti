@@ -1,6 +1,8 @@
 import { Player } from './Player';
+import { Card } from './Card';
 import { RoomId } from '../value-objects/RoomId';
 import { PlayerId } from '../value-objects/PlayerId';
+import { SelectableDeck, RoleSelectionCard } from '../types/GameTypes';
 
 /**
  * Game Entity
@@ -13,12 +15,12 @@ export class Game {
   private _players: Player[];
   private _phase: string;
   private _currentTurn: PlayerId | null;
-  private _lastPlay: { playerId: PlayerId; cards: any[] } | undefined;
-  private _deck: any[];
+  private _lastPlay: { playerId: PlayerId; cards: Card[] } | undefined;
+  private _deck: Card[];
   private _round: number;
   private _finishedPlayers: PlayerId[];
-  private _selectableDecks?: any[];
-  private _roleSelectionCards?: any[];
+  private _selectableDecks?: SelectableDeck[];
+  private _roleSelectionCards?: RoleSelectionCard[];
 
   /**
    * Private constructor - factory method를 통해서만 생성 가능
@@ -28,12 +30,12 @@ export class Game {
     players: Player[] = [],
     phase: string = 'waiting',
     currentTurn: PlayerId | null = null,
-    lastPlay: { playerId: PlayerId; cards: any[] } | undefined = undefined,
-    deck: any[] = [],
+    lastPlay: { playerId: PlayerId; cards: Card[] } | undefined = undefined,
+    deck: Card[] = [],
     round: number = 0,
     finishedPlayers: PlayerId[] = [],
-    selectableDecks?: any[],
-    roleSelectionCards?: any[]
+    selectableDecks?: SelectableDeck[],
+    roleSelectionCards?: RoleSelectionCard[]
   ) {
     this.roomId = roomId;
     this._players = players;
@@ -69,11 +71,11 @@ export class Game {
     return this._currentTurn;
   }
 
-  get lastPlay(): { playerId: PlayerId; cards: any[] } | undefined {
+  get lastPlay(): { playerId: PlayerId; cards: Card[] } | undefined {
     return this._lastPlay;
   }
 
-  get deck(): any[] {
+  get deck(): Card[] {
     return [...this._deck];
   }
 
@@ -85,11 +87,11 @@ export class Game {
     return [...this._finishedPlayers];
   }
 
-  get selectableDecks(): any[] | undefined {
+  get selectableDecks(): SelectableDeck[] | undefined {
     return this._selectableDecks ? [...this._selectableDecks] : undefined;
   }
 
-  get roleSelectionCards(): any[] | undefined {
+  get roleSelectionCards(): RoleSelectionCard[] | undefined {
     return this._roleSelectionCards ? [...this._roleSelectionCards] : undefined;
   }
 
@@ -99,7 +101,7 @@ export class Game {
    * @param cards 낼 카드들
    * @returns 카드를 낼 수 있으면 true
    */
-  canPlayCard(playerId: PlayerId, cards: any[]): boolean {
+  canPlayCard(playerId: PlayerId, cards: Card[]): boolean {
     // 게임이 플레이 중인지 확인
     if (this._phase !== 'playing') {
       return false;
@@ -229,7 +231,7 @@ export class Game {
    * 마지막 플레이 설정
    * @param play 플레이 정보
    */
-  setLastPlay(play: { playerId: PlayerId; cards: any[] } | undefined): void {
+  setLastPlay(play: { playerId: PlayerId; cards: Card[] } | undefined): void {
     this._lastPlay = play;
   }
 
@@ -254,7 +256,7 @@ export class Game {
    * 덱 설정
    * @param deck 카드 덱
    */
-  setDeck(deck: any[]): void {
+  setDeck(deck: Card[]): void {
     this._deck = [...deck];
   }
 
@@ -262,7 +264,7 @@ export class Game {
    * 선택 가능한 덱 설정
    * @param decks 선택 가능한 덱들
    */
-  setSelectableDecks(decks: any[]): void {
+  setSelectableDecks(decks: SelectableDeck[]): void {
     this._selectableDecks = [...decks];
   }
 
@@ -270,7 +272,7 @@ export class Game {
    * 역할 선택 카드 설정
    * @param cards 역할 선택 카드들
    */
-  setRoleSelectionCards(cards: any[]): void {
+  setRoleSelectionCards(cards: RoleSelectionCard[]): void {
     this._roleSelectionCards = [...cards];
   }
 
@@ -313,7 +315,7 @@ export class Game {
     }
 
     // 선택한 역할 카드 찾기
-    const roleCard = this._roleSelectionCards.find((card: any) => card.number === roleNumber);
+    const roleCard = this._roleSelectionCards.find((card) => card.number === roleNumber);
     if (!roleCard) {
       throw new Error(`Role card with number ${roleNumber} not found`);
     }
@@ -391,15 +393,19 @@ export class Game {
    */
   toPlainObject(): {
     roomId: string;
-    players: any[];
+    players: ReturnType<Player['toPlainObject']>[];
     phase: string;
     currentTurn: string | null;
-    lastPlay: { playerId: string; cards: any[] } | undefined;
-    deck: any[];
+    lastPlay: { playerId: string; cards: ReturnType<Card['toPlainObject']>[] } | undefined;
+    deck: ReturnType<Card['toPlainObject']>[];
     round: number;
     finishedPlayers: string[];
-    selectableDecks?: any[];
-    roleSelectionCards?: any[];
+    selectableDecks?: Array<{
+      cards: ReturnType<Card['toPlainObject']>[];
+      isSelected: boolean;
+      selectedBy?: string;
+    }>;
+    roleSelectionCards?: RoleSelectionCard[];
   } {
     return {
       roomId: this.roomId.value, // RoomId를 string으로 변환
@@ -409,13 +415,19 @@ export class Game {
       lastPlay: this._lastPlay
         ? {
             playerId: this._lastPlay.playerId.value, // PlayerId를 string으로 변환
-            cards: this._lastPlay.cards,
+            cards: this._lastPlay.cards.map((c) => c.toPlainObject()), // Card[]를 plain object로 변환
           }
         : undefined,
-      deck: [...this._deck],
+      deck: this._deck.map((c) => c.toPlainObject()), // Card[]를 plain object로 변환
       round: this._round,
       finishedPlayers: this._finishedPlayers.map((fp) => fp.value), // PlayerId[]를 string[]로 변환
-      selectableDecks: this._selectableDecks,
+      selectableDecks: this._selectableDecks
+        ? this._selectableDecks.map((deck) => ({
+            cards: deck.cards.map((c) => c.toPlainObject()), // Card[]를 plain object로 변환
+            isSelected: deck.isSelected,
+            selectedBy: deck.selectedBy,
+          }))
+        : undefined,
       roleSelectionCards: this._roleSelectionCards,
     };
   }
@@ -425,15 +437,19 @@ export class Game {
    */
   static fromPlainObject(obj: {
     roomId: string;
-    players?: any[];
+    players?: ReturnType<Player['toPlainObject']>[];
     phase?: string;
     currentTurn?: string | null;
-    lastPlay?: { playerId: string; cards: any[] };
-    deck?: any[];
+    lastPlay?: { playerId: string; cards: ReturnType<Card['toPlainObject']>[] };
+    deck?: ReturnType<Card['toPlainObject']>[];
     round?: number;
     finishedPlayers?: string[];
-    selectableDecks?: any[];
-    roleSelectionCards?: any[];
+    selectableDecks?: Array<{
+      cards: ReturnType<Card['toPlainObject']>[];
+      isSelected: boolean;
+      selectedBy?: string;
+    }>;
+    roleSelectionCards?: RoleSelectionCard[];
   }): Game {
     const players = obj.players
       ? obj.players.map((p) => Player.fromPlainObject(p))
@@ -444,12 +460,22 @@ export class Game {
     const lastPlay = obj.lastPlay
       ? {
           playerId: PlayerId.create(obj.lastPlay.playerId), // string을 PlayerId로 변환
-          cards: obj.lastPlay.cards,
+          cards: obj.lastPlay.cards.map((c) => Card.fromPlainObject(c)), // plain object를 Card[]로 변환
         }
       : undefined;
     const finishedPlayers = obj.finishedPlayers
       ? obj.finishedPlayers.map((fp) => PlayerId.create(fp)) // string[]을 PlayerId[]로 변환
       : [];
+    const deck = obj.deck
+      ? obj.deck.map((c) => Card.fromPlainObject(c)) // plain object를 Card[]로 변환
+      : [];
+    const selectableDecks = obj.selectableDecks
+      ? obj.selectableDecks.map((d) => ({
+          cards: d.cards.map((c) => Card.fromPlainObject(c)), // plain object를 Card[]로 변환
+          isSelected: d.isSelected,
+          selectedBy: d.selectedBy,
+        }))
+      : undefined;
 
     return new Game(
       roomId,
@@ -457,10 +483,10 @@ export class Game {
       obj.phase || 'waiting',
       currentTurn,
       lastPlay,
-      obj.deck || [],
+      deck,
       obj.round || 0,
       finishedPlayers,
-      obj.selectableDecks,
+      selectableDecks,
       obj.roleSelectionCards
     );
   }

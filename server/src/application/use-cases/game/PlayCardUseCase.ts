@@ -130,7 +130,7 @@ export class PlayCardUseCase implements IUseCase<PlayCardRequest, UseCaseRespons
       // 9. lastPlay 업데이트
       game.setLastPlay({
         playerId,
-        cards: cards.map((c) => c.toPlainObject()),
+        cards,
       });
 
       // 10. 플레이어가 모든 카드를 냈으면 완료 목록에 추가

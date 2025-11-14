@@ -265,8 +265,8 @@ describe('PlayCardUseCase', () => {
       game.setLastPlay({
         playerId: PlayerId.create('player2'),
         cards: [
-          { rank: 4, isJoker: false },
-          { rank: 4, isJoker: false },
+          Card.create(4, false),
+          Card.create(4, false),
         ],
       });
 

@@ -12,6 +12,7 @@ import {
 } from '../../../src/application/ports/RepositoryError';
 import { Game } from '../../../src/domain/entities/Game';
 import { Player } from '../../../src/domain/entities/Player';
+import { Card } from '../../../src/domain/entities/Card';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
 import { PlayerId } from '../../../src/domain/value-objects/PlayerId';
 
@@ -92,7 +93,7 @@ describe('MongoGameRepository Integration Tests', () => {
       game.setCurrentTurn(playerId1);
       game.setLastPlay({
         playerId: playerId1,
-        cards: [{ rank: 1, isJoker: false }],
+        cards: [Card.create(1, false)],
       });
 
       // Act
@@ -388,14 +389,14 @@ describe('MongoGameRepository Integration Tests', () => {
       const playerId = PlayerId.create('p1');
       const game = Game.create(roomId);
       game.setSelectableDecks([
-        { cards: [{ rank: 1, isJoker: false }], isSelected: false },
+        { cards: [Card.create(1, false)], isSelected: false },
       ]);
       game.setRoleSelectionCards([
         { number: 1, isSelected: false },
       ]);
       game.setLastPlay({
         playerId: playerId,
-        cards: [{ rank: 3, isJoker: false }],
+        cards: [Card.create(3, false)],
       });
 
       // Act
