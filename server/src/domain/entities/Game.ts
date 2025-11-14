@@ -275,6 +275,118 @@ export class Game {
   }
 
   /**
+   * 플레이어가 역할을 선택
+   * @param playerId 플레이어 ID
+   * @param roleNumber 선택할 역할 번호 (1-13)
+   * @returns 모든 플레이어가 역할을 선택했는지 여부
+   * @throws Error 게임 페이즈가 roleSelection이 아닌 경우
+   * @throws Error 플레이어를 찾을 수 없는 경우
+   * @throws Error 플레이어가 이미 역할을 선택한 경우
+   * @throws Error 역할 번호가 유효하지 않은 경우
+   * @throws Error 역할이 이미 선택된 경우
+   */
+  selectRole(playerId: PlayerId, roleNumber: number): boolean {
+    // 페이즈 확인
+    if (this._phase !== 'roleSelection') {
+      throw new Error('Cannot select role. Game is not in roleSelection phase');
+    }
+
+    // 역할 번호 유효성 확인
+    if (roleNumber < 1 || roleNumber > 13) {
+      throw new Error(`Role number must be between 1 and 13. Received: ${roleNumber}`);
+    }
+
+    // 플레이어 찾기
+    const player = this.getPlayer(playerId);
+    if (!player) {
+      throw new Error('Player not found');
+    }
+
+    // 플레이어가 이미 역할을 선택했는지 확인
+    if (player.role !== null) {
+      throw new Error('Player has already selected a role');
+    }
+
+    // 역할 선택 카드가 있는지 확인
+    if (!this._roleSelectionCards || this._roleSelectionCards.length === 0) {
+      throw new Error('No role selection cards available');
+    }
+
+    // 선택한 역할 카드 찾기
+    const roleCard = this._roleSelectionCards.find((card: any) => card.number === roleNumber);
+    if (!roleCard) {
+      throw new Error(`Role card with number ${roleNumber} not found`);
+    }
+
+    // 이미 선택된 역할인지 확인
+    if (roleCard.isSelected) {
+      throw new Error(`Role ${roleNumber} has already been selected`);
+    }
+
+    // 역할 선택 처리
+    roleCard.isSelected = true;
+    roleCard.selectedBy = playerId.value;
+    player.assignRole(roleNumber);
+
+    // 모든 플레이어가 역할을 선택했는지 확인
+    const allRolesSelected = this._players.every((p) => p.role !== null);
+
+    return allRolesSelected;
+  }
+
+  /**
+   * 플레이어가 덱을 선택
+   * @param playerId 플레이어 ID
+   * @param deckIndex 선택할 덱 인덱스
+   * @throws Error 게임 페이즈가 cardSelection이 아닌 경우
+   * @throws Error 플레이어의 턴이 아닌 경우
+   * @throws Error 덱 인덱스가 유효하지 않은 경우
+   * @throws Error 이미 선택된 덱인 경우
+   * @throws Error 플레이어를 찾을 수 없는 경우
+   */
+  selectDeck(playerId: PlayerId, deckIndex: number): void {
+    // 페이즈 확인
+    if (this._phase !== 'cardSelection') {
+      throw new Error('Cannot select deck. Game is not in cardSelection phase');
+    }
+
+    // 턴 확인
+    if (!this._currentTurn || !this._currentTurn.equals(playerId)) {
+      throw new Error('Not player turn');
+    }
+
+    // 선택 가능한 덱이 있는지 확인
+    if (!this._selectableDecks || this._selectableDecks.length === 0) {
+      throw new Error('No selectable decks available');
+    }
+
+    // 덱 인덱스 유효성 확인
+    if (deckIndex < 0 || deckIndex >= this._selectableDecks.length) {
+      throw new Error(`Invalid deck index: ${deckIndex}`);
+    }
+
+    const selectedDeck = this._selectableDecks[deckIndex];
+
+    // 이미 선택된 덱인지 확인
+    if (selectedDeck.isSelected) {
+      throw new Error('Deck already selected');
+    }
+
+    // 플레이어 찾기
+    const player = this.getPlayer(playerId);
+    if (!player) {
+      throw new Error('Player not found');
+    }
+
+    // 덱 선택 처리
+    selectedDeck.isSelected = true;
+    selectedDeck.selectedBy = playerId.value;
+
+    // 플레이어에게 카드 추가
+    player.addCards(selectedDeck.cards);
+  }
+
+  /**
    * 게임 상태를 플레인 객체로 변환
    */
   toPlainObject(): {
