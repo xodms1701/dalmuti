@@ -1,5 +1,5 @@
 /**
- * GameApplicationService Integration Tests
+ * GameCommandService Integration Tests
  *
  * 실제 MongoDB와 연결하여 전체 게임 플로우를 테스트합니다.
  * Use Case들이 실제 Repository와 함께 작동하는지 검증합니다.
@@ -24,7 +24,7 @@ import { Card } from '../../../src/domain/entities/Card';
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'dalmuti-test';
 
-describe('GameApplicationService Integration Tests', () => {
+describe('GameCommandService Integration Tests', () => {
   let service: GameCommandService;
   let repository: MongoGameRepository;
 
