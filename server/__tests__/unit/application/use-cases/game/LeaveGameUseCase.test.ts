@@ -166,9 +166,7 @@ describe('LeaveGameUseCase', () => {
 
     it('should return error when game not found', async () => {
       // Arrange
-      mockRepository.findById.mockRejectedValue(
-        new NotFoundError('Game', 'ROOM99')
-      );
+      mockRepository.findById.mockResolvedValue(null);
       const request: LeaveGameRequest = {
         roomId: 'ROOM99',
         playerId: 'player1',

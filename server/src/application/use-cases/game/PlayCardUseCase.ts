@@ -59,17 +59,7 @@ export class PlayCardUseCase implements IUseCase<PlayCardRequest, UseCaseRespons
       }
 
       // 2. 게임 조회
-      let game;
-      try {
-        game = await this.gameRepository.findById(roomId);
-      } catch (error) {
-        if (error instanceof NotFoundError) {
-          throw new ResourceNotFoundError('Game', roomId.value);
-        }
-        throw error;
-      }
-
-      // 게임이 존재하지 않으면 에러
+      const game = await this.gameRepository.findById(roomId);
       if (!game) {
         throw new ResourceNotFoundError('Game', roomId.value);
       }

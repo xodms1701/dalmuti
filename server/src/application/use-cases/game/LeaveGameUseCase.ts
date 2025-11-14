@@ -54,20 +54,9 @@ export class LeaveGameUseCase implements IUseCase<LeaveGameRequest, UseCaseRespo
       }
 
       // 2. 게임 조회
-      let game;
-      try {
-        game = await this.gameRepository.findById(roomId);
-        if (!game) {
-          throw new ResourceNotFoundError('Game', roomId.value);
-        }
-      } catch (error) {
-        if (error instanceof NotFoundError) {
-          throw new ResourceNotFoundError('Game', roomId.value);
-        }
-        if (error instanceof ResourceNotFoundError) {
-          throw error;
-        }
-        throw error;
+      const game = await this.gameRepository.findById(roomId);
+      if (!game) {
+        throw new ResourceNotFoundError('Game', roomId.value);
       }
 
       // 3. 플레이어 제거

@@ -192,9 +192,7 @@ describe('PlayCardUseCase', () => {
   describe('에러 케이스', () => {
     it('should return error when game not found', async () => {
       // Arrange
-      mockRepository.findById.mockRejectedValue(
-        new NotFoundError('Game', 'ROOM01')
-      );
+      mockRepository.findById.mockResolvedValue(null);
 
       const request: PlayCardRequest = {
         roomId: 'ROOM01',
@@ -441,9 +439,7 @@ describe('PlayCardUseCase', () => {
 
     it('should include all required fields in error response', async () => {
       // Arrange
-      mockRepository.findById.mockRejectedValue(
-        new NotFoundError('Game', 'ROOM01')
-      );
+      mockRepository.findById.mockResolvedValue(null);
 
       const request: PlayCardRequest = {
         roomId: 'ROOM01',

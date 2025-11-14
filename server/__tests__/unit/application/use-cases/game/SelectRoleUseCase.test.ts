@@ -173,27 +173,8 @@ describe('SelectRoleUseCase', () => {
       expect(mockRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should return error when repository throws NotFoundError', async () => {
-      // Arrange
-      mockRepository.findById.mockRejectedValue(
-        new NotFoundError('Game', 'ROOM01')
-      );
-
-      const request: SelectRoleRequest = {
-        roomId: 'ROOM01',
-        playerId: 'player1',
-        roleNumber: 5,
-      };
-
-      // Act
-      const response = await useCase.execute(request);
-
-      // Assert
-      expect(response.success).toBe(false);
-      if (!response.success) {
-        expect(response.error.code).toBe('RESOURCE_NOT_FOUND');
-      }
-    });
+    // NOTE: Repository.findById는 null을 반환하지 NotFoundError를 던지지 않음
+    // 이 케이스는 "should return error when game not found" 테스트로 커버됨
 
     it('should return error when role is already selected', async () => {
       // Arrange
