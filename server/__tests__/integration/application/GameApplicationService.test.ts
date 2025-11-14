@@ -17,6 +17,7 @@ import { PlayCardUseCase } from '../../../src/application/use-cases/game/PlayCar
 import { PassTurnUseCase } from '../../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../../src/application/use-cases/game/VoteNextGameUseCase';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
+import { Card } from '../../../src/domain/entities/Card';
 
 // 환경 변수 또는 기본값 사용
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
@@ -224,19 +225,19 @@ describe('GameApplicationService Integration Tests', () => {
       game!.setCurrentTurn(game!.players[0].id);
 
       // 플레이어에게 카드 할당
-      const cards = [{ rank: 5, isJoker: false }];
-      game!.players[0].assignCards(cards as any);
+      const cards = [Card.create(5, false)];
+      game!.players[0].assignCards(cards);
 
       await repository.update(RoomId.from(roomId), game!);
 
       // Act
-      const result = await service.playOrPass(roomId, 'p1', cards);
+      const result = await service.playOrPass(roomId, 'p1', [{ rank: 5, isJoker: false }]);
 
       // Assert
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.action).toBe('play');
-        expect(result.data.playedCards).toEqual(cards);
+        expect(result.data.playedCards).toEqual([{ rank: 5, isJoker: false }]);
         expect(result.data.nextTurn).toBeDefined();
       }
     });
