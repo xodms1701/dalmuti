@@ -25,7 +25,7 @@ describe('GameManager', () => {
       to: jest.fn().mockReturnThis(),
       emit: jest.fn(),
     };
-    gameManager = new GameManager(mockDb, mockIo as Server);
+    gameManager = new GameManager(mockDb, mockIo as unknown as Server);
   });
 
   afterEach(() => {
