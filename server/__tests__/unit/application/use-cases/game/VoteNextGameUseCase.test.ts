@@ -77,14 +77,14 @@ describe('VoteNextGameUseCase', () => {
       const player2 = Player.create(playerId2, 'Player 2');
       const player3 = Player.create(playerId3, 'Player 3');
 
-      // 첫 두 플레이어는 이미 찬성 투표
-      player1.ready();
-      player2.ready();
-
       const game = Game.create(roomId);
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.addPlayer(player3);
+
+      // 첫 두 플레이어는 이미 찬성 투표
+      game.registerVote(playerId1, true);
+      game.registerVote(playerId2, true);
 
       mockRepository.findById.mockResolvedValue(game);
 
@@ -120,12 +120,12 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      // 첫 플레이어는 찬성
-      player1.ready();
-
       const game = Game.create(roomId);
       game.addPlayer(player1);
       game.addPlayer(player2);
+
+      // 첫 플레이어는 찬성
+      game.registerVote(playerId1, true);
 
       mockRepository.findById.mockResolvedValue(game);
 
@@ -241,7 +241,7 @@ describe('VoteNextGameUseCase', () => {
       // Assert
       expect(response.success).toBe(false);
       if (!response.success) {
-        expect(response.error.code).toBe('RESOURCE_NOT_FOUND');
+        expect(response.error.code).toBe('BUSINESS_RULE_VIOLATION');
         expect(response.error.message).toContain('Player not found');
       }
       expect(mockRepository.update).not.toHaveBeenCalled();

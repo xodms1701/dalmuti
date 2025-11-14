@@ -21,6 +21,7 @@ export class Game {
   private _finishedPlayers: PlayerId[];
   private _selectableDecks?: SelectableDeck[];
   private _roleSelectionCards?: RoleSelectionCard[];
+  private _votes: Map<string, boolean>; // playerId → vote (true: 찬성, false: 반대)
 
   /**
    * Private constructor - factory method를 통해서만 생성 가능
@@ -35,7 +36,8 @@ export class Game {
     round: number = 0,
     finishedPlayers: PlayerId[] = [],
     selectableDecks?: SelectableDeck[],
-    roleSelectionCards?: RoleSelectionCard[]
+    roleSelectionCards?: RoleSelectionCard[],
+    votes: Map<string, boolean> = new Map()
   ) {
     this.roomId = roomId;
     this._players = players;
@@ -47,6 +49,7 @@ export class Game {
     this._finishedPlayers = finishedPlayers;
     this._selectableDecks = selectableDecks;
     this._roleSelectionCards = roleSelectionCards;
+    this._votes = votes;
   }
 
   /**
@@ -393,6 +396,91 @@ export class Game {
   }
 
   /**
+   * 다음 게임 진행에 대한 투표 등록
+   * @param playerId 투표하는 플레이어 ID
+   * @param vote 투표 (true: 찬성, false: 반대)
+   * @throws Error 플레이어가 게임에 없는 경우
+   */
+  registerVote(playerId: PlayerId, vote: boolean): void {
+    // 플레이어 존재 확인
+    const player = this.getPlayer(playerId);
+    if (!player) {
+      throw new Error('Player not found in game');
+    }
+
+    // 투표 등록
+    this._votes.set(playerId.value, vote);
+  }
+
+  /**
+   * 투표 결과 조회
+   * @returns { allVoted: boolean, approved: boolean, approvalCount: number, rejectionCount: number }
+   */
+  getVoteResult(): {
+    allVoted: boolean;
+    approved: boolean;
+    approvalCount: number;
+    rejectionCount: number;
+  } {
+    const totalPlayers = this._players.length;
+    const votedCount = this._votes.size;
+
+    let approvalCount = 0;
+    let rejectionCount = 0;
+
+    for (const vote of this._votes.values()) {
+      if (vote) {
+        approvalCount++;
+      } else {
+        rejectionCount++;
+      }
+    }
+
+    const allVoted = votedCount === totalPlayers && totalPlayers > 0;
+    const approved = allVoted && rejectionCount === 0;
+
+    return {
+      allVoted,
+      approved,
+      approvalCount,
+      rejectionCount,
+    };
+  }
+
+  /**
+   * 다음 게임 시작
+   * 라운드 증가, 페이즈 변경, 플레이어 및 투표 상태 초기화
+   */
+  startNextGame(): void {
+    // 라운드 증가
+    this._round++;
+
+    // 페이즈 변경
+    this._phase = 'roleSelection';
+
+    // 플레이어 상태 초기화
+    for (const player of this._players) {
+      player.unready();
+      player.resetPass();
+    }
+
+    // 투표 초기화
+    this._votes.clear();
+
+    // 게임 상태 초기화 (필요시 추가)
+    this._currentTurn = null;
+    this._lastPlay = undefined;
+    this._finishedPlayers = [];
+  }
+
+  /**
+   * 게임 종료 처리
+   */
+  endGame(): void {
+    this._phase = 'gameEnd';
+  }
+
+  /**
    * 게임 상태를 플레인 객체로 변환
    */
   toPlainObject(): {
@@ -410,7 +498,14 @@ export class Game {
       selectedBy?: string;
     }>;
     roleSelectionCards?: RoleSelectionCard[];
+    votes: Record<string, boolean>;
   } {
+    // Map을 Record로 변환
+    const votesRecord: Record<string, boolean> = {};
+    for (const [playerId, vote] of this._votes.entries()) {
+      votesRecord[playerId] = vote;
+    }
+
     return {
       roomId: this.roomId.value, // RoomId를 string으로 변환
       players: this._players.map((p) => p.toPlainObject()),
@@ -433,6 +528,7 @@ export class Game {
           }))
         : undefined,
       roleSelectionCards: this._roleSelectionCards,
+      votes: votesRecord,
     };
   }
 
@@ -454,6 +550,7 @@ export class Game {
       selectedBy?: string;
     }>;
     roleSelectionCards?: RoleSelectionCard[];
+    votes?: Record<string, boolean>;
   }): Game {
     const players = obj.players
       ? obj.players.map((p) => Player.fromPlainObject(p))
@@ -481,6 +578,14 @@ export class Game {
         }))
       : undefined;
 
+    // Record를 Map으로 변환
+    const votes = new Map<string, boolean>();
+    if (obj.votes) {
+      for (const [playerId, vote] of Object.entries(obj.votes)) {
+        votes.set(playerId, vote);
+      }
+    }
+
     return new Game(
       roomId,
       players,
@@ -491,7 +596,8 @@ export class Game {
       obj.round || 0,
       finishedPlayers,
       selectableDecks,
-      obj.roleSelectionCards
+      obj.roleSelectionCards,
+      votes
     );
   }
 }
