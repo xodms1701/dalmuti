@@ -29,6 +29,7 @@ import {
   ValidationError,
   BusinessRuleError,
 } from '../../errors/ApplicationError';
+import * as TaxService from '../../../domain/services/TaxService';
 
 /**
  * SelectRevolutionUseCase
@@ -69,10 +70,22 @@ export class SelectRevolutionUseCase
       // 3. 혁명 선택 처리 (Game Entity에 위임)
       game.processRevolutionChoice(playerId, request.wantRevolution);
 
-      // 4. Repository를 통해 업데이트
+      // 4. 혁명 거부 시 세금 교환 수행
+      if (!request.wantRevolution) {
+        // Domain Service를 통해 세금 교환 처리
+        const taxExchanges = TaxService.initializeTaxExchanges(game.players);
+        game.setTaxExchanges(taxExchanges);
+
+        // 세금 교환 후 playing 페이즈로 전환 준비
+        // (Legacy에서는 10초 타이머 사용, 여기서는 클라이언트에서 처리)
+        game.setCurrentTurn(game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0].id);
+        game.incrementRound();
+      }
+
+      // 5. Repository를 통해 업데이트
       await this.gameRepository.update(roomId, game);
 
-      // 5. Response DTO 반환
+      // 6. Response DTO 반환
       return createSuccessResponse<SelectRevolutionResponse>({
         roomId: game.roomId.value,
         playerId: playerId.value,
