@@ -19,9 +19,8 @@ import { SelectDeckUseCase } from '../use-cases/game/SelectDeckUseCase';
 import { PlayCardUseCase } from '../use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../use-cases/game/VoteNextGameUseCase';
+import { DeleteGameUseCase } from '../use-cases/game/DeleteGameUseCase';
 import { UseCaseResponse, createSuccessResponse, createErrorResponse } from '../dto/common/BaseResponse';
-import { IGameRepository } from '../ports/IGameRepository';
-import { RoomId } from '../../domain/value-objects/RoomId';
 
 /**
  * GameCommandService
@@ -31,7 +30,6 @@ import { RoomId } from '../../domain/value-objects/RoomId';
  */
 export class GameCommandService {
   constructor(
-    private readonly gameRepository: IGameRepository,
     private readonly createGameUseCase: CreateGameUseCase,
     private readonly joinGameUseCase: JoinGameUseCase,
     private readonly leaveGameUseCase: LeaveGameUseCase,
@@ -40,7 +38,8 @@ export class GameCommandService {
     private readonly selectDeckUseCase: SelectDeckUseCase,
     private readonly playCardUseCase: PlayCardUseCase,
     private readonly passTurnUseCase: PassTurnUseCase,
-    private readonly voteNextGameUseCase: VoteNextGameUseCase
+    private readonly voteNextGameUseCase: VoteNextGameUseCase,
+    private readonly deleteGameUseCase: DeleteGameUseCase
   ) {}
 
   /**
@@ -81,14 +80,16 @@ export class GameCommandService {
 
       if (!joinResult.success) {
         // 보상 트랜잭션: 참가 실패 시 생성된 게임을 삭제하여 원자성 보장
-        try {
-          await this.gameRepository.delete(RoomId.from(createResult.data.roomId));
-        } catch (deleteError) {
+        const deleteResult = await this.deleteGameUseCase.execute({
+          roomId: createResult.data.roomId,
+        });
+
+        if (!deleteResult.success) {
           // 삭제 실패 시 로그만 남기고 원래 에러를 반환
           // 실제 운영 환경에서는 모니터링/알림 필요
           console.error(
             `Failed to rollback game creation: ${createResult.data.roomId}`,
-            deleteError
+            deleteResult.error
           );
         }
         return joinResult;
