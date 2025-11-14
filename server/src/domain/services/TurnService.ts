@@ -11,6 +11,7 @@ import { Game } from '../entities/Game';
 import { Player } from '../entities/Player';
 import { PlayerId } from '../value-objects/PlayerId';
 import * as TurnHelper from '../../../game/helpers/TurnHelper';
+import type { Game as LegacyGame } from '../../../types';
 
 /**
  * 다음 활성 플레이어를 찾습니다.
@@ -23,11 +24,11 @@ import * as TurnHelper from '../../../game/helpers/TurnHelper';
 export function findNextPlayer(game: Game, currentPlayerId: string): string | null {
   // Game 엔티티를 플레인 객체로 변환하여 기존 헬퍼 사용
   const gamePlain = game.toPlainObject();
-  const nextPlayerId = TurnHelper.findNextPlayer(gamePlain as any, currentPlayerId);
+  const nextPlayerId = TurnHelper.findNextPlayer(gamePlain as LegacyGame, currentPlayerId);
 
   // 현재 플레이어와 같다면 활성 플레이어를 찾지 못한 것
   if (nextPlayerId === currentPlayerId) {
-    const firstActive = TurnHelper.findFirstActivePlayer(gamePlain as any);
+    const firstActive = TurnHelper.findFirstActivePlayer(gamePlain as LegacyGame);
     return firstActive === currentPlayerId ? null : firstActive;
   }
 
@@ -43,7 +44,7 @@ export function findNextPlayer(game: Game, currentPlayerId: string): string | nu
  */
 export function allPlayersPassedExceptLast(game: Game): boolean {
   const gamePlain = game.toPlainObject();
-  return TurnHelper.allPlayersPassedExceptLast(gamePlain as any);
+  return TurnHelper.allPlayersPassedExceptLast(gamePlain as LegacyGame);
 }
 
 /**
@@ -74,7 +75,7 @@ export function startNewRound(game: Game): void {
   // 마지막으로 카드를 낸 플레이어부터 다음 활성 플레이어 찾기
   if (prevLastPlayerId) {
     const gamePlain = game.toPlainObject();
-    const nextPlayerIdString = TurnHelper.findNextPlayerFrom(gamePlain as any, prevLastPlayerId.value);
+    const nextPlayerIdString = TurnHelper.findNextPlayerFrom(gamePlain as LegacyGame, prevLastPlayerId.value);
     game.setCurrentTurn(PlayerId.create(nextPlayerIdString));
   }
 }
@@ -100,7 +101,7 @@ export function getSortedPlayers(players: Player[]): Player[] {
  */
 export function countActivePlayers(game: Game): number {
   const gamePlain = game.toPlainObject();
-  return TurnHelper.countActivePlayers(gamePlain as any);
+  return TurnHelper.countActivePlayers(gamePlain as LegacyGame);
 }
 
 /**
@@ -111,7 +112,7 @@ export function countActivePlayers(game: Game): number {
  */
 export function getLastActivePlayer(game: Game): Player | null {
   const gamePlain = game.toPlainObject();
-  const lastActive = TurnHelper.getLastActivePlayer(gamePlain as any);
+  const lastActive = TurnHelper.getLastActivePlayer(gamePlain as LegacyGame);
 
   if (!lastActive) {
     return null;
@@ -129,5 +130,5 @@ export function getLastActivePlayer(game: Game): Player | null {
  */
 export function findFirstActivePlayer(game: Game): string | null {
   const gamePlain = game.toPlainObject();
-  return TurnHelper.findFirstActivePlayer(gamePlain as any);
+  return TurnHelper.findFirstActivePlayer(gamePlain as LegacyGame);
 }

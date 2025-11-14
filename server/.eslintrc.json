@@ -12,12 +12,11 @@
   "plugins": ["@typescript-eslint", "prettier"],
   "rules": {
     "prettier/prettier": "error",
+    "@typescript-eslint/no-explicit-any": "error",
     "import/no-extraneous-dependencies": [
       "error",
       {
-        "devDependencies": ["**/*.test.ts", "**/*.spec.ts"],
-        "packageDir": "./server",
-        "dependencies": ["mongodb"]
+        "devDependencies": ["**/*.test.ts", "**/*.spec.ts"]
       }
     ],
     "no-console": ["warn", { "allow": ["warn", "error"] }],

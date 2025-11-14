@@ -28,8 +28,26 @@ export async function setupGameWithPlayers(
 /**
  * 플레이어 통계를 초기화합니다
  */
-export function initializePlayerStats(players: Player[]): Record<string, any> {
-  const stats: Record<string, any> = {};
+export function initializePlayerStats(
+  players: Player[]
+): Record<
+  string,
+  {
+    nickname: string;
+    totalCardsPlayed: number;
+    totalPasses: number;
+    finishedAtRound: number;
+  }
+> {
+  const stats: Record<
+    string,
+    {
+      nickname: string;
+      totalCardsPlayed: number;
+      totalPasses: number;
+      finishedAtRound: number;
+    }
+  > = {};
   players.forEach((player) => {
     stats[player.id] = {
       nickname: player.nickname,

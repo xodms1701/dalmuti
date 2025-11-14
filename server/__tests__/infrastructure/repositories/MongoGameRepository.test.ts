@@ -12,6 +12,7 @@ import {
 } from '../../../src/application/ports/RepositoryError';
 import { Game } from '../../../src/domain/entities/Game';
 import { Player } from '../../../src/domain/entities/Player';
+import { Card } from '../../../src/domain/entities/Card';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
 import { PlayerId } from '../../../src/domain/value-objects/PlayerId';
 
@@ -81,7 +82,7 @@ describe('MongoGameRepository Integration Tests', () => {
 
       player1.assignRole(3);
       player1.assignRank(1);
-      player1.assignCards([{ rank: 1, isJoker: false }] as any[]);
+      player1.assignCards([Card.create(1, false)]);
 
       player2.assignRole(7);
       player2.assignRank(2);
@@ -92,7 +93,7 @@ describe('MongoGameRepository Integration Tests', () => {
       game.setCurrentTurn(playerId1);
       game.setLastPlay({
         playerId: playerId1,
-        cards: [{ rank: 1, isJoker: false }],
+        cards: [Card.create(1, false)],
       });
 
       // Act
@@ -130,7 +131,7 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should return null when game not found', async () => {
       // Act
-      const found = await repository.findById(RoomId.from('NOEXST'));
+      const found = await repository.findById(RoomId.from('NOEX01'));
 
       // Assert
       expect(found).toBeNull();
@@ -188,7 +189,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should throw NotFoundError when updating non-existent game', async () => {
       // Act & Assert
       await expect(
-        repository.update(RoomId.from('NOEXST'), { phase: 'playing' })
+        repository.update(RoomId.from('NOEX02'), { phase: 'playing' })
       ).rejects.toThrow(NotFoundError);
     });
 
@@ -246,7 +247,7 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should throw NotFoundError when deleting non-existent game', async () => {
       // Act & Assert
-      await expect(repository.delete(RoomId.from('NOEXST'))).rejects.toThrow(
+      await expect(repository.delete(RoomId.from('NOEX03'))).rejects.toThrow(
         NotFoundError
       );
     });
@@ -282,9 +283,9 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should return all saved games', async () => {
       // Arrange
-      const game1 = Game.create(RoomId.from('FIND01'));
-      const game2 = Game.create(RoomId.from('FIND02'));
-      const game3 = Game.create(RoomId.from('FIND03'));
+      const game1 = Game.create(RoomId.from('FINDA1'));
+      const game2 = Game.create(RoomId.from('FINDB2'));
+      const game3 = Game.create(RoomId.from('FINDC3'));
 
       await repository.save(game1);
       await repository.save(game2);
@@ -298,7 +299,7 @@ describe('MongoGameRepository Integration Tests', () => {
       expect(games.every((g) => g instanceof Game)).toBe(true);
 
       const roomIds = games.map((g) => g.roomId.value).sort();
-      expect(roomIds).toEqual(['FIND01', 'FIND02', 'FIND03']);
+      expect(roomIds).toEqual(['FINDA1', 'FINDB2', 'FINDC3']);
     });
 
     it('should reconstruct Game entities correctly', async () => {
@@ -388,14 +389,14 @@ describe('MongoGameRepository Integration Tests', () => {
       const playerId = PlayerId.create('p1');
       const game = Game.create(roomId);
       game.setSelectableDecks([
-        { cards: [{ rank: 1, isJoker: false }], isSelected: false },
+        { cards: [Card.create(1, false)], isSelected: false },
       ]);
       game.setRoleSelectionCards([
         { number: 1, isSelected: false },
       ]);
       game.setLastPlay({
         playerId: playerId,
-        cards: [{ rank: 3, isJoker: false }],
+        cards: [Card.create(3, false)],
       });
 
       // Act

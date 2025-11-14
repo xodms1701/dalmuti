@@ -13,7 +13,10 @@ import {
 describe('GameManager', () => {
   let gameManager: GameManager;
   let mockDb: MockDatabase;
-  let mockIo: any;
+  let mockIo: {
+    to: jest.Mock;
+    emit: jest.Mock;
+  };
 
   beforeEach(() => {
     mockDb = new MockDatabase();
@@ -22,7 +25,7 @@ describe('GameManager', () => {
       to: jest.fn().mockReturnThis(),
       emit: jest.fn(),
     };
-    gameManager = new GameManager(mockDb, mockIo as Server);
+    gameManager = new GameManager(mockDb, mockIo as unknown as Server);
   });
 
   afterEach(() => {

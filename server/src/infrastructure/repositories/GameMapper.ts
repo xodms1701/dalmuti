@@ -7,21 +7,27 @@
 
 import { Game } from '../../domain/entities/Game';
 import { Player } from '../../domain/entities/Player';
+import { Card } from '../../domain/entities/Card';
+import { RoleSelectionCard } from '../../domain/types/GameTypes';
 
 /**
  * MongoDB 문서 타입 정의
  */
 export interface GameDocument {
   _id: string; // MongoDB의 _id를 roomId로 사용
-  players: any[];
+  players: ReturnType<Player['toPlainObject']>[];
   phase: string;
   currentTurn: string | null;
-  lastPlay?: { playerId: string; cards: any[] };
-  deck: any[];
+  lastPlay?: { playerId: string; cards: ReturnType<Card['toPlainObject']>[] };
+  deck: ReturnType<Card['toPlainObject']>[];
   round: number;
   finishedPlayers: string[];
-  selectableDecks?: any[];
-  roleSelectionCards?: any[];
+  selectableDecks?: Array<{
+    cards: ReturnType<Card['toPlainObject']>[];
+    isSelected: boolean;
+    selectedBy?: string;
+  }>;
+  roleSelectionCards?: RoleSelectionCard[];
   createdAt?: Date;
   updatedAt?: Date;
 }

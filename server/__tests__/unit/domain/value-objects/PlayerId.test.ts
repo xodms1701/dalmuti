@@ -35,12 +35,12 @@ describe('PlayerId', () => {
 
     it('should throw error when value is null', () => {
       // Arrange & Act & Assert
-      expect(() => PlayerId.create(null as any)).toThrow('PlayerId cannot be empty');
+      expect(() => PlayerId.create(null as unknown as string)).toThrow('PlayerId cannot be empty');
     });
 
     it('should throw error when value is undefined', () => {
       // Arrange & Act & Assert
-      expect(() => PlayerId.create(undefined as any)).toThrow('PlayerId cannot be empty');
+      expect(() => PlayerId.create(undefined as unknown as string)).toThrow('PlayerId cannot be empty');
     });
 
     it('should accept value with special characters', () => {
@@ -83,7 +83,7 @@ describe('PlayerId', () => {
       const notPlayerId = { value: 'player123' };
 
       // Act
-      const result = playerId.equals(notPlayerId as any);
+      const result = playerId.equals(notPlayerId as unknown as PlayerId);
 
       // Assert
       expect(result).toBe(false);

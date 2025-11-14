@@ -12,9 +12,10 @@ import * as DeckHelper from '../../../game/helpers/DeckHelper';
 
 /**
  * 선택 가능한 덱 인터페이스
+ * Card VO를 직접 사용
  */
 export interface SelectableDeck {
-  cards: any[];
+  cards: ReturnType<Card['toPlainObject']>[];
   isSelected: boolean;
   selectedBy?: string;
 }
@@ -25,15 +26,11 @@ export interface SelectableDeck {
  * - 조커 2장
  * - 총 54장
  *
- * @returns 초기화된 카드 덱
+ * @returns 초기화된 카드 덱 (plain object 형태)
  */
-export function initializeDeck(): any[] {
+export function initializeDeck(): ReturnType<Card['toPlainObject']>[] {
   // 기존 헬퍼 함수 사용
-  const deck = DeckHelper.createStandardDeck();
-
-  // 플레인 객체를 Card 엔티티로 변환할 수도 있지만,
-  // 현재 Game 엔티티에서 any[] 타입을 사용하고 있으므로 그대로 반환
-  return deck;
+  return DeckHelper.createStandardDeck();
 }
 
 /**
@@ -42,7 +39,9 @@ export function initializeDeck(): any[] {
  *
  * @param deck - 섞을 덱
  */
-export function shuffleDeck(deck: any[]): any[] {
+export function shuffleDeck(
+  deck: ReturnType<Card['toPlainObject']>[]
+): ReturnType<Card['toPlainObject']>[] {
   // 기존 헬퍼가 새 배열을 반환하므로, 불변성을 유지하여 결과 반환
   return DeckHelper.shuffleDeck(deck);
 }
@@ -57,7 +56,10 @@ export function shuffleDeck(deck: any[]): any[] {
  * @param playerCount - 플레이어 수
  * @returns 선택 가능한 덱 배열
  */
-export function createSelectableDecks(deck: any[], playerCount: number): SelectableDeck[] {
+export function createSelectableDecks(
+  deck: ReturnType<Card['toPlainObject']>[],
+  playerCount: number
+): SelectableDeck[] {
   // 기존 헬퍼 함수 사용
   return DeckHelper.createSelectableDecks(deck, playerCount);
 }
@@ -84,7 +86,9 @@ export function createRoleSelectionDeck(): Array<{
  * @param cards - 정렬할 카드 배열
  * @returns 정렬된 카드 배열
  */
-export function sortCards(cards: any[]): any[] {
+export function sortCards(
+  cards: ReturnType<Card['toPlainObject']>[]
+): ReturnType<Card['toPlainObject']>[] {
   return DeckHelper.sortCards(cards);
 }
 
@@ -104,7 +108,10 @@ export function sortDeckCards(deck: SelectableDeck): void {
  * @param cardsToRemove - 제거할 카드 배열
  * @returns 카드가 제거된 새 덱
  */
-export function removeCards(deck: any[], cardsToRemove: any[]): any[] {
+export function removeCards(
+  deck: ReturnType<Card['toPlainObject']>[],
+  cardsToRemove: ReturnType<Card['toPlainObject']>[]
+): ReturnType<Card['toPlainObject']>[] {
   return DeckHelper.removeCards(deck, cardsToRemove);
 }
 
@@ -114,7 +121,7 @@ export function removeCards(deck: any[], cardsToRemove: any[]): any[] {
  * @param cards - 확인할 카드 배열
  * @returns 조커가 2장 이상이면 true
  */
-export function hasDoubleJoker(cards: any[]): boolean {
+export function hasDoubleJoker(cards: ReturnType<Card['toPlainObject']>[]): boolean {
   return DeckHelper.hasDoubleJoker(cards);
 }
 
@@ -124,7 +131,7 @@ export function hasDoubleJoker(cards: any[]): boolean {
  * @param deck - 대상 덱
  * @returns 카드 개수
  */
-export function countCards(deck: any[]): number {
+export function countCards(deck: ReturnType<Card['toPlainObject']>[]): number {
   return DeckHelper.countCards(deck);
 }
 

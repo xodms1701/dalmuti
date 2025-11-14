@@ -229,7 +229,7 @@ describe('CardRank', () => {
       const notRank = { value: 5 };
 
       // Act
-      const result = rank.equals(notRank as any);
+      const result = rank.equals(notRank as unknown as CardRank);
 
       // Assert
       expect(result).toBe(false);

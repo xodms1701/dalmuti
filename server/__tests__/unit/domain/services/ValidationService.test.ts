@@ -159,7 +159,7 @@ describe('ValidationService', () => {
 
     it('should return error for empty cards array', () => {
       // Arrange
-      const cards: any[] = [];
+      const cards: ReturnType<Card['toPlainObject']>[] = [];
 
       // Act
       const result = ValidationService.validateCards(cards);

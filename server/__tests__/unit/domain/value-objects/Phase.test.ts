@@ -321,7 +321,7 @@ describe('Phase', () => {
       const notPhase = { value: 'waiting' };
 
       // Act
-      const result = phase.equals(notPhase as any);
+      const result = phase.equals(notPhase as unknown as Phase);
 
       // Assert
       expect(result).toBe(false);

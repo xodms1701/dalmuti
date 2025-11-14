@@ -4,6 +4,7 @@
 
 import { Game } from '../../../../src/domain/entities/Game';
 import { Player } from '../../../../src/domain/entities/Player';
+import { Card } from '../../../../src/domain/entities/Card';
 import { RoomId } from '../../../../src/domain/value-objects/RoomId';
 import { PlayerId } from '../../../../src/domain/value-objects/PlayerId';
 
@@ -150,7 +151,7 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player1'));
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 5, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(5, false)]);
 
       // Assert
       expect(result).toBe(false);
@@ -180,7 +181,7 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player2'));
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 5, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(5, false)]);
 
       // Assert
       expect(result).toBe(false);
@@ -196,7 +197,7 @@ describe('Game', () => {
       game.addFinishedPlayer(PlayerId.create('player1'));
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 5, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(5, false)]);
 
       // Assert
       expect(result).toBe(false);
@@ -212,7 +213,7 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player1'));
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 5, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(5, false)]);
 
       // Assert
       expect(result).toBe(false);
@@ -227,7 +228,7 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player1'));
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 5, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(5, false)]);
 
       // Assert
       expect(result).toBe(true);
@@ -242,11 +243,11 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player1'));
       game.setLastPlay({
         playerId: PlayerId.create('player2'),
-        cards: [{ rank: 7, isJoker: false }, { rank: 7, isJoker: false }],
+        cards: [Card.create(7, false), Card.create(7, false)],
       });
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 5, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(5, false)]);
 
       // Assert
       expect(result).toBe(false);
@@ -261,11 +262,11 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player1'));
       game.setLastPlay({
         playerId: PlayerId.create('player2'),
-        cards: [{ rank: 3, isJoker: false }],
+        cards: [Card.create(3, false)],
       });
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 7, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(7, false)]);
 
       // Assert
       expect(result).toBe(false); // 7 is weaker than 3
@@ -280,11 +281,11 @@ describe('Game', () => {
       game.setCurrentTurn(PlayerId.create('player1'));
       game.setLastPlay({
         playerId: PlayerId.create('player2'),
-        cards: [{ rank: 7, isJoker: false }],
+        cards: [Card.create(7, false)],
       });
 
       // Act
-      const result = game.canPlayCard(PlayerId.create('player1'), [{ rank: 3, isJoker: false }]);
+      const result = game.canPlayCard(PlayerId.create('player1'), [Card.create(3, false)]);
 
       // Assert
       expect(result).toBe(true); // 3 is stronger than 7
@@ -470,7 +471,7 @@ describe('Game', () => {
       const game = Game.create(RoomId.from('ROOM01'));
       const lastPlay = {
         playerId: PlayerId.create('player1'),
-        cards: [{ rank: 5, isJoker: false }],
+        cards: [Card.create(5, false)],
       };
 
       // Act
@@ -478,7 +479,8 @@ describe('Game', () => {
 
       // Assert
       expect(game.lastPlay?.playerId.value).toBe('player1');
-      expect(game.lastPlay?.cards).toEqual([{ rank: 5, isJoker: false }]);
+      expect(game.lastPlay?.cards).toHaveLength(1);
+      expect(game.lastPlay?.cards[0].rank).toBe(5);
     });
 
     it('should increment round', () => {
@@ -519,13 +521,14 @@ describe('Game', () => {
     it('should set deck', () => {
       // Arrange
       const game = Game.create(RoomId.from('ROOM01'));
-      const deck = [{ rank: 5, isJoker: false }];
+      const deck = [Card.create(5, false)];
 
       // Act
       game.setDeck(deck);
 
       // Assert
-      expect(game.deck).toEqual(deck);
+      expect(game.deck).toHaveLength(1);
+      expect(game.deck[0].rank).toBe(5);
     });
 
     it('should set selectable decks', () => {
@@ -635,11 +638,11 @@ describe('Game', () => {
     it('should return a copy of deck array', () => {
       // Arrange
       const game = Game.create(RoomId.from('ROOM01'));
-      game.setDeck([{ rank: 5, isJoker: false }]);
+      game.setDeck([Card.create(5, false)]);
 
       // Act
       const deck = game.deck;
-      deck.push({ rank: 7, isJoker: false });
+      deck.push(Card.create(7, false));
 
       // Assert
       expect(game.deck).toHaveLength(1);

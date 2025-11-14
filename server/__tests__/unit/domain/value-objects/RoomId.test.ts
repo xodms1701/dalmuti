@@ -179,7 +179,7 @@ describe('RoomId', () => {
       const notRoomId = { value: 'ROOM01' };
 
       // Act
-      const result = roomId.equals(notRoomId as any);
+      const result = roomId.equals(notRoomId as unknown as RoomId);
 
       // Assert
       expect(result).toBe(false);
