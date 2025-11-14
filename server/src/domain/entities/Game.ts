@@ -34,6 +34,12 @@ export class Game {
 
   private _votes: Map<string, boolean>; // playerId → vote (true: 찬성, false: 반대)
 
+  private _revolutionStatus?: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId: string;
+  }; // 혁명 상태
+
   /**
    * Private constructor - factory method를 통해서만 생성 가능
    */
@@ -48,7 +54,12 @@ export class Game {
     finishedPlayers: PlayerId[] = [],
     selectableDecks?: SelectableDeck[],
     roleSelectionCards?: RoleSelectionCard[],
-    votes: Map<string, boolean> = new Map()
+    votes: Map<string, boolean> = new Map(),
+    revolutionStatus?: {
+      isRevolution: boolean;
+      isGreatRevolution: boolean;
+      revolutionPlayerId: string;
+    }
   ) {
     this.roomId = roomId;
     this._players = players;
@@ -61,6 +72,7 @@ export class Game {
     this._selectableDecks = selectableDecks;
     this._roleSelectionCards = roleSelectionCards;
     this._votes = votes;
+    this._revolutionStatus = revolutionStatus;
   }
 
   /**
@@ -107,6 +119,27 @@ export class Game {
 
   get roleSelectionCards(): RoleSelectionCard[] | undefined {
     return this._roleSelectionCards ? [...this._roleSelectionCards] : undefined;
+  }
+
+  get revolutionStatus():
+    | {
+        isRevolution: boolean;
+        isGreatRevolution: boolean;
+        revolutionPlayerId: string;
+      }
+    | undefined {
+    return this._revolutionStatus;
+  }
+
+  /**
+   * 혁명 상태 설정
+   */
+  setRevolutionStatus(status: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId: string;
+  }): void {
+    this._revolutionStatus = status;
   }
 
   /**
@@ -509,6 +542,11 @@ export class Game {
     }>;
     roleSelectionCards?: RoleSelectionCard[];
     votes: Record<string, boolean>;
+    revolutionStatus?: {
+      isRevolution: boolean;
+      isGreatRevolution: boolean;
+      revolutionPlayerId: string;
+    };
   } {
     // Map을 Record로 변환
     const votesRecord: Record<string, boolean> = Object.fromEntries(this._votes);
@@ -536,6 +574,7 @@ export class Game {
         : undefined,
       roleSelectionCards: this._roleSelectionCards,
       votes: votesRecord,
+      revolutionStatus: this._revolutionStatus,
     };
   }
 
@@ -558,6 +597,11 @@ export class Game {
     }>;
     roleSelectionCards?: RoleSelectionCard[];
     votes?: Record<string, boolean>;
+    revolutionStatus?: {
+      isRevolution: boolean;
+      isGreatRevolution: boolean;
+      revolutionPlayerId: string;
+    };
   }): Game {
     const players = obj.players ? obj.players.map((p) => Player.fromPlainObject(p)) : [];
 
@@ -597,7 +641,8 @@ export class Game {
       finishedPlayers,
       selectableDecks,
       obj.roleSelectionCards,
-      votes
+      votes,
+      obj.revolutionStatus
     );
   }
 }

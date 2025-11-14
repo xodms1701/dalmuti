@@ -22,6 +22,10 @@ export class Player {
 
   private _isReady: boolean;
 
+  private _hasDoubleJoker?: boolean; // 조커 2장 보유 여부
+
+  private _revolutionChoice?: boolean; // 혁명 선택 여부 (true: 혁명, false: 거부)
+
   /**
    * Private constructor - factory method를 통해서만 생성 가능
    */
@@ -32,7 +36,9 @@ export class Player {
     role: number | null = null,
     rank: number | null = null,
     isPassed: boolean = false,
-    isReady: boolean = false
+    isReady: boolean = false,
+    hasDoubleJoker?: boolean,
+    revolutionChoice?: boolean
   ) {
     this.id = id;
     this.nickname = nickname;
@@ -41,6 +47,8 @@ export class Player {
     this._rank = rank;
     this._isPassed = isPassed;
     this._isReady = isReady;
+    this._hasDoubleJoker = hasDoubleJoker;
+    this._revolutionChoice = revolutionChoice;
   }
 
   /**
@@ -75,6 +83,36 @@ export class Player {
 
   get isReady(): boolean {
     return this._isReady;
+  }
+
+  get hasDoubleJoker(): boolean | undefined {
+    return this._hasDoubleJoker;
+  }
+
+  get revolutionChoice(): boolean | undefined {
+    return this._revolutionChoice;
+  }
+
+  /**
+   * 조커 2장 보유 플래그 설정
+   */
+  markHasDoubleJoker(): void {
+    this._hasDoubleJoker = true;
+  }
+
+  /**
+   * 조커 2장 보유 플래그 제거
+   */
+  clearDoubleJokerFlag(): void {
+    this._hasDoubleJoker = undefined;
+  }
+
+  /**
+   * 혁명 선택
+   * @param wantRevolution true: 혁명 일으킴, false: 혁명 거부
+   */
+  selectRevolution(wantRevolution: boolean): void {
+    this._revolutionChoice = wantRevolution;
   }
 
   /**
@@ -190,6 +228,8 @@ export class Player {
     rank: number | null;
     isPassed: boolean;
     isReady: boolean;
+    hasDoubleJoker?: boolean;
+    revolutionChoice?: boolean;
   } {
     return {
       id: this.id.value, // PlayerId를 string으로 변환
@@ -199,6 +239,8 @@ export class Player {
       rank: this._rank,
       isPassed: this._isPassed,
       isReady: this._isReady,
+      hasDoubleJoker: this._hasDoubleJoker,
+      revolutionChoice: this._revolutionChoice,
     };
   }
 
@@ -213,6 +255,8 @@ export class Player {
     rank?: number | null;
     isPassed?: boolean;
     isReady?: boolean;
+    hasDoubleJoker?: boolean;
+    revolutionChoice?: boolean;
   }): Player {
     const playerId = PlayerId.create(obj.id); // string을 PlayerId로 변환
     const cards = obj.cards
@@ -225,7 +269,9 @@ export class Player {
       obj.role || null,
       obj.rank || null,
       obj.isPassed || false,
-      obj.isReady || false
+      obj.isReady || false,
+      obj.hasDoubleJoker,
+      obj.revolutionChoice
     );
   }
 }
