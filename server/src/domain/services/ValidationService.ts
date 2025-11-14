@@ -11,6 +11,7 @@ import { Game } from '../entities/Game';
 import { Card } from '../entities/Card';
 import { PlayerId } from '../value-objects/PlayerId';
 import * as GameValidator from '../../../game/helpers/GameValidator';
+import type { Game as LegacyGame, Player as LegacyPlayer } from '../../../types';
 
 /**
  * 검증 결과 타입
@@ -52,7 +53,7 @@ export function validatePlayerAction(game: Game, playerId: string): ValidationRe
   const gamePlain = game.toPlainObject();
 
   // 플레이어 찾기
-  const playerResult = GameValidator.validatePlayer(gamePlain as any, playerId);
+  const playerResult = GameValidator.validatePlayer(gamePlain as LegacyGame, playerId);
   if (!playerResult.success) {
     return { success: false, error: playerResult.error };
   }
@@ -60,7 +61,7 @@ export function validatePlayerAction(game: Game, playerId: string): ValidationRe
   const player = playerResult.data;
 
   // 현재 턴인지 확인
-  const turnResult = GameValidator.validateTurn(gamePlain as any, playerId);
+  const turnResult = GameValidator.validateTurn(gamePlain as LegacyGame, playerId);
   if (!turnResult.success) {
     return { success: false, error: turnResult.error };
   }
@@ -72,7 +73,7 @@ export function validatePlayerAction(game: Game, playerId: string): ValidationRe
   }
 
   // 게임을 완료하지 않았는지 확인
-  const notFinishedResult = GameValidator.validateNotFinished(gamePlain as any, playerId);
+  const notFinishedResult = GameValidator.validateNotFinished(gamePlain as LegacyGame, playerId);
   if (!notFinishedResult.success) {
     return { success: false, error: notFinishedResult.error };
   }
@@ -155,7 +156,7 @@ export function validatePlayerHasCards(
   }
 
   const playerPlain = player.toPlainObject();
-  const result = GameValidator.validatePlayerHasCards(playerPlain as any, cards);
+  const result = GameValidator.validatePlayerHasCards(playerPlain as LegacyPlayer, cards);
 
   if (!result.success) {
     return { success: false, error: result.error };
@@ -173,7 +174,7 @@ export function validatePlayerHasCards(
  */
 export function validateMinPlayers(game: Game, minPlayers: number): ValidationResult {
   const gamePlain = game.toPlainObject();
-  const result = GameValidator.validateMinPlayers(gamePlain as any, minPlayers);
+  const result = GameValidator.validateMinPlayers(gamePlain as LegacyGame, minPlayers);
 
   if (!result.success) {
     return { success: false, error: result.error };
@@ -191,7 +192,7 @@ export function validateMinPlayers(game: Game, minPlayers: number): ValidationRe
  */
 export function validateMaxPlayers(game: Game, maxPlayers: number): ValidationResult {
   const gamePlain = game.toPlainObject();
-  const result = GameValidator.validateMaxPlayers(gamePlain as any, maxPlayers);
+  const result = GameValidator.validateMaxPlayers(gamePlain as LegacyGame, maxPlayers);
 
   if (!result.success) {
     return { success: false, error: result.error };
@@ -208,7 +209,7 @@ export function validateMaxPlayers(game: Game, maxPlayers: number): ValidationRe
  */
 export function validateAllPlayersReady(game: Game): ValidationResult {
   const gamePlain = game.toPlainObject();
-  const result = GameValidator.validateAllPlayersReady(gamePlain as any);
+  const result = GameValidator.validateAllPlayersReady(gamePlain as LegacyGame);
 
   if (!result.success) {
     return { success: false, error: result.error };

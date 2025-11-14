@@ -106,14 +106,14 @@ export class MongoGameRepository implements IGameRepository {
     try {
       const document = GameMapper.toDocument(game);
 
-      // createdAt 추가
-      const documentWithTimestamp = {
+      // createdAt, updatedAt 추가
+      const documentWithTimestamp: GameDocument = {
         ...document,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
-      await this.collection.insertOne(documentWithTimestamp as any);
+      await this.collection.insertOne(documentWithTimestamp);
     } catch (error) {
       // MongoDB duplicate key error (code 11000)
       if (error instanceof MongoError && error.code === 11000) {
