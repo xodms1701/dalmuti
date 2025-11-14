@@ -359,6 +359,7 @@ describe('GameMapper', () => {
 
     it('should handle all updatable fields', () => {
       // Arrange
+      const player1 = Player.create(PlayerId.create('p1'), 'Alice');
       const updates = {
         phase: 'gameEnd',
         currentTurn: PlayerId.create('p2'),
@@ -368,18 +369,8 @@ describe('GameMapper', () => {
         finishedPlayers: [PlayerId.create('p1'), PlayerId.create('p2')],
         selectableDecks: [{ cards: [], isSelected: true }],
         roleSelectionCards: [{ number: 1, isSelected: true }],
-        players: [
-          {
-            id: 'p1',
-            nickname: 'Alice',
-            cards: [],
-            role: null,
-            rank: null,
-            isPassed: false,
-            isReady: false,
-          },
-        ],
-      } as any;
+        players: [player1],
+      };
 
       // Act
       const updateDoc = GameMapper.toUpdateDocument(updates);
@@ -394,6 +385,17 @@ describe('GameMapper', () => {
       expect(updateDoc.selectableDecks).toBeDefined();
       expect(updateDoc.roleSelectionCards).toBeDefined();
       expect(updateDoc.players).toBeDefined();
+      expect(updateDoc.players).toEqual([
+        {
+          id: 'p1',
+          nickname: 'Alice',
+          cards: [],
+          role: null,
+          rank: null,
+          isPassed: false,
+          isReady: false,
+        },
+      ]);
       expect(updateDoc.updatedAt).toBeInstanceOf(Date);
     });
   });

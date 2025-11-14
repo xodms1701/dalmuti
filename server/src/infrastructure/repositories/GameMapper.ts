@@ -124,7 +124,7 @@ export class GameMapper {
       updateDoc.roleSelectionCards = updates.roleSelectionCards;
     }
     if ('players' in updates && updates.players !== undefined) {
-      updateDoc.players = updates.players;
+      updateDoc.players = updates.players.map((p) => p.toPlainObject());
     }
 
     return updateDoc;
