@@ -87,7 +87,7 @@ describe('DeckService', () => {
       const deck = DeckService.initializeDeck();
       const originalRankCounts: { [key: string]: number } = {};
       deck.forEach((card) => {
-        const key = card.isJoker ? 'joker' : String(card.rank);
+        const key = card.isJoker ? 'joker' : card.rank;
         originalRankCounts[key] = (originalRankCounts[key] || 0) + 1;
       });
 
@@ -97,7 +97,7 @@ describe('DeckService', () => {
       // Assert
       const shuffledRankCounts: { [key: string]: number } = {};
       deck.forEach((card) => {
-        const key = card.isJoker ? 'joker' : String(card.rank);
+        const key = card.isJoker ? 'joker' : card.rank;
         shuffledRankCounts[key] = (shuffledRankCounts[key] || 0) + 1;
       });
       expect(shuffledRankCounts).toEqual(originalRankCounts);
