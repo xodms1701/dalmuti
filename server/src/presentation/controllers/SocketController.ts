@@ -8,25 +8,30 @@
  * 2. Use Case 응답을 Socket.IO 클라이언트에게 전달
  * 3. 게임 상태 변경 시 브로드캐스트
  *
- * 의존성:
- * - GameApplicationService: Use Cases 조합 서비스
+ * 의존성 (CQRS Pattern):
+ * - GameApplicationService (Command): 상태 변경 작업
+ * - GameQueryService (Query): 조회 작업
  * - Socket.IO Server: 실시간 통신
  */
 
 import { Server, Socket } from 'socket.io';
 import { GameApplicationService } from '../../application/services/GameApplicationService';
+import { GameQueryService } from '../../application/services/GameQueryService';
 import { SocketEvent } from '../../../socket/events';
 
 export class SocketController {
   private io: Server;
-  private gameService: GameApplicationService;
+  private commandService: GameApplicationService;
+  private queryService: GameQueryService;
 
   constructor(
     io: Server,
-    gameService: GameApplicationService
+    commandService: GameApplicationService,
+    queryService: GameQueryService
   ) {
     this.io = io;
-    this.gameService = gameService;
+    this.commandService = commandService;
+    this.queryService = queryService;
     this.setupSocketHandlers();
   }
 
@@ -65,8 +70,8 @@ export class SocketController {
         { nickname }: { nickname: string },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        // GameApplicationService.createAndJoinGame() 호출
-        const result = await this.gameService.createAndJoinGame(socket.id, nickname);
+        // Command: 게임 생성 및 참가
+        const result = await this.commandService.createAndJoinGame(socket.id, nickname);
 
         if (result.success) {
           // Socket 룸에 참가
@@ -105,7 +110,7 @@ export class SocketController {
         { roomId, nickname }: { roomId: string; nickname: string },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.joinGame(
+        const result = await this.commandService.joinGame(
           roomId,
           socket.id,
           nickname
@@ -144,7 +149,7 @@ export class SocketController {
         { roomId }: { roomId: string },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.leaveGame(
+        const result = await this.commandService.leaveGame(
           roomId,
           socket.id
         );
@@ -183,8 +188,8 @@ export class SocketController {
         { roomId }: { roomId: string },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        // 준비 상태 토글 (현재 상태의 반대로 변경)
-        const result = await this.gameService.toggleReadyAndCheckStart(
+        // Command: 준비 상태 토글 (현재 상태의 반대로 변경)
+        const result = await this.commandService.toggleReadyAndCheckStart(
           roomId,
           socket.id
         );
@@ -217,7 +222,7 @@ export class SocketController {
         { roomId, roleNumber }: { roomId: string; roleNumber: number },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.selectRole(
+        const result = await this.commandService.selectRole(
           roomId,
           socket.id,
           roleNumber
@@ -251,7 +256,7 @@ export class SocketController {
         { roomId, deckIndex }: { roomId: string; deckIndex: number },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.selectDeck(
+        const result = await this.commandService.selectDeck(
           roomId,
           socket.id,
           deckIndex
@@ -285,7 +290,7 @@ export class SocketController {
         { roomId, cards }: { roomId: string; cards: Array<{ rank: number; isJoker: boolean }> },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.playOrPass(roomId, socket.id, cards);
+        const result = await this.commandService.playOrPass(roomId, socket.id, cards);
 
         if (result.success) {
           if (typeof callback === 'function') {
@@ -315,7 +320,7 @@ export class SocketController {
         { roomId }: { roomId: string },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.playOrPass(
+        const result = await this.commandService.playOrPass(
           roomId,
           socket.id,
           [] // 빈 배열이면 패스
@@ -349,7 +354,7 @@ export class SocketController {
         { roomId, vote }: { roomId: string; vote: boolean },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const result = await this.gameService.voteNextGame(
+        const result = await this.commandService.voteNextGame(
           roomId,
           socket.id,
           vote
@@ -383,7 +388,8 @@ export class SocketController {
         { roomId }: { roomId: string },
         callback?: (response: { success: boolean; data?: any; error?: string }) => void
       ) => {
-        const gameState = await this.gameService.getGameState(roomId);
+        // Query: 게임 상태 조회
+        const gameState = await this.queryService.getGameState(roomId);
 
         if (typeof callback === 'function') {
           callback(
@@ -400,7 +406,8 @@ export class SocketController {
    * 게임 상태를 해당 룸의 모든 클라이언트에게 브로드캐스트
    */
   private async emitGameState(roomId: string): Promise<void> {
-    const gameState = await this.gameService.getGameState(roomId);
+    // Query: 게임 상태 조회
+    const gameState = await this.queryService.getGameState(roomId);
 
     if (gameState) {
       this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, gameState);

@@ -6,10 +6,11 @@ import SocketManager from './socket/SocketManager';
 import GameManager from './game/GameManager';
 import MongoDB from './db/MongoDB';
 
-// Phase 4: New Architecture (DDD + Clean Architecture)
+// Phase 4: New Architecture (DDD + Clean Architecture + CQRS)
 import { SocketController } from './src/presentation/controllers/SocketController';
 import { MongoGameRepository } from './src/infrastructure/repositories/MongoGameRepository';
 import { GameApplicationService } from './src/application/services/GameApplicationService';
+import { GameQueryService } from './src/application/services/GameQueryService';
 import { CreateGameUseCase } from './src/application/use-cases/game/CreateGameUseCase';
 import { JoinGameUseCase } from './src/application/use-cases/game/JoinGameUseCase';
 import { LeaveGameUseCase } from './src/application/use-cases/game/LeaveGameUseCase';
@@ -42,7 +43,7 @@ const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
 const gameManager = new GameManager(db, io);
 new SocketManager(io, gameManager);
 
-// ===== New Architecture (Phase 4+) - DDD + Clean Architecture =====
+// ===== New Architecture (Phase 4+) - DDD + Clean Architecture + CQRS =====
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const gameRepository = new MongoGameRepository(mongoUri, 'dalmuti');
 
@@ -57,8 +58,8 @@ const playCardUseCase = new PlayCardUseCase(gameRepository);
 const passTurnUseCase = new PassTurnUseCase(gameRepository);
 const voteNextGameUseCase = new VoteNextGameUseCase(gameRepository);
 
-// Application Service 인스턴스 생성
-const gameApplicationService = new GameApplicationService(
+// CQRS: Command Service (상태 변경)
+const gameCommandService = new GameApplicationService(
   gameRepository,
   createGameUseCase,
   joinGameUseCase,
@@ -71,12 +72,15 @@ const gameApplicationService = new GameApplicationService(
   voteNextGameUseCase
 );
 
+// CQRS: Query Service (조회)
+const gameQueryService = new GameQueryService(gameRepository);
+
 // SocketController 인스턴스 생성 (Presentation Layer)
-// 모든 비즈니스 로직은 GameApplicationService를 통해 처리
-// Repository에 직접 접근하지 않고 Application Service를 통해 처리
+// CQRS 패턴: Command와 Query를 분리하여 주입
 new SocketController(
   io,
-  gameApplicationService
+  gameCommandService,
+  gameQueryService
 );
 
 // MongoDB 연결

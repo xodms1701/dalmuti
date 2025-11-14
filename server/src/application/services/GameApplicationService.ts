@@ -1,10 +1,13 @@
 /**
  * GameApplicationService.ts
  *
- * Application Service - Use Case 오케스트레이션
+ * CQRS Pattern - Command Service
  *
+ * 게임 상태 변경(Command) 전담 서비스
  * 여러 Use Case를 조합하여 복잡한 비즈니스 플로우를 처리합니다.
  * 향후 트랜잭션 관리, 이벤트 발행 등을 담당할 수 있습니다.
+ *
+ * 조회(Query)는 GameQueryService를 사용하세요.
  */
 
 import { CreateGameUseCase } from '../use-cases/game/CreateGameUseCase';
@@ -21,7 +24,7 @@ import { IGameRepository } from '../ports/IGameRepository';
 import { RoomId } from '../../domain/value-objects/RoomId';
 
 /**
- * GameApplicationService
+ * GameApplicationService (Command Service)
  *
  * Use Case들을 조합하여 복잡한 비즈니스 시나리오를 처리합니다.
  * 트랜잭션 관리 및 보상 트랜잭션을 담당합니다.
@@ -339,23 +342,5 @@ export class GameApplicationService {
       playerId,
       vote,
     });
-  }
-
-  /**
-   * 게임 상태 조회
-   *
-   * 게임의 현재 상태를 조회하여 반환합니다.
-   *
-   * @param roomId - 방 ID
-   * @returns 게임 상태 (PlainObject 형태) 또는 null
-   */
-  async getGameState(roomId: string): Promise<any | null> {
-    try {
-      const game = await this.gameRepository.findById(RoomId.from(roomId));
-      return game ? game.toPlainObject() : null;
-    } catch (error) {
-      console.error(`Failed to get game state for room ${roomId}:`, error);
-      return null;
-    }
   }
 }
