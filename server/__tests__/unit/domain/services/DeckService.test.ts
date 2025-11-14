@@ -2,6 +2,7 @@
  * DeckService Unit Tests
  */
 
+import { Card } from '../../../../src/domain/entities';
 import * as DeckService from '../../../../src/domain/services/DeckService';
 
 describe('DeckService', () => {
@@ -416,7 +417,7 @@ describe('DeckService', () => {
 
     it('should return 0 for empty deck', () => {
       // Arrange
-      const deck: any[] = [];
+      const deck: Card[] = [];
 
       // Act
       const count = DeckService.countCards(deck);
