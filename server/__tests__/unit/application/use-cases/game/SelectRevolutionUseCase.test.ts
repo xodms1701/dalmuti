@@ -128,7 +128,7 @@ describe('SelectRevolutionUseCase', () => {
 
     it('혁명 거부 시: 세금 교환 수행 후 tax 페이즈로 전환', async () => {
       // Arrange
-      const { game, doubleJokerPlayer } = createGameWithDoubleJoker('ROOM01', 4);
+      const { game } = createGameWithDoubleJoker('ROOM01', 4);
 
       mockRepository.findById.mockResolvedValue(game);
 
@@ -246,7 +246,7 @@ describe('SelectRevolutionUseCase', () => {
   describe('엣지 케이스', () => {
     it('5명 플레이어 게임에서 혁명 거부 시 올바른 세금 교환 발생', async () => {
       // Arrange
-      const { game, doubleJokerPlayer } = createGameWithDoubleJoker('ROOM01', 5);
+      const { game } = createGameWithDoubleJoker('ROOM01', 5);
 
       mockRepository.findById.mockResolvedValue(game);
 
@@ -270,7 +270,7 @@ describe('SelectRevolutionUseCase', () => {
 
     it('8명 플레이어 게임에서 혁명 거부 시 올바른 세금 교환 발생', async () => {
       // Arrange
-      const { game, doubleJokerPlayer } = createGameWithDoubleJoker('ROOM01', 8);
+      const { game } = createGameWithDoubleJoker('ROOM01', 8);
 
       mockRepository.findById.mockResolvedValue(game);
 

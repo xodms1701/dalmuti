@@ -19,6 +19,9 @@ import { PassTurnUseCase } from '../../src/application/use-cases/game/PassTurnUs
 import { VoteNextGameUseCase } from '../../src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../../src/application/use-cases/game/DeleteGameUseCase';
 import { RoomId } from '../../src/domain/value-objects/RoomId';
+import { Card } from '../../src/domain/entities/Card';
+import { DeckService } from '../../src/domain/services/DeckService';
+import { SelectableDeck } from '../../src/domain/entities/Game';
 
 // 환경 변수 또는 기본값 사용
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
@@ -185,7 +188,6 @@ describe('Full Game Flow E2E Tests', () => {
       });
 
       // 덱 분할 및 선택 가능한 덱 생성
-      const DeckService = require('../../src/domain/services/DeckService');
       const selectableDecks = DeckService.createSelectableDecks(game!.deck!, game!.players.length);
       game!.setSelectableDecks(selectableDecks);
 
@@ -208,9 +210,8 @@ describe('Full Game Flow E2E Tests', () => {
 
       // 3-1. 각 플레이어가 순서대로 덱 선택 (rank 순서: 1, 2, 3, 4)
       // Helper: 아직 선택되지 않은 첫 번째 덱의 인덱스 찾기
-      const findAvailableDeckIndex = (decks: any[]): number => {
-        return decks.findIndex((deck) => !deck.isSelected);
-      };
+      const findAvailableDeckIndex = (decks: SelectableDeck[]): number =>
+        decks.findIndex((deck) => !deck.isSelected);
 
       // Player 1 덱 선택
       game = await repository.findById(RoomId.from(roomId));
@@ -325,9 +326,6 @@ describe('Full Game Flow E2E Tests', () => {
       expect(game!.players.every((p) => p.rank !== null)).toBe(true);
       expect(game!.players.every((p) => p.role !== null)).toBe(true);
       expect(game!.players.every((p) => p.cards.length > 0)).toBe(true);
-
-      // 전체 플로우 성공!
-      console.log(`✅ Full game flow completed successfully! Room: ${roomId}`);
     });
 
     it('should handle revolution acceptance (대혁명) when double joker holder is last rank', async () => {
@@ -375,7 +373,6 @@ describe('Full Game Flow E2E Tests', () => {
 
       // 조커 2장을 player4에게 할당하기 위해 덱을 조작
       // (실제로는 덱 선택 과정에서 랜덤하게 할당되지만, 테스트를 위해 조작)
-      const Card = require('../../src/domain/entities/Card').Card;
       const joker1 = Card.create(13, true);
       const joker2 = Card.create(13, true);
       const normalCard = Card.create(5, false);
@@ -409,9 +406,6 @@ describe('Full Game Flow E2E Tests', () => {
         expect(revolutionResult.data.phase).toBe('playing');
         expect(revolutionResult.data.revolutionStatus?.isRevolution).toBe(true);
         expect(revolutionResult.data.revolutionStatus?.isGreatRevolution).toBe(true);
-
-        // 대혁명이 성공적으로 처리되었음
-        console.log(`✅ Great revolution (대혁명) test completed! Player: player4`);
       }
     });
   });
