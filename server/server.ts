@@ -7,7 +7,7 @@ import GameManager from './game/GameManager';
 import MongoDB from './db/MongoDB';
 
 // Phase 4: New Architecture (DDD + Clean Architecture + CQRS)
-import { SocketController } from './src/presentation/controllers/SocketController';
+import { SocketCoordinator } from './src/presentation/socket/SocketCoordinator';
 import { MongoGameRepository } from './src/infrastructure/repositories/MongoGameRepository';
 import { GameCommandService } from './src/application/services/GameCommandService';
 import { GameQueryService } from './src/application/services/GameQueryService';
@@ -35,7 +35,7 @@ const io = new Server(httpServer, {
 });
 
 // GET 요청 핸들러 추가
-app.get('/api', (req, res) => {
+app.get('/api', (_req, res) => {
   res.json({ message: 'dalmuti' });
 });
 
@@ -80,11 +80,12 @@ const gameCommandService = new GameCommandService(
 // CQRS: Query Service (조회)
 const gameQueryService = new GameQueryService(gameRepository);
 
-// SocketController 인스턴스 생성 (Presentation Layer)
+// SocketCoordinator 인스턴스 생성 (Presentation Layer)
 // CQRS 패턴: Command와 Query를 분리하여 주입
 // /v2 네임스페이스 사용 - Legacy와 충돌 방지
+// Primary Adapter 패턴: GameEvent, CardEvent, RoleSelectionEvent Adapter 조율
 const ioV2 = io.of('/v2');
-new SocketController(ioV2, gameCommandService, gameQueryService);
+new SocketCoordinator(ioV2, gameCommandService, gameQueryService);
 
 // MongoDB 연결
 gameRepository.connect().catch((error) => {
