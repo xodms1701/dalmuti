@@ -106,21 +106,21 @@ export class GameApplicationService {
   }
 
   /**
-   * 모든 플레이어가 준비 완료되었는지 확인하고 다음 페이즈로 진행
+   * 플레이어의 준비 상태를 토글하고 게임 시작 가능 여부 확인
    *
-   * 플레이어가 준비 상태를 변경하고, 모든 플레이어가 준비되었으면
-   * 자동으로 역할 선택 페이즈로 진행할 수 있습니다.
-   * (현재는 준비 상태만 변경하고, 페이즈 전환은 별도 로직에서 처리)
+   * ReadyGameUseCase를 호출하여 준비 상태를 토글합니다:
+   * - 준비 안됨 → 준비됨
+   * - 준비됨 → 준비 안됨 (취소)
+   *
+   * 모든 플레이어가 준비되었으면 게임 시작 가능 여부를 반환합니다.
    *
    * @param roomId - 방 ID
    * @param playerId - 플레이어 ID
-   * @param isReady - 준비 상태
    * @returns 준비 상태 변경 결과
    */
   async toggleReadyAndCheckStart(
     roomId: string,
-    playerId: string,
-    isReady: boolean
+    playerId: string
   ): Promise<
     UseCaseResponse<{
       roomId: string;
@@ -131,11 +131,11 @@ export class GameApplicationService {
     }>
   > {
     try {
-      // 준비 상태 변경
+      // 준비 상태 토글 (isReady를 전달하지 않으면 UseCase에서 자동 토글)
       const readyResult = await this.readyGameUseCase.execute({
         roomId,
         playerId,
-        isReady,
+        // isReady: undefined → ReadyGameUseCase에서 자동 토글
       });
 
       if (!readyResult.success) {
@@ -231,6 +231,131 @@ export class GameApplicationService {
         'PLAY_OR_PASS_FAILED',
         error instanceof Error ? error.message : 'Unknown error occurred'
       );
+    }
+  }
+
+  /**
+   * 게임 참가
+   *
+   * 플레이어를 기존 게임에 참가시킵니다.
+   *
+   * @param roomId - 방 ID
+   * @param playerId - 플레이어 ID
+   * @param nickname - 플레이어 닉네임
+   * @returns 참가 결과
+   */
+  async joinGame(
+    roomId: string,
+    playerId: string,
+    nickname: string
+  ): Promise<UseCaseResponse<any>> {
+    return await this.joinGameUseCase.execute({
+      roomId,
+      playerId,
+      nickname,
+    });
+  }
+
+  /**
+   * 게임 나가기
+   *
+   * 플레이어를 게임에서 퇴장시킵니다.
+   *
+   * @param roomId - 방 ID
+   * @param playerId - 플레이어 ID
+   * @returns 퇴장 결과
+   */
+  async leaveGame(
+    roomId: string,
+    playerId: string
+  ): Promise<UseCaseResponse<any>> {
+    return await this.leaveGameUseCase.execute({
+      roomId,
+      playerId,
+    });
+  }
+
+  /**
+   * 역할 선택
+   *
+   * 플레이어가 역할(순위)을 선택합니다.
+   *
+   * @param roomId - 방 ID
+   * @param playerId - 플레이어 ID
+   * @param roleNumber - 역할 번호 (1-13)
+   * @returns 역할 선택 결과
+   */
+  async selectRole(
+    roomId: string,
+    playerId: string,
+    roleNumber: number
+  ): Promise<UseCaseResponse<any>> {
+    return await this.selectRoleUseCase.execute({
+      roomId,
+      playerId,
+      roleNumber,
+    });
+  }
+
+  /**
+   * 덱 선택
+   *
+   * 플레이어가 카드 덱을 선택합니다.
+   *
+   * @param roomId - 방 ID
+   * @param playerId - 플레이어 ID
+   * @param deckIndex - 덱 인덱스
+   * @returns 덱 선택 결과
+   */
+  async selectDeck(
+    roomId: string,
+    playerId: string,
+    deckIndex: number
+  ): Promise<UseCaseResponse<any>> {
+    return await this.selectDeckUseCase.execute({
+      roomId,
+      playerId,
+      deckIndex,
+    });
+  }
+
+  /**
+   * 다음 게임 투표
+   *
+   * 게임 종료 후 다음 게임 진행 여부에 투표합니다.
+   *
+   * @param roomId - 방 ID
+   * @param playerId - 플레이어 ID
+   * @param vote - 투표 (true: 찬성, false: 반대)
+   * @returns 투표 결과
+   */
+  async voteNextGame(
+    roomId: string,
+    playerId: string,
+    vote: boolean
+  ): Promise<UseCaseResponse<any>> {
+    return await this.voteNextGameUseCase.execute({
+      roomId,
+      playerId,
+      vote,
+    });
+  }
+
+  /**
+   * 게임 상태 조회
+   *
+   * 게임의 현재 상태를 조회하여 반환합니다.
+   *
+   * @param roomId - 방 ID
+   * @returns 게임 상태 (PlainObject 형태) 또는 null
+   */
+  async getGameState(roomId: string): Promise<any | null> {
+    try {
+      const game = await this.gameRepository.findById(RoomId.from(roomId));
+      return game ? game.toPlainObject() : null;
+    } catch (error) {
+      console.error(`Failed to get game state for room ${roomId}:`, error);
+      return null;
     }
   }
 }

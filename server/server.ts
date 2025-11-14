@@ -6,6 +6,20 @@ import SocketManager from './socket/SocketManager';
 import GameManager from './game/GameManager';
 import MongoDB from './db/MongoDB';
 
+// Phase 4: New Architecture (DDD + Clean Architecture)
+import { SocketController } from './src/presentation/controllers/SocketController';
+import { MongoGameRepository } from './src/infrastructure/repositories/MongoGameRepository';
+import { GameApplicationService } from './src/application/services/GameApplicationService';
+import { CreateGameUseCase } from './src/application/use-cases/game/CreateGameUseCase';
+import { JoinGameUseCase } from './src/application/use-cases/game/JoinGameUseCase';
+import { LeaveGameUseCase } from './src/application/use-cases/game/LeaveGameUseCase';
+import { ReadyGameUseCase } from './src/application/use-cases/game/ReadyGameUseCase';
+import { SelectRoleUseCase } from './src/application/use-cases/game/SelectRoleUseCase';
+import { SelectDeckUseCase } from './src/application/use-cases/game/SelectDeckUseCase';
+import { PlayCardUseCase } from './src/application/use-cases/game/PlayCardUseCase';
+import { PassTurnUseCase } from './src/application/use-cases/game/PassTurnUseCase';
+import { VoteNextGameUseCase } from './src/application/use-cases/game/VoteNextGameUseCase';
+
 dotenv.config();
 
 const app = express();
@@ -23,9 +37,52 @@ app.get('/api', (req, res) => {
   res.json({ message: 'dalmuti' });
 });
 
+// ===== Legacy Architecture (Phase 1-3) =====
 const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
 const gameManager = new GameManager(db, io);
 new SocketManager(io, gameManager);
+
+// ===== New Architecture (Phase 4+) - DDD + Clean Architecture =====
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const gameRepository = new MongoGameRepository(mongoUri, 'dalmuti');
+
+// Use Cases 인스턴스 생성
+const createGameUseCase = new CreateGameUseCase(gameRepository);
+const joinGameUseCase = new JoinGameUseCase(gameRepository);
+const leaveGameUseCase = new LeaveGameUseCase(gameRepository);
+const readyGameUseCase = new ReadyGameUseCase(gameRepository);
+const selectRoleUseCase = new SelectRoleUseCase(gameRepository);
+const selectDeckUseCase = new SelectDeckUseCase(gameRepository);
+const playCardUseCase = new PlayCardUseCase(gameRepository);
+const passTurnUseCase = new PassTurnUseCase(gameRepository);
+const voteNextGameUseCase = new VoteNextGameUseCase(gameRepository);
+
+// Application Service 인스턴스 생성
+const gameApplicationService = new GameApplicationService(
+  gameRepository,
+  createGameUseCase,
+  joinGameUseCase,
+  leaveGameUseCase,
+  readyGameUseCase,
+  selectRoleUseCase,
+  selectDeckUseCase,
+  playCardUseCase,
+  passTurnUseCase,
+  voteNextGameUseCase
+);
+
+// SocketController 인스턴스 생성 (Presentation Layer)
+// 모든 비즈니스 로직은 GameApplicationService를 통해 처리
+// Repository에 직접 접근하지 않고 Application Service를 통해 처리
+new SocketController(
+  io,
+  gameApplicationService
+);
+
+// MongoDB 연결
+gameRepository.connect().catch((error) => {
+  console.error('Failed to connect to MongoDB (New Architecture):', error);
+});
 
 const PORT = process.env.PORT || 3000;
 

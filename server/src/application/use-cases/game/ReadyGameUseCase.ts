@@ -63,20 +63,26 @@ export class ReadyGameUseCase implements IUseCase<ReadyGameRequest, UseCaseRespo
         throw new ResourceNotFoundError('Player', playerId.value);
       }
 
-      // 4. 준비 상태 변경
-      if (request.isReady) {
+      // 4. 준비 상태 결정
+      // isReady가 undefined면 현재 상태를 토글, 값이 있으면 그 값 사용
+      const targetReadyState = request.isReady !== undefined
+        ? request.isReady
+        : !player.isReady;
+
+      // 5. 준비 상태 변경
+      if (targetReadyState) {
         player.ready();
       } else {
         player.unready();
       }
 
-      // 5. Repository를 통해 업데이트
+      // 6. Repository를 통해 업데이트
       await this.gameRepository.update(roomId, game);
 
-      // 6. 모든 플레이어 준비 완료 여부 확인
+      // 7. 모든 플레이어 준비 완료 여부 확인
       const allPlayersReady = game.players.length > 0 && game.players.every((p) => p.isReady);
 
-      // 7. Response DTO 반환
+      // 8. Response DTO 반환
       return createSuccessResponse<ReadyGameResponse>({
         roomId: game.roomId.value,
         playerId: player.id.value,
