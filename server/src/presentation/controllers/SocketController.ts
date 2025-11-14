@@ -18,11 +18,27 @@ import { Server, Socket } from 'socket.io';
 import { GameCommandService } from '../../application/services/GameCommandService';
 import { GameQueryService } from '../../application/services/GameQueryService';
 import { SocketEvent } from '../../../socket/events';
+import { UseCaseResponse } from '../../application/dto/common/BaseResponse';
+
+/**
+ * Socket.IO 응답 타입
+ */
+type SocketResponse<T = unknown> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+/**
+ * Socket.IO 콜백 타입
+ */
+type SocketCallback<T = unknown> = (response: SocketResponse<T>) => void;
 
 export class SocketController {
   private io: Server;
   private commandService: GameCommandService;
   private queryService: GameQueryService;
+  private playerRooms: Map<string, string>; // playerId → roomId 매핑
 
   constructor(
     io: Server,
@@ -32,6 +48,7 @@ export class SocketController {
     this.io = io;
     this.commandService = commandService;
     this.queryService = queryService;
+    this.playerRooms = new Map();
     this.setupSocketHandlers();
   }
 
@@ -54,8 +71,21 @@ export class SocketController {
       this.handleVote(socket);
       this.handleGetGameState(socket);
 
-      socket.on('disconnect', () => {
+      socket.on('disconnect', async () => {
         console.log('클라이언트가 연결 해제되었습니다:', socket.id);
+
+        // 플레이어가 게임 중이었다면 자동으로 나가기 처리
+        const roomId = this.playerRooms.get(socket.id);
+        if (roomId) {
+          try {
+            await this.commandService.leaveGame(roomId, socket.id);
+            this.playerRooms.delete(socket.id);
+            await this.emitGameState(roomId);
+            console.log(`플레이어 ${socket.id}가 게임 ${roomId}에서 자동으로 나갔습니다.`);
+          } catch (error) {
+            console.error('Disconnect 처리 중 오류:', error);
+          }
+        }
       });
     });
   }
@@ -68,34 +98,24 @@ export class SocketController {
       SocketEvent.CREATE_GAME,
       async (
         { nickname }: { nickname: string },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
         // Command: 게임 생성 및 참가
         const result = await this.commandService.createAndJoinGame(socket.id, nickname);
 
-        if (result.success) {
-          // Socket 룸에 참가
-          socket.join(result.data.roomId);
-
-          // 클라이언트에게 응답
-          if (typeof callback === 'function') {
-            callback({
-              success: true,
-              data: { roomId: result.data.roomId, nickname },
-            });
+        await this.handleSocketEvent(
+          result,
+          callback,
+          result.success ? result.data.roomId : undefined,
+          async () => {
+            if (result.success) {
+              // Socket 룸에 참가
+              socket.join(result.data.roomId);
+              // 플레이어-룸 매핑 저장
+              this.playerRooms.set(socket.id, result.data.roomId);
+            }
           }
-
-          // 게임 상태 브로드캐스트
-          await this.emitGameState(result.data.roomId);
-        } else {
-          // 에러 응답
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        );
       }
     );
   }
@@ -108,33 +128,21 @@ export class SocketController {
       SocketEvent.JOIN_GAME,
       async (
         { roomId, nickname }: { roomId: string; nickname: string },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
-        const result = await this.commandService.joinGame(
-          roomId,
-          socket.id,
-          nickname
+        const result = await this.commandService.joinGame(roomId, socket.id, nickname);
+
+        await this.handleSocketEvent(
+          result,
+          callback,
+          result.success ? roomId : undefined,
+          async () => {
+            if (result.success) {
+              socket.join(roomId);
+              this.playerRooms.set(socket.id, roomId);
+            }
+          }
         );
-
-        if (result.success) {
-          socket.join(roomId);
-
-          if (typeof callback === 'function') {
-            callback({
-              success: true,
-              data: { roomId, nickname },
-            });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
       }
     );
   }
@@ -147,29 +155,21 @@ export class SocketController {
       SocketEvent.LEAVE_GAME,
       async (
         { roomId }: { roomId: string },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
-        const result = await this.commandService.leaveGame(
-          roomId,
-          socket.id
+        const result = await this.commandService.leaveGame(roomId, socket.id);
+
+        await this.handleSocketEvent(
+          result,
+          callback,
+          result.success ? roomId : undefined,
+          async () => {
+            if (result.success) {
+              socket.leave(roomId);
+              this.playerRooms.delete(socket.id);
+            }
+          }
         );
-
-        if (result.success) {
-          socket.leave(roomId);
-
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
       }
     );
   }
@@ -186,28 +186,12 @@ export class SocketController {
       SocketEvent.READY,
       async (
         { roomId }: { roomId: string },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
         // Command: 준비 상태 토글 (현재 상태의 반대로 변경)
-        const result = await this.commandService.toggleReadyAndCheckStart(
-          roomId,
-          socket.id
-        );
+        const result = await this.commandService.toggleReadyAndCheckStart(roomId, socket.id);
 
-        if (result.success) {
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        await this.handleSocketEvent(result, callback, roomId);
       }
     );
   }
@@ -220,28 +204,11 @@ export class SocketController {
       SocketEvent.SELECT_ROLE,
       async (
         { roomId, roleNumber }: { roomId: string; roleNumber: number },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
-        const result = await this.commandService.selectRole(
-          roomId,
-          socket.id,
-          roleNumber
-        );
+        const result = await this.commandService.selectRole(roomId, socket.id, roleNumber);
 
-        if (result.success) {
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        await this.handleSocketEvent(result, callback, roomId);
       }
     );
   }
@@ -254,28 +221,11 @@ export class SocketController {
       SocketEvent.SELECT_DECK,
       async (
         { roomId, deckIndex }: { roomId: string; deckIndex: number },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
-        const result = await this.commandService.selectDeck(
-          roomId,
-          socket.id,
-          deckIndex
-        );
+        const result = await this.commandService.selectDeck(roomId, socket.id, deckIndex);
 
-        if (result.success) {
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        await this.handleSocketEvent(result, callback, roomId);
       }
     );
   }
@@ -288,24 +238,11 @@ export class SocketController {
       SocketEvent.PLAY_CARD,
       async (
         { roomId, cards }: { roomId: string; cards: Array<{ rank: number; isJoker: boolean }> },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
         const result = await this.commandService.playOrPass(roomId, socket.id, cards);
 
-        if (result.success) {
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        await this.handleSocketEvent(result, callback, roomId);
       }
     );
   }
@@ -318,7 +255,7 @@ export class SocketController {
       SocketEvent.PASS,
       async (
         { roomId }: { roomId: string },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
         const result = await this.commandService.playOrPass(
           roomId,
@@ -326,20 +263,7 @@ export class SocketController {
           [] // 빈 배열이면 패스
         );
 
-        if (result.success) {
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        await this.handleSocketEvent(result, callback, roomId);
       }
     );
   }
@@ -352,28 +276,11 @@ export class SocketController {
       SocketEvent.VOTE,
       async (
         { roomId, vote }: { roomId: string; vote: boolean },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
-        const result = await this.commandService.voteNextGame(
-          roomId,
-          socket.id,
-          vote
-        );
+        const result = await this.commandService.voteNextGame(roomId, socket.id, vote);
 
-        if (result.success) {
-          if (typeof callback === 'function') {
-            callback({ success: true, data: result.data });
-          }
-
-          await this.emitGameState(roomId);
-        } else {
-          if (typeof callback === 'function') {
-            callback({
-              success: false,
-              error: result.error.message,
-            });
-          }
-        }
+        await this.handleSocketEvent(result, callback, roomId);
       }
     );
   }
@@ -386,17 +293,27 @@ export class SocketController {
       SocketEvent.GET_GAME_STATE,
       async (
         { roomId }: { roomId: string },
-        callback?: (response: { success: boolean; data?: any; error?: string }) => void
+        callback?: SocketCallback
       ) => {
-        // Query: 게임 상태 조회
-        const gameState = await this.queryService.getGameState(roomId);
+        try {
+          // Query: 게임 상태 조회
+          const gameState = await this.queryService.getGameState(roomId);
 
-        if (typeof callback === 'function') {
-          callback(
-            gameState
-              ? { success: true, data: gameState }
-              : { success: false, error: '게임 상태를 찾을 수 없습니다.' }
-          );
+          if (typeof callback === 'function') {
+            callback(
+              gameState
+                ? { success: true, data: gameState }
+                : { success: false, error: '게임 상태를 찾을 수 없습니다.' }
+            );
+          }
+        } catch (error) {
+          console.error('GET_GAME_STATE error:', error);
+          if (typeof callback === 'function') {
+            callback({
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+            });
+          }
         }
       }
     );
@@ -411,6 +328,57 @@ export class SocketController {
 
     if (gameState) {
       this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, gameState);
+    }
+  }
+
+  /**
+   * Socket 이벤트 핸들러 공통 로직
+   *
+   * @param useCaseResult - Use Case 실행 결과
+   * @param callback - Socket.IO 콜백 함수
+   * @param roomId - 브로드캐스트할 룸 ID (선택사항)
+   * @param onSuccess - 성공 시 추가 작업 (선택사항)
+   */
+  private async handleSocketEvent<T>(
+    useCaseResult: UseCaseResponse<T>,
+    callback?: SocketCallback<T>,
+    roomId?: string,
+    onSuccess?: () => void | Promise<void>
+  ): Promise<void> {
+    try {
+      if (useCaseResult.success) {
+        // 성공 시 콜백 호출
+        if (typeof callback === 'function') {
+          callback({ success: true, data: useCaseResult.data });
+        }
+
+        // 추가 작업 실행 (예: socket.join)
+        if (onSuccess) {
+          await onSuccess();
+        }
+
+        // 게임 상태 브로드캐스트
+        if (roomId) {
+          await this.emitGameState(roomId);
+        }
+      } else {
+        // 실패 시 콜백 호출
+        if (typeof callback === 'function') {
+          callback({
+            success: false,
+            error: useCaseResult.error.message,
+          });
+        }
+      }
+    } catch (error) {
+      // 예외 처리
+      console.error('Socket event handling error:', error);
+      if (typeof callback === 'function') {
+        callback({
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+        });
+      }
     }
   }
 }
