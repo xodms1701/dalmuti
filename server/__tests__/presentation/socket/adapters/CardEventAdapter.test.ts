@@ -180,7 +180,7 @@ describe('CardEventAdapter', () => {
       mockQueryService.getGameState.mockResolvedValue(mockGameState as any);
 
       const callback = jest.fn();
-      await selectDeckHandler({ roomId: 'room-123', deckIndex: 0 }, callback);
+      await selectDeckHandler({ roomId: 'room-123', cardIndex: 0 }, callback);
 
       expect(mockCommandService.selectDeck).toHaveBeenCalledWith('room-123', 'socket-123', 0);
       expect(callback).toHaveBeenCalledWith({
@@ -197,7 +197,7 @@ describe('CardEventAdapter', () => {
       } as UseCaseResponse<any>);
 
       const callback = jest.fn();
-      await selectDeckHandler({ roomId: 'room-123', deckIndex: 0 }, callback);
+      await selectDeckHandler({ roomId: 'room-123', cardIndex: 0 }, callback);
 
       expect(callback).toHaveBeenCalledWith({
         success: false,
