@@ -151,9 +151,6 @@ describe('Full Game Flow E2E Tests', () => {
       expect(game!.selectableDecks).toBeDefined();
       expect(game!.selectableDecks?.length).toBe(4); // 4명이므로 4개 덱
 
-      // 역할에 따라 정렬된 플레이어 목록 (테스트 검증용)
-      const sortedPlayers = game!.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
-
       // ==================== Phase 3: 덱 선택 (Deck Selection) ====================
 
       // 3-1. 각 플레이어가 순서대로 덱 선택 (rank 순서: 1, 2, 3, 4)

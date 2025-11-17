@@ -101,14 +101,7 @@ export class SelectDeckUseCase
         } else {
           // 조커 2장 보유자가 없으면 바로 세금 교환
           const taxExchanges = TaxService.initializeTaxExchanges(game.players);
-          game.setTaxExchanges(taxExchanges);
-          game.changePhase('tax');
-
-          // 세금 교환 후 게임 시작 준비
-          game.setCurrentTurn(
-            game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0].id
-          );
-          game.incrementRound();
+          game.prepareForTaxPhase(taxExchanges);
         }
       } else {
         // 아직 모든 덱이 선택되지 않았다면 다음 플레이어에게 턴을 넘김

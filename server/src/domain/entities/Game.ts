@@ -158,6 +158,36 @@ export class Game {
   }
 
   /**
+   * 세금 교환 페이즈 준비
+   *
+   * 세금 교환을 설정하고 tax 페이즈로 전환합니다.
+   * 다음 라운드 시작 플레이어(rank 1)를 턴으로 설정하고 라운드를 증가시킵니다.
+   *
+   * SelectDeckUseCase와 SelectRevolutionUseCase에서 공통으로 사용됩니다.
+   *
+   * @param taxExchanges 세금 교환 정보 (Use Case에서 TaxService를 통해 생성)
+   */
+  prepareForTaxPhase(taxExchanges: TaxExchange[]): void {
+    // 세금 교환 설정
+    this.setTaxExchanges(taxExchanges);
+
+    // tax 페이즈로 전환
+    this.changePhase('tax');
+
+    // 첫 번째 순위 플레이어(rank 1)를 턴으로 설정
+    const firstRankPlayer = this._players
+      .slice()
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0];
+
+    if (firstRankPlayer) {
+      this.setCurrentTurn(firstRankPlayer.id);
+    }
+
+    // 라운드 증가
+    this.incrementRound();
+  }
+
+  /**
    * 플레이어가 카드를 낼 수 있는지 확인
    * @param playerId 플레이어 ID
    * @param cards 낼 카드들

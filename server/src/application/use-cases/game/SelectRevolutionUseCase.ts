@@ -72,16 +72,9 @@ export class SelectRevolutionUseCase
 
       // 4. 혁명 거부 시 세금 교환 수행
       if (!request.wantRevolution) {
-        // Domain Service를 통해 세금 교환 처리
+        // TaxService를 통해 세금 교환 초기화 후 Game 엔티티에 설정
         const taxExchanges = TaxService.initializeTaxExchanges(game.players);
-        game.setTaxExchanges(taxExchanges);
-
-        // 세금 교환 후 playing 페이즈로 전환 준비
-        // (Legacy에서는 10초 타이머 사용, 여기서는 클라이언트에서 처리)
-        game.setCurrentTurn(
-          game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0].id
-        );
-        game.incrementRound();
+        game.prepareForTaxPhase(taxExchanges);
       }
 
       // 5. Repository를 통해 업데이트
