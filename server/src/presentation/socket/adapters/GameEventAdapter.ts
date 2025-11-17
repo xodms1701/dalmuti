@@ -139,9 +139,9 @@ export class GameEventAdapter extends BaseEventAdapter {
 
         await this.handleSocketEvent(result, callback, roomId);
 
-        // 모든 플레이어가 준비되었으면 ALL_PLAYERS_READY 브로드캐스트
+        // 모든 플레이어가 준비되었으면 allPlayersReady 브로드캐스트
         if (result.success && result.data.allPlayersReady) {
-          this.io.to(roomId).emit('ALL_PLAYERS_READY');
+          this.io.to(roomId).emit('allPlayersReady');
         }
       }
     );

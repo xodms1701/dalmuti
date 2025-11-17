@@ -97,7 +97,7 @@ export class SocketCoordinator {
           // 게임 상태 브로드캐스트
           const gameState = await this.queryService.getGameState(roomId);
           if (gameState) {
-            this.io.to(roomId).emit('GAME_STATE_UPDATED', { game: gameState });
+            this.io.to(roomId).emit('gameStateUpdated', gameState);
           }
 
           // eslint-disable-next-line no-console

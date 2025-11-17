@@ -97,7 +97,7 @@ describe('RoleSelectionEventAdapter', () => {
         data: mockGameState,
       });
       expect(mockIo.to).toHaveBeenCalledWith('room-123');
-      expect(mockIo.emit).toHaveBeenCalledWith('GAME_STATE_UPDATED', mockGameState);
+      expect(mockIo.emit).toHaveBeenCalledWith('gameStateUpdated', mockGameState);
     });
 
     it('실패 시 에러를 반환해야 한다', async () => {
