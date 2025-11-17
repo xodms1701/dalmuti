@@ -91,6 +91,23 @@ export class CardEventAdapter extends BaseEventAdapter {
         const result = await this.commandService.selectDeck(roomId, socket.id, cardIndex);
 
         await this.handleSocketEvent(result, callback, roomId);
+
+        // 세금 교환 페이즈로 전환된 경우 10초 후 playing 페이즈로 자동 전환
+        if (result.success && result.data.phase === 'tax') {
+          setTimeout(async () => {
+            try {
+              // GameCommandService를 통해 phase 전환
+              const transitionResult = await this.commandService.transitionTaxToPlaying(roomId);
+
+              if (transitionResult.success && transitionResult.data.transitioned) {
+                // 클라이언트에게 업데이트된 게임 상태 전송
+                await this.emitGameState(roomId);
+              }
+            } catch (error) {
+              console.error('Failed to auto-transition from tax to playing phase:', error);
+            }
+          }, 10000); // 10초 후 실행
+        }
       }
     );
   }

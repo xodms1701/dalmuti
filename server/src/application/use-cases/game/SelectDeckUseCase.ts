@@ -87,7 +87,32 @@ export class SelectDeckUseCase
       // 선택된 덱의 카드 정보 변환
       const selectedCards = selectedDeck.cards.map((card) => card.toPlainObject());
 
-      // 4. 모든 덱이 선택되었는지 확인
+      // 4. 마지막 덱 자동 선택 로직 (다음 플레이어에게 턴 넘기기 전에 처리)
+      const sortedPlayers = game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+      const remainingDecks = game.selectableDecks?.filter((deck) => !deck.isSelected) ?? [];
+
+      // 다음 플레이어 찾기
+      const currentPlayerIndex = sortedPlayers.findIndex((p) => p.id.equals(playerId));
+      const nextPlayerIndex = (currentPlayerIndex + 1) % sortedPlayers.length;
+      const nextPlayer = sortedPlayers[nextPlayerIndex];
+
+      if (remainingDecks.length === 1) {
+        // 남은 덱이 1개면 다음 플레이어에게 자동 할당
+        const lastDeck = remainingDecks[0];
+        lastDeck.isSelected = true;
+        lastDeck.selectedBy = nextPlayer.id.value;
+
+        // 다음 플레이어에게 카드 할당
+        nextPlayer.addCards(lastDeck.cards);
+
+        // 모든 덱이 선택되었으므로 1등(rank가 가장 낮은 플레이어)으로 턴 설정
+        game.setCurrentTurn(sortedPlayers[0].id);
+      } else if (remainingDecks.length > 1) {
+        // 남은 덱이 2개 이상이면 다음 플레이어로 턴 넘기기
+        game.setCurrentTurn(nextPlayer.id);
+      }
+
+      // 5. 모든 덱이 선택되었는지 확인 (마지막 덱 자동 할당 포함)
       const allDecksSelected = game.selectableDecks?.every((deck) => deck.isSelected) ?? false;
 
       if (allDecksSelected) {
@@ -103,26 +128,17 @@ export class SelectDeckUseCase
           const taxExchanges = TaxService.initializeTaxExchanges(game.players);
           game.prepareForTaxPhase(taxExchanges);
         }
-      } else {
-        // 아직 모든 덱이 선택되지 않았다면 다음 플레이어에게 턴을 넘김
-        const sortedPlayers = game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
-        const nextPlayer = sortedPlayers.find(
-          (p) => !game.selectableDecks?.some((d) => d.selectedBy === p.id.value)
-        );
-
-        if (nextPlayer) {
-          game.setCurrentTurn(nextPlayer.id);
-        }
       }
 
-      // 5. 변경사항 영속화
+      // 6. 변경사항 영속화
       await this.gameRepository.update(roomId, game);
 
-      // 6. Response DTO 반환
+      // 7. Response DTO 반환
       return createSuccessResponse<SelectDeckResponse>({
         roomId: game.roomId.value,
         playerId: playerId.value,
         selectedCards,
+        phase: game.phase,
       });
     } catch (error) {
       // Application Layer 에러는 그대로 전달

@@ -20,6 +20,8 @@ import { PlayCardUseCase } from '../../src/application/use-cases/game/PlayCardUs
 import { PassTurnUseCase } from '../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../../src/application/use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from '../../src/application/use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from '../../src/application/use-cases/game/TransitionToCardSelectionUseCase';
 import { RoomId } from '../../src/domain/value-objects/RoomId';
 import { Card } from '../../src/domain/entities/Card';
 import { SelectableDeck } from '../../src/domain/types/GameTypes';
@@ -50,6 +52,8 @@ describe('Full Game Flow E2E Tests', () => {
     const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
     const deleteGameUseCase = new DeleteGameUseCase(repository);
+    const transitionTaxToPlayingUseCase = new TransitionTaxToPlayingUseCase(repository);
+    const transitionToCardSelectionUseCase = new TransitionToCardSelectionUseCase(repository);
 
     // GameCommandService 생성 (E2E 테스트는 Service 계층을 통해 호출)
     service = new GameCommandService(
@@ -64,7 +68,9 @@ describe('Full Game Flow E2E Tests', () => {
       playCardUseCase,
       passTurnUseCase,
       voteNextGameUseCase,
-      deleteGameUseCase
+      deleteGameUseCase,
+      transitionTaxToPlayingUseCase,
+      transitionToCardSelectionUseCase
     );
   });
 
@@ -126,7 +132,7 @@ describe('Full Game Flow E2E Tests', () => {
       expect(game).not.toBeNull();
       expect(game!.phase).toBe('roleSelection');
       expect(game!.deck).toBeDefined();
-      expect(game!.deck?.length).toBe(54); // 52 + 2 jokers
+      expect(game!.deck?.length).toBe(80); // 78 + 2 jokers
       expect(game!.roleSelectionDeck).toBeDefined();
       expect(game!.roleSelectionDeck?.length).toBe(13);
 
@@ -143,8 +149,17 @@ describe('Full Game Flow E2E Tests', () => {
       expect(role3.success).toBe(true);
       expect(role4.success).toBe(true);
 
-      // 2-2. 역할 선택 완료 후 자동으로 cardSelection 페이즈로 전환됨
-      // SelectRoleUseCase가 자동으로 처리: 덱 생성, 페이즈 전환, 턴 설정
+      // 2-2. 역할 선택 완료 후 roleSelectionComplete 페이즈로 전환됨
+      game = await repository.findById(RoomId.from(roomId));
+      expect(game).not.toBeNull();
+      expect(game!.phase).toBe('roleSelectionComplete');
+
+      // 2-3. 5초 타이머 대신 수동으로 cardSelection 페이즈로 전환
+      // (E2E 테스트에서는 setTimeout이 실행되지 않으므로)
+      const transitionResult = await service.transitionToCardSelection(roomId);
+      expect(transitionResult.success).toBe(true);
+
+      // 2-4. cardSelection 페이즈로 전환 확인
       game = await repository.findById(RoomId.from(roomId));
       expect(game).not.toBeNull();
       expect(game!.phase).toBe('cardSelection');
@@ -170,17 +185,14 @@ describe('Full Game Flow E2E Tests', () => {
       const deck2 = await service.selectDeck(roomId, 'player2', deck2Index);
       expect(deck2.success).toBe(true);
 
-      // Player 3 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
+      // Player 3 덱 선택 (SelectDeckUseCase가 자동으로 마지막 덱을 Player 4에게 할당)
       game = await repository.findById(RoomId.from(roomId));
       const deck3Index = findAvailableDeckIndex(game!.selectableDecks!);
       const deck3 = await service.selectDeck(roomId, 'player3', deck3Index);
       expect(deck3.success).toBe(true);
 
-      // Player 4 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
-      game = await repository.findById(RoomId.from(roomId));
-      const deck4Index = findAvailableDeckIndex(game!.selectableDecks!);
-      const deck4 = await service.selectDeck(roomId, 'player4', deck4Index);
-      expect(deck4.success).toBe(true);
+      // Player 4는 자동으로 마지막 덱이 할당되므로 선택할 필요 없음
+      // (Player 3이 선택할 때 남은 덱이 1개면 Player 4에게 자동 할당됨)
 
       // 3-2. 덱 선택 완료 후 상태 확인
       game = await repository.findById(RoomId.from(roomId));

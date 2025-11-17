@@ -47,4 +47,9 @@ export interface VoteNextGameResponse {
    * 다음 게임이 시작되었는지 여부
    */
   nextGameStarted: boolean;
+
+  /**
+   * 현재 게임 페이즈
+   */
+  phase: string;
 }

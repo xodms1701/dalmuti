@@ -725,25 +725,81 @@ export class Game {
    * 라운드 증가, 페이즈 변경, 플레이어 및 투표 상태 초기화
    */
   startNextGame(): void {
-    // 라운드 증가
-    this._round++;
+    // 1. 현재 게임 이력 저장 (새 게임 초기화 전에)
+    const gameHistory: GameHistory = {
+      gameNumber: this._gameNumber,
+      players: this._finishedPlayers.map((playerId, index) => {
+        const playerIdStr = playerId.value;
+        const player = this._players.find((p) => p.id.value === playerIdStr);
+        const stats = this._playerStats.get(playerIdStr) || {
+          nickname: player?.nickname || '',
+          totalCardsPlayed: 0,
+          totalPasses: 0,
+          finishedAtRound: 0,
+        };
+        return {
+          playerId: playerIdStr,
+          nickname: stats.nickname,
+          rank: index + 1,
+          finishedAtRound: stats.finishedAtRound,
+          totalCardsPlayed: stats.totalCardsPlayed,
+          totalPasses: stats.totalPasses,
+        };
+      }),
+      finishedOrder: this._finishedPlayers.map((pid) => pid.value),
+      totalRounds: this._round,
+      roundPlays: [...this._roundPlays],
+      startedAt: this._currentGameStartedAt || new Date(),
+      endedAt: new Date(),
+    };
+    this._gameHistories.push(gameHistory);
 
-    // 페이즈 변경
-    this._phase = 'roleSelection';
+    // 2. finishedPlayers 순서대로 계급 재배정
+    this._finishedPlayers.forEach((playerId, index) => {
+      const player = this._players.find((p) => p.id.equals(playerId));
+      if (player) {
+        player.assignRank(index + 1);
+      }
+    });
+
+    // 3. 게임 번호 증가
+    this._gameNumber++;
+
+    // 4. 라운드 초기화 (새 게임 시작이므로 1로 리셋)
+    this._round = 1;
+
+    // 5. 페이즈 변경 - 먼저 순위 확인 화면으로 전환 (5초 후 Adapter에서 cardSelection으로 전환)
+    this._phase = 'roleSelectionComplete';
 
     // 플레이어 상태 초기화
     for (const player of this._players) {
       player.unready();
       player.resetPass();
+      // 플레이어 카드도 초기화
+      player.clearCards();
     }
 
     // 투표 초기화
     this._votes.clear();
 
-    // 게임 상태 초기화 (필요시 추가)
+    // 게임 상태 초기화
     this._currentTurn = null;
     this._lastPlay = undefined;
     this._finishedPlayers = [];
+
+    // 플레이어 통계 초기화
+    this._playerStats.clear();
+    for (const player of this._players) {
+      this._playerStats.set(player.id.value, {
+        nickname: player.nickname,
+        totalCardsPlayed: 0,
+        totalPasses: 0,
+        finishedAtRound: 0,
+      });
+    }
+
+    // 라운드 플레이 기록 초기화
+    this._roundPlays = [];
   }
 
   /**

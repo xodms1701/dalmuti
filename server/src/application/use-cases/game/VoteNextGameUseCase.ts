@@ -109,6 +109,7 @@ export class VoteNextGameUseCase
         playerId: playerId.value,
         votePassed,
         nextGameStarted,
+        phase: game.phase,
       });
     } catch (error) {
       // Application Layer 에러는 그대로 전달

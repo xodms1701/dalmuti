@@ -19,6 +19,8 @@ import { PlayCardUseCase } from '../../../src/application/use-cases/game/PlayCar
 import { PassTurnUseCase } from '../../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../../src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../../../src/application/use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from '../../../src/application/use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from '../../../src/application/use-cases/game/TransitionToCardSelectionUseCase';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
 import { Card } from '../../../src/domain/entities/Card';
 
@@ -48,6 +50,8 @@ describe('GameCommandService Integration Tests', () => {
     const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
     const deleteGameUseCase = new DeleteGameUseCase(repository);
+    const transitionTaxToPlayingUseCase = new TransitionTaxToPlayingUseCase(repository);
+    const transitionToCardSelectionUseCase = new TransitionToCardSelectionUseCase(repository);
 
     // Application Service 생성
     service = new GameCommandService(
@@ -62,7 +66,9 @@ describe('GameCommandService Integration Tests', () => {
       playCardUseCase,
       passTurnUseCase,
       voteNextGameUseCase,
-      deleteGameUseCase
+      deleteGameUseCase,
+      transitionTaxToPlayingUseCase,
+      transitionToCardSelectionUseCase
     );
   });
 

@@ -71,7 +71,7 @@ describe('StartGameUseCase', () => {
       // 게임 상태 확인
       expect(game.phase).toBe('roleSelection');
       expect(game.deck).toBeDefined();
-      expect(game.deck?.length).toBe(54); // 표준 덱: 52장 + 조커 2장
+      expect(game.deck?.length).toBe(80); // 표준 덱: 78장 + 조커 2장
       expect(game.roleSelectionDeck).toBeDefined();
       expect(game.roleSelectionDeck?.length).toBe(13); // 1-13 역할 카드
     });
@@ -117,16 +117,16 @@ describe('StartGameUseCase', () => {
       // Assert
       // 덱이 설정되었는지 확인
       expect(game.deck).toBeDefined();
-      expect(game.deck?.length).toBe(54);
+      expect(game.deck?.length).toBe(80);
 
       // 조커 2장 확인
       const jokers = game.deck?.filter((card) => card.isJoker);
       expect(jokers?.length).toBe(2);
 
-      // rank 1-13 카드 각 4장씩 확인
-      for (let rank = 1; rank <= 13; rank++) {
+      // rank 1-12 카드 각 번호만큼 확인 (1번은 1장, 2번은 2장, ..., 12번은 12장)
+      for (let rank = 1; rank <= 12; rank++) {
         const cardsOfRank = game.deck?.filter((card) => card.rank === rank && !card.isJoker);
-        expect(cardsOfRank?.length).toBe(4);
+        expect(cardsOfRank?.length).toBe(rank);
       }
     });
 

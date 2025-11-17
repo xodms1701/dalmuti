@@ -24,6 +24,8 @@ import { PlayCardUseCase } from './src/application/use-cases/game/PlayCardUseCas
 import { PassTurnUseCase } from './src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from './src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from './src/application/use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from './src/application/use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from './src/application/use-cases/game/TransitionToCardSelectionUseCase';
 
 dotenv.config();
 
@@ -69,6 +71,8 @@ const playCardUseCase = new PlayCardUseCase(gameRepository);
 const passTurnUseCase = new PassTurnUseCase(gameRepository);
 const voteNextGameUseCase = new VoteNextGameUseCase(gameRepository);
 const deleteGameUseCase = new DeleteGameUseCase(gameRepository);
+const transitionTaxToPlayingUseCase = new TransitionTaxToPlayingUseCase(gameRepository);
+const transitionToCardSelectionUseCase = new TransitionToCardSelectionUseCase(gameRepository);
 
 // CQRS: Command Service (상태 변경)
 // Repository를 직접 받지 않고 Use Cases만 조합
@@ -84,7 +88,9 @@ const gameCommandService = new GameCommandService(
   playCardUseCase,
   passTurnUseCase,
   voteNextGameUseCase,
-  deleteGameUseCase
+  deleteGameUseCase,
+  transitionTaxToPlayingUseCase,
+  transitionToCardSelectionUseCase
 );
 
 // CQRS: Query Service (조회)

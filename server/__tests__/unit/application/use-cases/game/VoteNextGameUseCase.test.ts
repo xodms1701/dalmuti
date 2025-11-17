@@ -102,12 +102,13 @@ describe('VoteNextGameUseCase', () => {
       if (response.success) {
         expect(response.data.votePassed).toBe(true);
         expect(response.data.nextGameStarted).toBe(true);
+        expect(response.data.phase).toBe('roleSelectionComplete'); // 순위 확인 화면으로 먼저 전환
       }
       expect(mockRepository.update).toHaveBeenCalledTimes(1);
 
       // 게임 상태 확인
       const updatedGame = mockRepository.update.mock.calls[0][1] as Game;
-      expect(updatedGame.phase).toBe('roleSelection');
+      expect(updatedGame.phase).toBe('roleSelectionComplete'); // 순위 확인 화면으로 먼저 전환
       expect(updatedGame.round).toBeGreaterThan(0);
     });
 

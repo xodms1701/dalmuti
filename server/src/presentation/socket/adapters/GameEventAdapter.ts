@@ -178,6 +178,27 @@ export class GameEventAdapter extends BaseEventAdapter {
         const result = await this.commandService.voteNextGame(roomId, socket.id, vote);
 
         await this.handleSocketEvent(result, callback, roomId);
+
+        // 투표 통과 시 순위 확인 화면(roleSelectionComplete)으로 전환되면
+        // 5초 후 카드 선택 페이즈(cardSelection)로 자동 전환
+        if (result.success && result.data.phase === 'roleSelectionComplete') {
+          setTimeout(async () => {
+            try {
+              // GameCommandService를 통해 phase 전환 (덱 셔플 및 분배 포함)
+              const transitionResult = await this.commandService.transitionToCardSelection(roomId);
+
+              if (transitionResult.success && transitionResult.data.transitioned) {
+                // 클라이언트에게 업데이트된 게임 상태 전송
+                await this.emitGameState(roomId);
+              }
+            } catch (error) {
+              console.error(
+                'Failed to auto-transition from roleSelectionComplete to cardSelection phase:',
+                error
+              );
+            }
+          }, 5000); // 5초 후 실행
+        }
       }
     );
   }

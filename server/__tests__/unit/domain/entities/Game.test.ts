@@ -791,7 +791,7 @@ describe('Game', () => {
 
         // Assert
         expect(game.round).toBe(1);
-        expect(game.phase).toBe('roleSelection');
+        expect(game.phase).toBe('roleSelectionComplete'); // 순위 확인 화면으로 먼저 전환
         expect(game.currentTurn).toBeNull();
         expect(game.lastPlay).toBeUndefined();
         expect(game.finishedPlayers).toEqual([]);
