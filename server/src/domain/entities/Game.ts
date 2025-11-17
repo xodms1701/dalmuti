@@ -3,7 +3,7 @@ import { Player } from './Player';
 import { Card } from './Card';
 import { RoomId } from '../value-objects/RoomId';
 import { PlayerId } from '../value-objects/PlayerId';
-import { SelectableDeck, RoleSelectionCard } from '../types/GameTypes';
+import { SelectableDeck, RoleSelectionCard, TaxExchange } from '../types/GameTypes';
 
 /**
  * Game Entity
@@ -34,6 +34,14 @@ export class Game {
 
   private _votes: Map<string, boolean>; // playerId → vote (true: 찬성, false: 반대)
 
+  private _revolutionStatus?: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId: string;
+  }; // 혁명 상태
+
+  private _taxExchanges?: TaxExchange[]; // 세금 교환 정보
+
   /**
    * Private constructor - factory method를 통해서만 생성 가능
    */
@@ -48,7 +56,13 @@ export class Game {
     finishedPlayers: PlayerId[] = [],
     selectableDecks?: SelectableDeck[],
     roleSelectionCards?: RoleSelectionCard[],
-    votes: Map<string, boolean> = new Map()
+    votes: Map<string, boolean> = new Map(),
+    revolutionStatus?: {
+      isRevolution: boolean;
+      isGreatRevolution: boolean;
+      revolutionPlayerId: string;
+    },
+    taxExchanges?: TaxExchange[]
   ) {
     this.roomId = roomId;
     this._players = players;
@@ -61,6 +75,8 @@ export class Game {
     this._selectableDecks = selectableDecks;
     this._roleSelectionCards = roleSelectionCards;
     this._votes = votes;
+    this._revolutionStatus = revolutionStatus;
+    this._taxExchanges = taxExchanges;
   }
 
   /**
@@ -107,6 +123,68 @@ export class Game {
 
   get roleSelectionCards(): RoleSelectionCard[] | undefined {
     return this._roleSelectionCards ? [...this._roleSelectionCards] : undefined;
+  }
+
+  get revolutionStatus():
+    | {
+        isRevolution: boolean;
+        isGreatRevolution: boolean;
+        revolutionPlayerId: string;
+      }
+    | undefined {
+    return this._revolutionStatus;
+  }
+
+  get taxExchanges(): TaxExchange[] | undefined {
+    return this._taxExchanges ? [...this._taxExchanges] : undefined;
+  }
+
+  /**
+   * 혁명 상태 설정
+   */
+  setRevolutionStatus(status: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId: string;
+  }): void {
+    this._revolutionStatus = status;
+  }
+
+  /**
+   * 세금 교환 정보 설정
+   */
+  setTaxExchanges(exchanges: TaxExchange[]): void {
+    this._taxExchanges = [...exchanges];
+  }
+
+  /**
+   * 세금 교환 페이즈 준비
+   *
+   * 세금 교환을 설정하고 tax 페이즈로 전환합니다.
+   * 다음 라운드 시작 플레이어(rank 1)를 턴으로 설정하고 라운드를 증가시킵니다.
+   *
+   * SelectDeckUseCase와 SelectRevolutionUseCase에서 공통으로 사용됩니다.
+   *
+   * @param taxExchanges 세금 교환 정보 (Use Case에서 TaxService를 통해 생성)
+   */
+  prepareForTaxPhase(taxExchanges: TaxExchange[]): void {
+    // 세금 교환 설정
+    this.setTaxExchanges(taxExchanges);
+
+    // tax 페이즈로 전환
+    this.changePhase('tax');
+
+    // 첫 번째 순위 플레이어(rank 1)를 턴으로 설정
+    const firstRankPlayer = this._players
+      .slice()
+      .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))[0];
+
+    if (firstRankPlayer) {
+      this.setCurrentTurn(firstRankPlayer.id);
+    }
+
+    // 라운드 증가
+    this.incrementRound();
   }
 
   /**
@@ -406,6 +484,110 @@ export class Game {
   }
 
   /**
+   * 조커 2장 보유자 확인 및 플래그 설정
+   * 모든 플레이어의 카드를 확인하여 조커를 2장 가진 플레이어를 찾습니다.
+   * @returns 조커 2장 보유 플레이어 (없으면 undefined)
+   */
+  checkDoubleJoker(): Player | undefined {
+    for (const player of this._players) {
+      const jokerCount = player.cards.filter((card) => card.isJoker).length;
+      if (jokerCount === 2) {
+        player.markHasDoubleJoker();
+        return player;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * 혁명 선택 처리
+   * @param playerId 혁명을 선택하는 플레이어 ID
+   * @param wantRevolution true: 혁명, false: 혁명 거부
+   * @returns 처리 성공 여부
+   * @throws Error 페이즈가 revolution이 아닌 경우
+   * @throws Error 플레이어의 턴이 아닌 경우
+   * @throws Error 조커 2장을 가지지 않은 경우
+   */
+  processRevolutionChoice(playerId: PlayerId, wantRevolution: boolean): void {
+    // 페이즈 확인
+    if (this._phase !== 'revolution') {
+      throw new Error('Cannot select revolution. Game is not in revolution phase');
+    }
+
+    // 턴 확인
+    if (!this._currentTurn || !this._currentTurn.equals(playerId)) {
+      throw new Error('Not player turn');
+    }
+
+    // 플레이어 찾기
+    const player = this.getPlayer(playerId);
+    if (!player) {
+      throw new Error('Player not found');
+    }
+
+    // 조커 2장 확인
+    if (!player.hasDoubleJoker) {
+      throw new Error('Player does not have double joker');
+    }
+
+    // 혁명 선택 등록
+    player.selectRevolution(wantRevolution);
+
+    if (wantRevolution) {
+      // 혁명을 일으킨다
+      const playerCount = this._players.length;
+      const isLowestRank = player.rank === playerCount;
+
+      if (isLowestRank) {
+        // 대혁명: 모든 순위 뒤집기
+        this.reverseAllRanks();
+        this._revolutionStatus = {
+          isRevolution: true,
+          isGreatRevolution: true,
+          revolutionPlayerId: playerId.value,
+        };
+      } else {
+        // 일반 혁명: 순위 유지
+        this._revolutionStatus = {
+          isRevolution: true,
+          isGreatRevolution: false,
+          revolutionPlayerId: playerId.value,
+        };
+      }
+
+      // 혁명이 일어나면 세금 없이 바로 게임 시작
+      this._phase = 'playing';
+      this._lastPlay = undefined;
+      this._round = 1;
+
+      // 1등부터 시작
+      const sortedPlayers = this._players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+      this._currentTurn = sortedPlayers[0].id;
+    } else {
+      // 혁명을 일으키지 않는다
+      // hasDoubleJoker 플래그 제거하여 조커 2장 사실 숨김
+      player.clearDoubleJokerFlag();
+
+      // 세금 교환을 위해 tax 페이즈로 변경
+      // (실제 세금 교환 로직은 UseCase에서 TaxService를 통해 수행)
+      this._phase = 'tax';
+    }
+  }
+
+  /**
+   * 대혁명 시 모든 플레이어의 순위 반전
+   * rank = playerCount - rank + 1
+   */
+  reverseAllRanks(): void {
+    const playerCount = this._players.length;
+    for (const player of this._players) {
+      if (player.rank !== null) {
+        player.assignRank(playerCount - player.rank + 1);
+      }
+    }
+  }
+
+  /**
    * 다음 게임 진행에 대한 투표 등록
    * @param playerId 투표하는 플레이어 ID
    * @param vote 투표 (true: 찬성, false: 반대)
@@ -509,6 +691,12 @@ export class Game {
     }>;
     roleSelectionCards?: RoleSelectionCard[];
     votes: Record<string, boolean>;
+    revolutionStatus?: {
+      isRevolution: boolean;
+      isGreatRevolution: boolean;
+      revolutionPlayerId: string;
+    };
+    taxExchanges?: TaxExchange[];
   } {
     // Map을 Record로 변환
     const votesRecord: Record<string, boolean> = Object.fromEntries(this._votes);
@@ -536,6 +724,8 @@ export class Game {
         : undefined,
       roleSelectionCards: this._roleSelectionCards,
       votes: votesRecord,
+      revolutionStatus: this._revolutionStatus,
+      taxExchanges: this._taxExchanges,
     };
   }
 
@@ -558,6 +748,12 @@ export class Game {
     }>;
     roleSelectionCards?: RoleSelectionCard[];
     votes?: Record<string, boolean>;
+    revolutionStatus?: {
+      isRevolution: boolean;
+      isGreatRevolution: boolean;
+      revolutionPlayerId: string;
+    };
+    taxExchanges?: TaxExchange[];
   }): Game {
     const players = obj.players ? obj.players.map((p) => Player.fromPlainObject(p)) : [];
 
@@ -597,7 +793,9 @@ export class Game {
       finishedPlayers,
       selectableDecks,
       obj.roleSelectionCards,
-      votes
+      votes,
+      obj.revolutionStatus,
+      obj.taxExchanges
     );
   }
 }

@@ -4,6 +4,7 @@
 
 import { Card } from '../../../../src/domain/entities';
 import * as DeckService from '../../../../src/domain/services/DeckService';
+import { SelectableDeck } from '../../../../src/domain/types/GameTypes';
 
 describe('DeckService', () => {
   describe('initializeDeck', () => {
@@ -301,11 +302,11 @@ describe('DeckService', () => {
   describe('sortDeckCards', () => {
     it('should sort deck cards in-place', () => {
       // Arrange
-      const deck: DeckService.SelectableDeck = {
+      const deck: SelectableDeck = {
         cards: [
-          { rank: 7, isJoker: false },
-          { rank: 3, isJoker: false },
-          { rank: 10, isJoker: false },
+          Card.fromPlainObject({ rank: 7, isJoker: false }),
+          Card.fromPlainObject({ rank: 3, isJoker: false }),
+          Card.fromPlainObject({ rank: 10, isJoker: false }),
         ],
         isSelected: false,
       };
@@ -314,9 +315,9 @@ describe('DeckService', () => {
       DeckService.sortDeckCards(deck);
 
       // Assert
-      expect(deck.cards[0].rank).toBe(3);
-      expect(deck.cards[1].rank).toBe(7);
-      expect(deck.cards[2].rank).toBe(10);
+      expect(deck.cards[0].toPlainObject().rank).toBe(3);
+      expect(deck.cards[1].toPlainObject().rank).toBe(7);
+      expect(deck.cards[2].toPlainObject().rank).toBe(10);
     });
   });
 
@@ -430,20 +431,20 @@ describe('DeckService', () => {
   describe('countTotalCards', () => {
     it('should count all cards across multiple decks', () => {
       // Arrange
-      const decks: DeckService.SelectableDeck[] = [
+      const decks: SelectableDeck[] = [
         {
           cards: [
-            { rank: 5, isJoker: false },
-            { rank: 7, isJoker: false },
+            Card.fromPlainObject({ rank: 5, isJoker: false }),
+            Card.fromPlainObject({ rank: 7, isJoker: false }),
           ],
           isSelected: false,
         },
-        { cards: [{ rank: 3, isJoker: false }], isSelected: false },
+        { cards: [Card.fromPlainObject({ rank: 3, isJoker: false })], isSelected: false },
         {
           cards: [
-            { rank: 1, isJoker: false },
-            { rank: 2, isJoker: false },
-            { rank: 4, isJoker: false },
+            Card.fromPlainObject({ rank: 1, isJoker: false }),
+            Card.fromPlainObject({ rank: 2, isJoker: false }),
+            Card.fromPlainObject({ rank: 4, isJoker: false }),
           ],
           isSelected: false,
         },
@@ -458,7 +459,7 @@ describe('DeckService', () => {
 
     it('should return 0 for empty decks array', () => {
       // Arrange
-      const decks: DeckService.SelectableDeck[] = [];
+      const decks: SelectableDeck[] = [];
 
       // Act
       const total = DeckService.countTotalCards(decks);
@@ -469,7 +470,7 @@ describe('DeckService', () => {
 
     it('should handle decks with no cards', () => {
       // Arrange
-      const decks: DeckService.SelectableDeck[] = [
+      const decks: SelectableDeck[] = [
         { cards: [], isSelected: false },
         { cards: [], isSelected: false },
       ];

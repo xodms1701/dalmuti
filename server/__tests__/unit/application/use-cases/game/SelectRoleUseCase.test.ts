@@ -10,6 +10,7 @@ import { SelectRoleRequest } from '../../../../../src/application/dto/game/Selec
 import { NotFoundError } from '../../../../../src/application/ports/RepositoryError';
 import { Game } from '../../../../../src/domain/entities/Game';
 import { Player } from '../../../../../src/domain/entities/Player';
+import { Card } from '../../../../../src/domain/entities/Card';
 import { RoomId } from '../../../../../src/domain/value-objects/RoomId';
 import { PlayerId } from '../../../../../src/domain/value-objects/PlayerId';
 
@@ -91,6 +92,18 @@ describe('SelectRoleUseCase', () => {
     it('should return allRolesSelected=true when all players selected roles', async () => {
       // Arrange
       const game = createTestGame('ROOM02', 4);
+
+      // 덱 초기화 (allRolesSelected일 때 덱이 필요함)
+      const deckCards = [];
+      for (let rank = 1; rank <= 13; rank++) {
+        for (let i = 0; i < 4; i++) {
+          deckCards.push(Card.create(rank, false));
+        }
+      }
+      // 조커 2장 추가 (rank는 13)
+      deckCards.push(Card.create(13, true));
+      deckCards.push(Card.create(13, true));
+      game.setDeck(deckCards);
 
       // 3명의 플레이어가 이미 역할을 선택한 상태
       const player1 = game.getPlayer(PlayerId.create('player1'))!;

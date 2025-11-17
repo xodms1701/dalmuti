@@ -84,11 +84,11 @@ export class CardEventAdapter extends BaseEventAdapter {
     socket.on(
       SocketEvent.SELECT_DECK,
       async (
-        { roomId, deckIndex }: { roomId: string; deckIndex: number },
+        { roomId, cardIndex }: { roomId: string; cardIndex: number },
         callback?: SocketCallback
       ) => {
         // Command: 덱 선택
-        const result = await this.commandService.selectDeck(roomId, socket.id, deckIndex);
+        const result = await this.commandService.selectDeck(roomId, socket.id, cardIndex);
 
         await this.handleSocketEvent(result, callback, roomId);
       }

@@ -132,7 +132,8 @@ export abstract class BaseEventAdapter implements ISocketEventPort {
     try {
       const gameState = await this.queryService.getGameState(roomId);
       if (gameState) {
-        this.io.to(roomId).emit('GAME_STATE_UPDATED', { game: gameState });
+        // Legacy 클라이언트 호환성을 위해 gameState를 직접 전송
+        this.io.to(roomId).emit('GAME_STATE_UPDATED', gameState);
       }
     } catch (error) {
       console.error('Failed to emit game state:', error);

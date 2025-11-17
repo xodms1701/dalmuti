@@ -33,6 +33,7 @@ export class GameEventAdapter extends BaseEventAdapter {
     this.handleJoinGame(socket);
     this.handleLeaveGame(socket);
     this.handleReady(socket);
+    this.handleStartGame(socket);
     this.handleVote(socket);
     this.handleGetGameState(socket);
   }
@@ -126,6 +127,8 @@ export class GameEventAdapter extends BaseEventAdapter {
    * 플레이어의 준비 상태를 토글합니다:
    * - 준비 안됨 → 준비됨
    * - 준비됨 → 준비 안됨 (취소)
+   *
+   * 모든 플레이어가 준비되면 ALL_PLAYERS_READY 이벤트를 브로드캐스트합니다.
    */
   private handleReady(socket: Socket): void {
     socket.on(
@@ -133,6 +136,28 @@ export class GameEventAdapter extends BaseEventAdapter {
       async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
         // Command: 준비 상태 토글 (현재 상태의 반대로 변경)
         const result = await this.commandService.toggleReadyAndCheckStart(roomId, socket.id);
+
+        await this.handleSocketEvent(result, callback, roomId);
+
+        // 모든 플레이어가 준비되었으면 ALL_PLAYERS_READY 브로드캐스트
+        if (result.success && result.data.allPlayersReady) {
+          this.io.to(roomId).emit('ALL_PLAYERS_READY');
+        }
+      }
+    );
+  }
+
+  /**
+   * START_GAME 이벤트 핸들러
+   *
+   * 대기 중인 게임을 시작하여 역할 선택 단계로 진입합니다.
+   */
+  private handleStartGame(socket: Socket): void {
+    socket.on(
+      SocketEvent.START_GAME,
+      async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
+        // Command: 게임 시작
+        const result = await this.commandService.startGame(roomId);
 
         await this.handleSocketEvent(result, callback, roomId);
       }
