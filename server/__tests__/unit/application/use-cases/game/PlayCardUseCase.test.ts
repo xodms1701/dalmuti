@@ -35,7 +35,7 @@ describe('PlayCardUseCase', () => {
    * 테스트용 게임 생성 헬퍼
    */
   function createTestGame(): Game {
-    const game = Game.create(RoomId.from('ROOM01'));
+    const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
     // 플레이어 3명 추가
     const player1 = Player.create(PlayerId.create('player1'), 'Player 1');

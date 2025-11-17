@@ -151,13 +151,14 @@ export class GameEventAdapter extends BaseEventAdapter {
    * START_GAME 이벤트 핸들러
    *
    * 대기 중인 게임을 시작하여 역할 선택 단계로 진입합니다.
+   * 방장만 게임을 시작할 수 있습니다.
    */
   private handleStartGame(socket: Socket): void {
     socket.on(
       SocketEvent.START_GAME,
       async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
-        // Command: 게임 시작
-        const result = await this.commandService.startGame(roomId);
+        // Command: 게임 시작 (방장 권한 필요)
+        const result = await this.commandService.startGame(roomId, socket.id);
 
         await this.handleSocketEvent(result, callback, roomId);
       }

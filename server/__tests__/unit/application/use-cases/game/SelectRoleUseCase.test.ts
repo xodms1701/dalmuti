@@ -37,7 +37,7 @@ describe('SelectRoleUseCase', () => {
     playerCount: number = 4,
     phase: string = 'roleSelection'
   ): Game => {
-    const game = Game.create(RoomId.from(roomId));
+    const game = Game.create(RoomId.from(roomId), PlayerId.create('owner1'));
 
     // 플레이어 추가
     for (let i = 1; i <= playerCount; i++) {

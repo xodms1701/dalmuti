@@ -13,7 +13,7 @@ describe('TurnService', () => {
   describe('findNextPlayer', () => {
     it('should find next active player in rank order', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -38,7 +38,7 @@ describe('TurnService', () => {
 
     it('should skip players who have finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -64,7 +64,7 @@ describe('TurnService', () => {
 
     it('should wrap around to first player when at end', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -85,7 +85,7 @@ describe('TurnService', () => {
 
     it('should return null when no active players remain', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -108,7 +108,7 @@ describe('TurnService', () => {
 
     it('should return null when only current player is active', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -132,7 +132,7 @@ describe('TurnService', () => {
   describe('allPlayersPassedExceptLast', () => {
     it('should return true when all players except last player have passed', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -164,7 +164,7 @@ describe('TurnService', () => {
 
     it('should return false when no players have passed', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -183,7 +183,7 @@ describe('TurnService', () => {
 
     it('should return false when multiple players have not passed', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -208,7 +208,7 @@ describe('TurnService', () => {
 
     it('should exclude finished players from check', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -239,7 +239,7 @@ describe('TurnService', () => {
   describe('startNewRound', () => {
     it('should increment round number', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const initialRound = game.round;
 
       // Act
@@ -251,7 +251,7 @@ describe('TurnService', () => {
 
     it('should clear lastPlay', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.setLastPlay({
         playerId: PlayerId.create('player1'),
         cards: [Card.create(5, false)],
@@ -266,7 +266,7 @@ describe('TurnService', () => {
 
     it('should reset pass status for all active players', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -292,7 +292,7 @@ describe('TurnService', () => {
 
     it('should not reset pass status for finished players', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -317,7 +317,7 @@ describe('TurnService', () => {
 
     it('should set current turn to active player after last player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -411,7 +411,7 @@ describe('TurnService', () => {
   describe('countActivePlayers', () => {
     it('should count players who have not finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -434,7 +434,7 @@ describe('TurnService', () => {
 
     it('should return 0 when all players have finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -455,7 +455,7 @@ describe('TurnService', () => {
 
     it('should return total count when no players have finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -476,7 +476,7 @@ describe('TurnService', () => {
   describe('getLastActivePlayer', () => {
     it('should return the last remaining active player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -497,7 +497,7 @@ describe('TurnService', () => {
 
     it('should return null when no active players remain', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -518,7 +518,7 @@ describe('TurnService', () => {
 
     it('should return null when multiple active players remain', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -539,7 +539,7 @@ describe('TurnService', () => {
   describe('findFirstActivePlayer', () => {
     it('should find first active player by rank', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -565,7 +565,7 @@ describe('TurnService', () => {
 
     it('should return null when no active players', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
 
       player1.assignCards([]);
@@ -581,7 +581,7 @@ describe('TurnService', () => {
 
     it('should return first player when all are active', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 

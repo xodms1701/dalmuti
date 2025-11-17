@@ -115,7 +115,7 @@ describe('Full Game Flow E2E Tests', () => {
       }
 
       // 1-4. 게임 시작
-      const startResult = await service.startGame(roomId);
+      const startResult = await service.startGame(roomId, 'player1');
       expect(startResult.success).toBe(true);
       if (startResult.success) {
         expect(startResult.data.phase).toBe('roleSelection');
@@ -259,7 +259,7 @@ describe('Full Game Flow E2E Tests', () => {
       await service.toggleReadyAndCheckStart(roomId, 'player2');
       await service.toggleReadyAndCheckStart(roomId, 'player3');
       await service.toggleReadyAndCheckStart(roomId, 'player4');
-      await service.startGame(roomId);
+      await service.startGame(roomId, 'player1');
 
       // 3. 역할 선택 (player4를 꼴찌로 만들기 위해 13번 선택)
       // SelectRoleUseCase가 자동으로 rank를 할당함

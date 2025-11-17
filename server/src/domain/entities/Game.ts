@@ -14,6 +14,8 @@ import { SelectableDeck, RoleSelectionCard, TaxExchange } from '../types/GameTyp
 export class Game {
   readonly roomId: RoomId;
 
+  private _ownerId: PlayerId; // 방장 ID
+
   private _players: Player[];
 
   private _phase: string;
@@ -47,6 +49,7 @@ export class Game {
    */
   private constructor(
     roomId: RoomId,
+    ownerId: PlayerId,
     players: Player[] = [],
     phase: string = 'waiting',
     currentTurn: PlayerId | null = null,
@@ -65,6 +68,7 @@ export class Game {
     taxExchanges?: TaxExchange[]
   ) {
     this.roomId = roomId;
+    this._ownerId = ownerId;
     this._players = players;
     this._phase = phase;
     this._currentTurn = currentTurn;
@@ -82,13 +86,18 @@ export class Game {
   /**
    * Factory method - Game 인스턴스 생성
    * @param roomId 방 ID (RoomId Value Object)
+   * @param ownerId 방장 ID (첫 플레이어 ID)
    * @returns Game 인스턴스
    */
-  static create(roomId: RoomId): Game {
-    return new Game(roomId);
+  static create(roomId: RoomId, ownerId: PlayerId): Game {
+    return new Game(roomId, ownerId);
   }
 
   // Getters
+  get ownerId(): PlayerId {
+    return this._ownerId;
+  }
+
   get players(): Player[] {
     return [...this._players]; // 불변성 보장을 위해 복사본 반환
   }
@@ -291,6 +300,11 @@ export class Game {
       throw new Error('Player not found');
     }
     this._players.splice(index, 1);
+
+    // 방장이 나가면 첫 번째 플레이어를 방장으로 설정
+    if (this._ownerId.equals(playerId) && this._players.length > 0) {
+      this._ownerId = this._players[0].id;
+    }
   }
 
   /**
@@ -677,6 +691,7 @@ export class Game {
    */
   toPlainObject(): {
     roomId: string;
+    ownerId: string;
     players: ReturnType<Player['toPlainObject']>[];
     phase: string;
     currentTurn: string | null;
@@ -703,6 +718,7 @@ export class Game {
 
     return {
       roomId: this.roomId.value, // RoomId를 string으로 변환
+      ownerId: this._ownerId.value, // PlayerId를 string으로 변환
       players: this._players.map((p) => p.toPlainObject()),
       phase: this._phase,
       currentTurn: this._currentTurn ? this._currentTurn.value : null, // PlayerId를 string으로 변환
@@ -734,6 +750,7 @@ export class Game {
    */
   static fromPlainObject(obj: {
     roomId: string;
+    ownerId: string;
     players?: ReturnType<Player['toPlainObject']>[];
     phase?: string;
     currentTurn?: string | null;
@@ -758,6 +775,7 @@ export class Game {
     const players = obj.players ? obj.players.map((p) => Player.fromPlainObject(p)) : [];
 
     const roomId = RoomId.from(obj.roomId); // string을 RoomId로 변환
+    const ownerId = PlayerId.create(obj.ownerId); // string을 PlayerId로 변환
     const currentTurn = obj.currentTurn ? PlayerId.create(obj.currentTurn) : null; // string을 PlayerId로 변환
     const lastPlay = obj.lastPlay
       ? {
@@ -784,6 +802,7 @@ export class Game {
 
     return new Game(
       roomId,
+      ownerId,
       players,
       obj.phase || 'waiting',
       currentTurn,

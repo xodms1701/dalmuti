@@ -16,6 +16,7 @@
 import { IUseCase } from '../base/IUseCase';
 import { IGameRepository } from '../../ports/IGameRepository';
 import { RoomId } from '../../../domain/value-objects/RoomId';
+import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { StartGameRequest, StartGameResponse } from '../../dto/game/StartGameDto';
 import {
   UseCaseResponse,
@@ -47,12 +48,14 @@ export class StartGameUseCase
     try {
       // 1. Value Object 변환
       let roomId: RoomId;
+      let playerId: PlayerId;
 
       try {
         roomId = RoomId.from(request.roomId);
+        playerId = PlayerId.create(request.playerId);
       } catch (error) {
         throw new ValidationError(
-          error instanceof Error ? error.message : 'Invalid room ID format',
+          error instanceof Error ? error.message : 'Invalid room ID or player ID format',
           'roomId'
         );
       }
@@ -63,7 +66,12 @@ export class StartGameUseCase
         throw new ResourceNotFoundError('Game', roomId.value);
       }
 
-      // 3. 플레이어 수 검증
+      // 3. 방장 권한 확인
+      if (!game.ownerId.equals(playerId)) {
+        throw new BusinessRuleError('방장만 게임을 시작할 수 있습니다.');
+      }
+
+      // 4. 플레이어 수 검증
       const playerCount = game.players.length;
       if (playerCount < this.MIN_PLAYERS || playerCount > this.MAX_PLAYERS) {
         throw new BusinessRuleError(
@@ -71,14 +79,14 @@ export class StartGameUseCase
         );
       }
 
-      // 4. phase 검증 (waiting 단계에서만 시작 가능)
+      // 5. phase 검증 (waiting 단계에서만 시작 가능)
       if (game.phase !== 'waiting') {
         throw new BusinessRuleError(
           `대기 중인 게임만 시작할 수 있습니다. 현재 상태: ${game.phase}`
         );
       }
 
-      // 5. 덱 초기화
+      // 6. 덱 초기화
       const standardDeck = DeckService.initializeDeck();
       const shuffledDeck = DeckService.shuffleDeck(standardDeck);
 
@@ -89,17 +97,17 @@ export class StartGameUseCase
 
       game.setDeck(deckCards);
 
-      // 6. 역할 선택 카드 초기화
+      // 7. 역할 선택 카드 초기화
       const roleSelectionCards = DeckService.createRoleSelectionDeck();
       game.setRoleSelectionCards(roleSelectionCards);
 
-      // 7. phase를 'roleSelection'으로 변경
+      // 8. phase를 'roleSelection'으로 변경
       game.changePhase('roleSelection');
 
-      // 8. Repository를 통해 업데이트
+      // 9. Repository를 통해 업데이트
       await this.gameRepository.update(roomId, game);
 
-      // 9. Response DTO 반환
+      // 10. Response DTO 반환
       return createSuccessResponse<StartGameResponse>({
         roomId: game.roomId.value,
         phase: game.phase,

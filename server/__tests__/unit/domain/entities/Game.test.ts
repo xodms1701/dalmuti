@@ -13,7 +13,7 @@ describe('Game', () => {
     it('should create a game with valid room id', () => {
       // Arrange & Act
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
 
       // Assert
       expect(game.roomId.value).toBe('ROOM01');
@@ -40,7 +40,7 @@ describe('Game', () => {
   describe('addPlayer', () => {
     it('should add a player to the game', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
 
       // Act
@@ -53,7 +53,7 @@ describe('Game', () => {
 
     it('should add multiple players', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
 
@@ -67,7 +67,7 @@ describe('Game', () => {
 
     it('should throw error when adding duplicate player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
 
@@ -79,7 +79,7 @@ describe('Game', () => {
   describe('removePlayer', () => {
     it('should remove a player from the game', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
 
@@ -92,7 +92,7 @@ describe('Game', () => {
 
     it('should throw error when removing non-existent player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act & Assert
       expect(() => game.removePlayer(PlayerId.create('player1'))).toThrow('Player not found');
@@ -100,7 +100,7 @@ describe('Game', () => {
 
     it('should only remove specified player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       game.addPlayer(player1);
@@ -118,7 +118,7 @@ describe('Game', () => {
   describe('getPlayer', () => {
     it('should return player when found', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
 
@@ -132,7 +132,7 @@ describe('Game', () => {
 
     it('should return undefined when player not found', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       const found = game.getPlayer(PlayerId.create('player1'));
@@ -145,7 +145,7 @@ describe('Game', () => {
   describe('canPlayCard', () => {
     it('should return false when game is not in playing phase', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.setCurrentTurn(PlayerId.create('player1'));
@@ -159,7 +159,7 @@ describe('Game', () => {
 
     it('should return false when cards array is empty', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -174,7 +174,7 @@ describe('Game', () => {
 
     it('should return false when not player turn', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -189,7 +189,7 @@ describe('Game', () => {
 
     it('should return false when player has finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -205,7 +205,7 @@ describe('Game', () => {
 
     it('should return false when player has passed', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.pass();
       game.addPlayer(player);
@@ -221,7 +221,7 @@ describe('Game', () => {
 
     it('should return true when all conditions are met', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -236,7 +236,7 @@ describe('Game', () => {
 
     it('should return false when card count does not match lastPlay', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -255,7 +255,7 @@ describe('Game', () => {
 
     it('should return false when cards are weaker than lastPlay', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -274,7 +274,7 @@ describe('Game', () => {
 
     it('should return true when cards are stronger than lastPlay', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -295,7 +295,7 @@ describe('Game', () => {
   describe('isGameOver', () => {
     it('should return true when only one active player remains', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       game.addPlayer(player1);
@@ -311,7 +311,7 @@ describe('Game', () => {
 
     it('should return true when no active players remain', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player1);
       game.addFinishedPlayer(PlayerId.create('player1'));
@@ -325,7 +325,7 @@ describe('Game', () => {
 
     it('should return false when multiple active players remain', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -343,7 +343,7 @@ describe('Game', () => {
 
     it('should return false when all players are active', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       game.addPlayer(player1);
@@ -360,7 +360,7 @@ describe('Game', () => {
   describe('isPlayerTurn', () => {
     it('should return true when it is player turn', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.setCurrentTurn(PlayerId.create('player1'));
 
       // Act
@@ -372,7 +372,7 @@ describe('Game', () => {
 
     it('should return false when it is not player turn', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.setCurrentTurn(PlayerId.create('player2'));
 
       // Act
@@ -384,7 +384,7 @@ describe('Game', () => {
 
     it('should return false when current turn is null', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       const result = game.isPlayerTurn(PlayerId.create('player1'));
@@ -397,7 +397,7 @@ describe('Game', () => {
   describe('getActivePlayerCount', () => {
     it('should return count of active players', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       const player3 = Player.create(PlayerId.create('player3'), 'Charlie');
@@ -415,7 +415,7 @@ describe('Game', () => {
 
     it('should return 0 when all players are finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player1);
       game.addFinishedPlayer(PlayerId.create('player1'));
@@ -429,7 +429,7 @@ describe('Game', () => {
 
     it('should return total count when no players are finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       game.addPlayer(player1);
@@ -446,7 +446,7 @@ describe('Game', () => {
   describe('state management', () => {
     it('should change phase', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       game.changePhase('playing');
@@ -457,7 +457,7 @@ describe('Game', () => {
 
     it('should set current turn', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       game.setCurrentTurn(PlayerId.create('player1'));
@@ -468,7 +468,7 @@ describe('Game', () => {
 
     it('should set last play', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const lastPlay = {
         playerId: PlayerId.create('player1'),
         cards: [Card.create(5, false)],
@@ -485,7 +485,7 @@ describe('Game', () => {
 
     it('should increment round', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       game.incrementRound();
@@ -497,7 +497,7 @@ describe('Game', () => {
 
     it('should add finished player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       game.addFinishedPlayer(PlayerId.create('player1'));
@@ -508,7 +508,7 @@ describe('Game', () => {
 
     it('should not add duplicate finished player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       game.addFinishedPlayer(PlayerId.create('player1'));
@@ -520,7 +520,7 @@ describe('Game', () => {
 
     it('should set deck', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const deck = [Card.create(5, false)];
 
       // Act
@@ -533,7 +533,7 @@ describe('Game', () => {
 
     it('should set selectable decks', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const decks = [{ cards: [], isSelected: false }];
 
       // Act
@@ -545,7 +545,7 @@ describe('Game', () => {
 
     it('should set role selection cards', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const cards = [{ number: 1, isSelected: false }];
 
       // Act
@@ -559,7 +559,7 @@ describe('Game', () => {
   describe('toPlainObject / fromPlainObject', () => {
     it('should convert game to plain object', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -577,6 +577,7 @@ describe('Game', () => {
       // Arrange
       const plain = {
         roomId: 'ROOM01',
+        ownerId: 'owner1',
         players: [
           {
             id: 'player1',
@@ -608,7 +609,7 @@ describe('Game', () => {
 
     it('should handle minimal plain object', () => {
       // Arrange
-      const plain = { roomId: 'ROOM01' };
+      const plain = { roomId: 'ROOM01', ownerId: 'owner1' };
 
       // Act
       const game = Game.fromPlainObject(plain);
@@ -623,7 +624,7 @@ describe('Game', () => {
   describe('immutability', () => {
     it('should return a copy of players array', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
 
@@ -637,7 +638,7 @@ describe('Game', () => {
 
     it('should return a copy of deck array', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.setDeck([Card.create(5, false)]);
 
       // Act
@@ -650,7 +651,7 @@ describe('Game', () => {
 
     it('should return a copy of finished players array', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addFinishedPlayer(PlayerId.create('player1'));
 
       // Act
@@ -666,7 +667,7 @@ describe('Game', () => {
     describe('registerVote', () => {
       it('should register vote for player', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const playerId = PlayerId.create('player1');
         const player = Player.create(playerId, 'Alice');
         game.addPlayer(player);
@@ -682,7 +683,7 @@ describe('Game', () => {
 
       it('should register rejection vote', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const playerId = PlayerId.create('player1');
         const player = Player.create(playerId, 'Alice');
         game.addPlayer(player);
@@ -698,7 +699,7 @@ describe('Game', () => {
 
       it('should throw error when player not found', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const playerId = PlayerId.create('nonexistent');
 
         // Act & Assert
@@ -709,7 +710,7 @@ describe('Game', () => {
     describe('getVoteResult', () => {
       it('should return all voted when all players voted', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const playerId1 = PlayerId.create('player1');
         const playerId2 = PlayerId.create('player2');
         const player1 = Player.create(playerId1, 'Alice');
@@ -731,7 +732,7 @@ describe('Game', () => {
 
       it('should return not approved when one player rejects', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const playerId1 = PlayerId.create('player1');
         const playerId2 = PlayerId.create('player2');
         const player1 = Player.create(playerId1, 'Alice');
@@ -753,7 +754,7 @@ describe('Game', () => {
 
       it('should return not all voted when some players have not voted', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const playerId1 = PlayerId.create('player1');
         const playerId2 = PlayerId.create('player2');
         const player1 = Player.create(playerId1, 'Alice');
@@ -774,7 +775,7 @@ describe('Game', () => {
     describe('startNextGame', () => {
       it('should increment round and reset game state', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         const player1 = Player.create(PlayerId.create('player1'), 'Alice');
         const player2 = Player.create(PlayerId.create('player2'), 'Bob');
         player1.ready();
@@ -806,7 +807,7 @@ describe('Game', () => {
     describe('endGame', () => {
       it('should change phase to gameEnd', () => {
         // Arrange
-        const game = Game.create(RoomId.from('ROOM01'));
+        const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
         game.changePhase('playing');
 
         // Act

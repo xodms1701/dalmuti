@@ -72,8 +72,11 @@ export class GameCommandService {
     }>
   > {
     try {
-      // 1. 게임 생성
-      const createResult = await this.createGameUseCase.execute({ roomId });
+      // 1. 게임 생성 (생성자를 방장으로 설정)
+      const createResult = await this.createGameUseCase.execute({
+        roomId,
+        ownerId: creatorId,
+      });
 
       if (!createResult.success) {
         return createResult;
@@ -283,16 +286,19 @@ export class GameCommandService {
    * 게임 시작
    *
    * 대기 중인 게임을 시작하여 역할 선택 단계로 진입합니다.
+   * 방장만 게임을 시작할 수 있습니다.
    * - 플레이어 수 검증 (4-8명)
    * - 덱 및 역할 선택 카드 초기화
    * - phase를 'roleSelection'으로 변경
    *
    * @param roomId - 방 ID
+   * @param playerId - 게임 시작을 요청한 플레이어 ID (방장)
    * @returns 게임 시작 결과
    */
-  async startGame(roomId: string) {
+  async startGame(roomId: string, playerId: string) {
     return this.startGameUseCase.execute({
       roomId,
+      playerId,
     });
   }
 

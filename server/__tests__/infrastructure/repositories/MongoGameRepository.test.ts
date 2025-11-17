@@ -50,7 +50,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should save a new game', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
 
@@ -67,8 +67,8 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should throw DuplicateError when saving game with existing roomId', async () => {
       // Arrange
       const roomId = RoomId.from('DUPLIC');
-      const game1 = Game.create(roomId);
-      const game2 = Game.create(roomId);
+      const game1 = Game.create(roomId, PlayerId.create('owner1'));
+      const game2 = Game.create(roomId, PlayerId.create('owner1'));
 
       // Act
       await repository.save(game1);
@@ -80,7 +80,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should save game with complex state', async () => {
       // Arrange
       const roomId = RoomId.from('CMPLX1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       const playerId1 = PlayerId.create('p1');
       const playerId2 = PlayerId.create('p2');
       const player1 = Player.create(playerId1, 'Alice');
@@ -124,7 +124,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should find game by roomId', async () => {
       // Arrange
       const roomId = RoomId.from('FIND01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       await repository.save(game);
 
       // Act
@@ -147,7 +147,7 @@ describe('MongoGameRepository Integration Tests', () => {
       // Arrange
       const roomId = RoomId.from('RECONS');
       const playerId = PlayerId.create('p1');
-      const originalGame = Game.create(roomId);
+      const originalGame = Game.create(roomId, PlayerId.create('owner1'));
       const player = Player.create(playerId, 'TestPlayer');
       player.assignRole(5);
       originalGame.addPlayer(player);
@@ -174,7 +174,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should update game partially', async () => {
       // Arrange
       const roomId = RoomId.from('UPDAT1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.changePhase('waiting');
       await repository.save(game);
 
@@ -202,7 +202,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should return updated game entity', async () => {
       // Arrange
       const roomId = RoomId.from('RETRN1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       await repository.save(game);
 
       // Act
@@ -219,7 +219,7 @@ describe('MongoGameRepository Integration Tests', () => {
       // Arrange
       const roomId = RoomId.from('PRESV1');
       const playerId = PlayerId.create('p1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       const player = Player.create(playerId, 'Alice');
       game.addPlayer(player);
       game.changePhase('waiting');
@@ -240,7 +240,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should delete game by roomId', async () => {
       // Arrange
       const roomId = RoomId.from('DELET1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       await repository.save(game);
 
       // Act
@@ -260,8 +260,8 @@ describe('MongoGameRepository Integration Tests', () => {
       // Arrange
       const roomId1 = RoomId.from('ROOM11');
       const roomId2 = RoomId.from('ROOM22');
-      const game1 = Game.create(roomId1);
-      const game2 = Game.create(roomId2);
+      const game1 = Game.create(roomId1, PlayerId.create('owner1'));
+      const game2 = Game.create(roomId2, PlayerId.create('owner1'));
       await repository.save(game1);
       await repository.save(game2);
 
@@ -287,9 +287,9 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should return all saved games', async () => {
       // Arrange
-      const game1 = Game.create(RoomId.from('FINDA1'));
-      const game2 = Game.create(RoomId.from('FINDB2'));
-      const game3 = Game.create(RoomId.from('FINDC3'));
+      const game1 = Game.create(RoomId.from('FINDA1'), PlayerId.create('owner1'));
+      const game2 = Game.create(RoomId.from('FINDB2'), PlayerId.create('owner1'));
+      const game3 = Game.create(RoomId.from('FINDC3'), PlayerId.create('owner1'));
 
       await repository.save(game1);
       await repository.save(game2);
@@ -308,12 +308,12 @@ describe('MongoGameRepository Integration Tests', () => {
 
     it('should reconstruct Game entities correctly', async () => {
       // Arrange
-      const game1 = Game.create(RoomId.from('ROOMA1'));
+      const game1 = Game.create(RoomId.from('ROOMA1'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('p1'), 'Alice');
       game1.addPlayer(player1);
       game1.changePhase('waiting');
 
-      const game2 = Game.create(RoomId.from('ROOMB2'));
+      const game2 = Game.create(RoomId.from('ROOMB2'), PlayerId.create('owner1'));
       const player2 = Player.create(PlayerId.create('p2'), 'Bob');
       game2.addPlayer(player2);
       game2.changePhase('playing');
@@ -356,7 +356,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should handle game with empty players array', async () => {
       // Arrange
       const roomId = RoomId.from('EMPTY1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
 
       // Act
       await repository.save(game);
@@ -370,7 +370,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should handle game with undefined optional fields', async () => {
       // Arrange
       const roomId = RoomId.from('MINML1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
 
       // Act
       await repository.save(game);
@@ -388,7 +388,7 @@ describe('MongoGameRepository Integration Tests', () => {
       // Arrange
       const roomId = RoomId.from('FULL01');
       const playerId = PlayerId.create('p1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.setSelectableDecks([{ cards: [Card.create(1, false)], isSelected: false }]);
       game.setRoleSelectionCards([{ number: 1, isSelected: false }]);
       game.setLastPlay({
@@ -410,7 +410,7 @@ describe('MongoGameRepository Integration Tests', () => {
     it('should handle multiple updates to same game', async () => {
       // Arrange
       const roomId = RoomId.from('MULTI1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       await repository.save(game);
 
       // Act

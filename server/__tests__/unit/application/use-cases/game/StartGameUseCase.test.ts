@@ -31,7 +31,7 @@ describe('StartGameUseCase', () => {
 
   // 테스트용 게임 생성 헬퍼
   const createTestGame = (roomId: string, playerCount: number = 4): Game => {
-    const game = Game.create(RoomId.from(roomId));
+    const game = Game.create(RoomId.from(roomId), PlayerId.create('owner1'));
 
     // 플레이어 추가
     for (let i = 1; i <= playerCount; i++) {
@@ -50,6 +50,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM01',
       };
 
@@ -81,6 +82,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM02',
       };
 
@@ -105,6 +107,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM03',
       };
 
@@ -133,6 +136,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM04',
       };
 
@@ -159,6 +163,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(null);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM99',
       };
 
@@ -176,6 +181,7 @@ describe('StartGameUseCase', () => {
     it('잘못된 roomId 형식이면 실패해야 함', async () => {
       // Arrange
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: '',
       };
 
@@ -196,6 +202,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM05',
       };
 
@@ -217,6 +224,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM06',
       };
 
@@ -239,6 +247,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM07',
       };
 
@@ -262,6 +271,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM08',
       };
 
@@ -281,6 +291,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM09',
       };
 

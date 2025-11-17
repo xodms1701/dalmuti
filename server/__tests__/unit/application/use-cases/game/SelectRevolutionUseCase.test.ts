@@ -35,7 +35,7 @@ describe('SelectRevolutionUseCase', () => {
     roomId: string,
     playerCount: number = 4
   ): { game: Game; doubleJokerPlayer: Player } => {
-    const game = Game.create(RoomId.from(roomId));
+    const game = Game.create(RoomId.from(roomId), PlayerId.create('owner1'));
 
     // 플레이어 추가
     const players: Player[] = [];

@@ -45,7 +45,7 @@ describe('PassTurnUseCase', () => {
       player1.assignCards([Card.create(5)]);
       player2.assignCards([Card.create(6)]);
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.changePhase('playing');
@@ -90,7 +90,7 @@ describe('PassTurnUseCase', () => {
       player2.assignCards([Card.create(6)]);
       player3.assignCards([Card.create(7)]);
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.addPlayer(player3);
@@ -127,7 +127,7 @@ describe('PassTurnUseCase', () => {
       player1.assignCards([Card.create(5)]);
       player2.assignCards([Card.create(6)]);
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.changePhase('playing');
@@ -167,7 +167,7 @@ describe('PassTurnUseCase', () => {
       player1.assignCards([Card.create(5)]);
       player2.assignCards([Card.create(6)]);
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.changePhase('playing');
@@ -227,7 +227,7 @@ describe('PassTurnUseCase', () => {
       const player1Id = PlayerId.create('player1');
 
       const player1 = Player.create(player1Id, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -273,7 +273,7 @@ describe('PassTurnUseCase', () => {
       const player1Id = PlayerId.create('player1');
 
       const player1 = Player.create(player1Id, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.changePhase('playing');
       game.setCurrentTurn(player1Id);
@@ -309,7 +309,7 @@ describe('PassTurnUseCase', () => {
       player1.assignRank(1);
       player1.assignCards([Card.create(5)]);
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.changePhase('playing');
       game.setCurrentTurn(player1Id);
@@ -342,7 +342,7 @@ describe('PassTurnUseCase', () => {
       player1.assignRank(1);
       player1.assignCards([Card.create(5)]);
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.changePhase('playing');
       game.setCurrentTurn(player1Id);

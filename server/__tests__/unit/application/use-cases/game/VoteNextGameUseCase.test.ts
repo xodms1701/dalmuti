@@ -40,7 +40,7 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -77,7 +77,7 @@ describe('VoteNextGameUseCase', () => {
       const player2 = Player.create(playerId2, 'Player 2');
       const player3 = Player.create(playerId3, 'Player 3');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.addPlayer(player3);
@@ -120,7 +120,7 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -160,7 +160,7 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -224,7 +224,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -273,7 +273,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -304,7 +304,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -333,7 +333,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);

@@ -38,7 +38,7 @@ describe('LeaveGameUseCase', () => {
         playerId: 'player1',
       };
 
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Player 2'));
 
@@ -69,7 +69,7 @@ describe('LeaveGameUseCase', () => {
         playerId: 'player1',
       };
 
-      const game = Game.create(RoomId.from('ROOM02'));
+      const game = Game.create(RoomId.from('ROOM02'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
 
       mockRepository.findById.mockResolvedValue(game);
@@ -101,7 +101,7 @@ describe('LeaveGameUseCase', () => {
         playerId: 'player1',
       };
 
-      const game = Game.create(RoomId.from('TEST01'));
+      const game = Game.create(RoomId.from('TEST01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Player 2'));
       game.addPlayer(Player.create(PlayerId.create('player3'), 'Player 3'));
@@ -192,7 +192,7 @@ describe('LeaveGameUseCase', () => {
         playerId: 'nonexistent',
       };
 
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
 
       mockRepository.findById.mockResolvedValue(game);
@@ -213,7 +213,7 @@ describe('LeaveGameUseCase', () => {
       // Arrange
       mockRepository.findById.mockResolvedValue(
         (() => {
-          const game = Game.create(RoomId.from('ROOM01'));
+          const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
           game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
           game.addPlayer(Player.create(PlayerId.create('player2'), 'Player 2'));
           return game;
@@ -241,7 +241,7 @@ describe('LeaveGameUseCase', () => {
       // Arrange
       mockRepository.findById.mockResolvedValue(
         (() => {
-          const game = Game.create(RoomId.from('ROOM01'));
+          const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
           game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
           return game;
         })()
@@ -273,7 +273,7 @@ describe('LeaveGameUseCase', () => {
         playerId: 'player1',
       };
 
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Player 2'));
 
@@ -299,7 +299,7 @@ describe('LeaveGameUseCase', () => {
         playerId: 'player1',
       };
 
-      const game = Game.create(RoomId.from('RESP01'));
+      const game = Game.create(RoomId.from('RESP01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Player 1'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Player 2'));
 

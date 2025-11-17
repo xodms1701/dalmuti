@@ -15,6 +15,7 @@ import { RoleSelectionCard } from '../../domain/types/GameTypes';
  */
 export interface GameDocument {
   _id: string; // MongoDB의 _id를 roomId로 사용
+  ownerId: string; // 방장 ID
   players: ReturnType<Player['toPlainObject']>[];
   phase: string;
   currentTurn: string | null;
@@ -49,6 +50,7 @@ export class GameMapper {
 
     return {
       _id: plainGame.roomId,
+      ownerId: plainGame.ownerId,
       players: plainGame.players, // Player.toPlainObject()로 이미 변환됨
       phase: plainGame.phase,
       currentTurn: plainGame.currentTurn,
@@ -72,6 +74,7 @@ export class GameMapper {
     // MongoDB의 _id를 roomId로 매핑
     const game = Game.fromPlainObject({
       roomId: document._id,
+      ownerId: document.ownerId,
       players: document.players || [],
       phase: document.phase,
       currentTurn: document.currentTurn,

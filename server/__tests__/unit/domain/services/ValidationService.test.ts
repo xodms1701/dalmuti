@@ -13,7 +13,7 @@ describe('ValidationService', () => {
   describe('validateGameState', () => {
     it('should return success when phase matches', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.changePhase('playing');
 
       // Act
@@ -26,7 +26,7 @@ describe('ValidationService', () => {
 
     it('should return error when phase does not match', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.changePhase('waiting');
 
       // Act
@@ -40,7 +40,7 @@ describe('ValidationService', () => {
 
     it('should validate waiting phase', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       const result = ValidationService.validateGameState(game, 'waiting');
@@ -53,7 +53,7 @@ describe('ValidationService', () => {
   describe('validatePlayerAction', () => {
     it('should return success when all conditions are met', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
       game.addPlayer(player);
@@ -69,7 +69,7 @@ describe('ValidationService', () => {
 
     it('should return error when player not found', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.changePhase('playing');
 
       // Act
@@ -82,7 +82,7 @@ describe('ValidationService', () => {
 
     it('should return error when not player turn', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -98,7 +98,7 @@ describe('ValidationService', () => {
 
     it('should return error when player has passed', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.pass();
       game.addPlayer(player);
@@ -115,7 +115,7 @@ describe('ValidationService', () => {
 
     it('should return error when player has finished', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       game.addPlayer(player);
       game.changePhase('playing');
@@ -295,7 +295,7 @@ describe('ValidationService', () => {
   describe('validatePlayerHasCards', () => {
     it('should return success when player has the cards', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false), Card.create(7, false)]);
       game.addPlayer(player);
@@ -311,7 +311,7 @@ describe('ValidationService', () => {
 
     it('should return error when player does not have the cards', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('player1'), 'Alice');
       player.assignCards([Card.create(5, false)]);
       game.addPlayer(player);
@@ -327,7 +327,7 @@ describe('ValidationService', () => {
 
     it('should return error when player not found', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       const result = ValidationService.validatePlayerHasCards(game, PlayerId.create('player1'), [
@@ -342,7 +342,7 @@ describe('ValidationService', () => {
   describe('validateMinPlayers', () => {
     it('should return success when player count meets minimum', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Alice'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Bob'));
 
@@ -355,7 +355,7 @@ describe('ValidationService', () => {
 
     it('should return error when player count is below minimum', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Alice'));
 
       // Act
@@ -367,7 +367,7 @@ describe('ValidationService', () => {
 
     it('should return success when player count exceeds minimum', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Alice'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Bob'));
       game.addPlayer(Player.create(PlayerId.create('player3'), 'Charlie'));
@@ -383,7 +383,7 @@ describe('ValidationService', () => {
   describe('validateMaxPlayers', () => {
     it('should return success when player count is below maximum', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Alice'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Bob'));
 
@@ -396,7 +396,7 @@ describe('ValidationService', () => {
 
     it('should return error when player count equals maximum', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Alice'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Bob'));
 
@@ -409,7 +409,7 @@ describe('ValidationService', () => {
 
     it('should return error when player count exceeds maximum', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       game.addPlayer(Player.create(PlayerId.create('player1'), 'Alice'));
       game.addPlayer(Player.create(PlayerId.create('player2'), 'Bob'));
       game.addPlayer(Player.create(PlayerId.create('player3'), 'Charlie'));
@@ -425,7 +425,7 @@ describe('ValidationService', () => {
   describe('validateAllPlayersReady', () => {
     it('should return success when all players are ready', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       player1.ready();
@@ -442,7 +442,7 @@ describe('ValidationService', () => {
 
     it('should return error when not all players are ready', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       player1.ready();
@@ -459,7 +459,7 @@ describe('ValidationService', () => {
 
     it('should return error when no players are ready', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       game.addPlayer(player1);
@@ -474,7 +474,7 @@ describe('ValidationService', () => {
 
     it('should return success with single ready player', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       player1.ready();
       game.addPlayer(player1);
@@ -490,7 +490,7 @@ describe('ValidationService', () => {
   describe('ValidationResult structure', () => {
     it('should return correct structure for success', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       const result = ValidationService.validateGameState(game, 'waiting');
@@ -502,7 +502,7 @@ describe('ValidationService', () => {
 
     it('should return correct structure for failure', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
 
       // Act
       const result = ValidationService.validateGameState(game, 'playing');

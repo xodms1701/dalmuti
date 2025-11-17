@@ -31,7 +31,7 @@ describe('CreateGameUseCase', () => {
   describe('성공 케이스', () => {
     it('should create game with auto-generated roomId', async () => {
       // Arrange
-      const request: CreateGameRequest = {};
+      const request: CreateGameRequest = { ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -48,7 +48,7 @@ describe('CreateGameUseCase', () => {
 
     it('should create game with specified roomId', async () => {
       // Arrange
-      const request: CreateGameRequest = { roomId: 'ROOM01' };
+      const request: CreateGameRequest = { roomId: 'ROOM01', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -64,7 +64,7 @@ describe('CreateGameUseCase', () => {
 
     it('should call repository.save with Game entity', async () => {
       // Arrange
-      const request: CreateGameRequest = { roomId: 'TEST01' };
+      const request: CreateGameRequest = { roomId: 'TEST01', ownerId: 'owner1' };
 
       // Act
       await useCase.execute(request);
@@ -82,7 +82,7 @@ describe('CreateGameUseCase', () => {
   describe('에러 케이스', () => {
     it('should return error when roomId format is invalid', async () => {
       // Arrange - RoomId는 6자리 영숫자여야 함
-      const request: CreateGameRequest = { roomId: 'INVALID' };
+      const request: CreateGameRequest = { roomId: 'INVALID', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -98,7 +98,7 @@ describe('CreateGameUseCase', () => {
 
     it('should return error when roomId is too long', async () => {
       // Arrange
-      const request: CreateGameRequest = { roomId: 'TOOLONG123' };
+      const request: CreateGameRequest = { roomId: 'TOOLONG123', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -113,7 +113,7 @@ describe('CreateGameUseCase', () => {
 
     it('should return error when roomId contains invalid characters', async () => {
       // Arrange
-      const request: CreateGameRequest = { roomId: 'ROOM#1' };
+      const request: CreateGameRequest = { roomId: 'ROOM#1', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -128,7 +128,7 @@ describe('CreateGameUseCase', () => {
     it('should return conflict error when roomId already exists', async () => {
       // Arrange
       mockRepository.save.mockRejectedValue(new DuplicateError('Game', 'ROOM01'));
-      const request: CreateGameRequest = { roomId: 'ROOM01' };
+      const request: CreateGameRequest = { roomId: 'ROOM01', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -144,7 +144,7 @@ describe('CreateGameUseCase', () => {
     it('should return error when repository fails', async () => {
       // Arrange
       mockRepository.save.mockRejectedValue(new Error('Database connection failed'));
-      const request: CreateGameRequest = {};
+      const request: CreateGameRequest = { ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -161,7 +161,7 @@ describe('CreateGameUseCase', () => {
   describe('Response 구조', () => {
     it('should return response with timestamp', async () => {
       // Arrange
-      const request: CreateGameRequest = {};
+      const request: CreateGameRequest = { ownerId: 'owner1' };
       const beforeTime = new Date();
 
       // Act
@@ -176,7 +176,7 @@ describe('CreateGameUseCase', () => {
 
     it('should include all required fields in success response', async () => {
       // Arrange
-      const request: CreateGameRequest = { roomId: 'RESP01' };
+      const request: CreateGameRequest = { roomId: 'RESP01', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);
@@ -194,7 +194,7 @@ describe('CreateGameUseCase', () => {
 
     it('should include all required fields in error response', async () => {
       // Arrange
-      const request: CreateGameRequest = { roomId: 'BAD' };
+      const request: CreateGameRequest = { roomId: 'BAD', ownerId: 'owner1' };
 
       // Act
       const response = await useCase.execute(request);

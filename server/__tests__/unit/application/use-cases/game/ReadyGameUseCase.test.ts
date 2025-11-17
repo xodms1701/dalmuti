@@ -35,7 +35,7 @@ describe('ReadyGameUseCase', () => {
       const roomId = RoomId.from('ROOM01');
       const playerId = PlayerId.create('player1');
       const player = Player.create(playerId, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -67,7 +67,7 @@ describe('ReadyGameUseCase', () => {
       const playerId = PlayerId.create('player1');
       const player = Player.create(playerId, 'Player 1');
       player.ready(); // 먼저 준비 상태로 설정
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -102,7 +102,7 @@ describe('ReadyGameUseCase', () => {
       const player2 = Player.create(player2Id, 'Player 2');
       player2.ready(); // player2는 이미 준비 완료
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -132,7 +132,7 @@ describe('ReadyGameUseCase', () => {
       const player1 = Player.create(player1Id, 'Player 1');
       const player2 = Player.create(player2Id, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -159,7 +159,7 @@ describe('ReadyGameUseCase', () => {
       const roomId = RoomId.from('ROOM01');
       const playerId = PlayerId.create('player1');
       const player = Player.create(playerId, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -207,7 +207,7 @@ describe('ReadyGameUseCase', () => {
     it('should return error when player not found', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       // 플레이어를 추가하지 않음
 
       mockRepository.findById.mockResolvedValue(game);
@@ -276,7 +276,7 @@ describe('ReadyGameUseCase', () => {
       const roomId = RoomId.from('ROOM01');
       const playerId = PlayerId.create('player1');
       const player = Player.create(playerId, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -306,7 +306,7 @@ describe('ReadyGameUseCase', () => {
       const roomId = RoomId.from('ROOM01');
       const playerId = PlayerId.create('player1');
       const player = Player.create(playerId, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -334,7 +334,7 @@ describe('ReadyGameUseCase', () => {
       const roomId = RoomId.from('ROOM01');
       const playerId = PlayerId.create('player1');
       const player = Player.create(playerId, 'Player 1');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player);
 
       mockRepository.findById.mockResolvedValue(game);
