@@ -725,7 +725,17 @@ export class Game {
    * 라운드 증가, 페이즈 변경, 플레이어 및 투표 상태 초기화
    */
   startNextGame(): void {
-    // 1. 현재 게임 이력 저장 (새 게임 초기화 전에)
+    this._archiveCurrentGame();
+    this._reassignRanksForNextGame();
+    this._resetGameForNextRound();
+    this._resetPlayersForNextGame();
+  }
+
+  /**
+   * 현재 게임을 히스토리에 저장
+   * @private
+   */
+  private _archiveCurrentGame(): void {
     const gameHistory: GameHistory = {
       gameNumber: this._gameNumber,
       players: this._finishedPlayers.map((playerId, index) => {
@@ -753,31 +763,34 @@ export class Game {
       endedAt: new Date(),
     };
     this._gameHistories.push(gameHistory);
+  }
 
-    // 2. finishedPlayers 순서대로 계급 재배정
+  /**
+   * 다음 게임을 위해 순위 재배정
+   * @private
+   */
+  private _reassignRanksForNextGame(): void {
     this._finishedPlayers.forEach((playerId, index) => {
       const player = this._players.find((p) => p.id.equals(playerId));
       if (player) {
         player.assignRank(index + 1);
       }
     });
+  }
 
-    // 3. 게임 번호 증가
+  /**
+   * 게임 상태 초기화 (라운드, 페이즈, 턴 등)
+   * @private
+   */
+  private _resetGameForNextRound(): void {
+    // 게임 번호 증가
     this._gameNumber++;
 
-    // 4. 라운드 초기화 (새 게임 시작이므로 1로 리셋)
+    // 라운드 초기화 (새 게임 시작이므로 1로 리셋)
     this._round = 1;
 
-    // 5. 페이즈 변경 - 먼저 순위 확인 화면으로 전환 (5초 후 Adapter에서 cardSelection으로 전환)
+    // 페이즈 변경 - 먼저 순위 확인 화면으로 전환 (5초 후 Adapter에서 cardSelection으로 전환)
     this._phase = 'roleSelectionComplete';
-
-    // 플레이어 상태 초기화
-    for (const player of this._players) {
-      player.unready();
-      player.resetPass();
-      // 플레이어 카드도 초기화
-      player.clearCards();
-    }
 
     // 투표 초기화
     this._votes.clear();
@@ -786,6 +799,22 @@ export class Game {
     this._currentTurn = null;
     this._lastPlay = undefined;
     this._finishedPlayers = [];
+
+    // 라운드 플레이 기록 초기화
+    this._roundPlays = [];
+  }
+
+  /**
+   * 플레이어 상태 초기화 (카드, 준비 상태 등)
+   * @private
+   */
+  private _resetPlayersForNextGame(): void {
+    // 플레이어 상태 초기화
+    for (const player of this._players) {
+      player.unready();
+      player.resetPass();
+      player.clearCards();
+    }
 
     // 플레이어 통계 초기화
     this._playerStats.clear();
@@ -797,9 +826,6 @@ export class Game {
         finishedAtRound: 0,
       });
     }
-
-    // 라운드 플레이 기록 초기화
-    this._roundPlays = [];
   }
 
   /**

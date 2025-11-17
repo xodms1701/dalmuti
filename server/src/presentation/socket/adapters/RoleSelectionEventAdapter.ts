@@ -18,6 +18,7 @@
 import { Socket } from 'socket.io';
 import { SocketEvent } from '../../../../socket/events';
 import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
+import { PhaseTransitionScheduler } from '../services/PhaseTransitionScheduler';
 
 /**
  * RoleSelectionEventAdapter
@@ -25,6 +26,12 @@ import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
  * 역할 선택 이벤트를 처리하는 Primary Adapter
  */
 export class RoleSelectionEventAdapter extends BaseEventAdapter {
+  private readonly phaseTransitionScheduler: PhaseTransitionScheduler;
+
+  constructor(...args: ConstructorParameters<typeof BaseEventAdapter>) {
+    super(...args);
+    this.phaseTransitionScheduler = new PhaseTransitionScheduler();
+  }
   /**
    * ISocketEventPort 구현
    * Socket 연결 시 이벤트 핸들러 등록
@@ -55,8 +62,9 @@ export class RoleSelectionEventAdapter extends BaseEventAdapter {
         // 모든 역할 선택 완료 시 순위 확인 화면(roleSelectionComplete)으로 전환되면
         // 5초 후 카드 선택 페이즈(cardSelection)로 자동 전환
         if (result.success && result.data.phase === 'roleSelectionComplete') {
-          setTimeout(async () => {
-            try {
+          this.phaseTransitionScheduler.scheduleRoleSelectionCompleteToCardSelection(
+            roomId,
+            async () => {
               // GameCommandService를 통해 phase 전환 (덱 셔플 및 분배 포함)
               const transitionResult = await this.commandService.transitionToCardSelection(roomId);
 
@@ -64,13 +72,8 @@ export class RoleSelectionEventAdapter extends BaseEventAdapter {
                 // 클라이언트에게 업데이트된 게임 상태 전송
                 await this.emitGameState(roomId);
               }
-            } catch (error) {
-              console.error(
-                'Failed to auto-transition from roleSelectionComplete to cardSelection phase:',
-                error
-              );
             }
-          }, 5000); // 5초 후 실행
+          );
         }
       }
     );
