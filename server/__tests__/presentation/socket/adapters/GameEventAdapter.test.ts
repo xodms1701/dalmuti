@@ -32,6 +32,10 @@ describe('GameEventAdapter', () => {
       leaveGame: jest.fn(),
       toggleReadyAndCheckStart: jest.fn(),
       voteNextGame: jest.fn(),
+      transitionToCardSelection: jest.fn().mockResolvedValue({
+        success: true,
+        data: { transitioned: true },
+      }),
     } as any;
 
     // Mock QueryService

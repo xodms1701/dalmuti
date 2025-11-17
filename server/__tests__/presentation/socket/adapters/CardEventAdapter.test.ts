@@ -29,6 +29,10 @@ describe('CardEventAdapter', () => {
     mockCommandService = {
       playOrPass: jest.fn(),
       selectDeck: jest.fn(),
+      transitionTaxToPlaying: jest.fn().mockResolvedValue({
+        success: true,
+        data: { transitioned: true },
+      }),
     } as any;
 
     // Mock QueryService

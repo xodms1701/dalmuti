@@ -28,6 +28,10 @@ describe('RoleSelectionEventAdapter', () => {
     // Mock CommandService
     mockCommandService = {
       selectRole: jest.fn(),
+      transitionToCardSelection: jest.fn().mockResolvedValue({
+        success: true,
+        data: { transitioned: true },
+      }),
     } as any;
 
     // Mock QueryService
