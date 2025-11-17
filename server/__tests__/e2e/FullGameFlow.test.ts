@@ -2,6 +2,8 @@
  * Full Game Flow E2E Tests
  *
  * 대기실 → 역할 선택 → 덱 선택 → 혁명/세금 → 게임 플레이 전체 플로우 테스트
+ *
+ * E2E 테스트는 실제 애플리케이션 동작과 유사하게 Service 계층을 통해 호출합니다.
  */
 
 import { GameCommandService } from '../../src/application/services/GameCommandService';
@@ -29,12 +31,6 @@ const DB_NAME = 'dalmuti-test-e2e';
 describe('Full Game Flow E2E Tests', () => {
   let service: GameCommandService;
   let repository: MongoGameRepository;
-  let startGameUseCase: StartGameUseCase;
-  let selectRoleUseCase: SelectRoleUseCase;
-  let selectDeckUseCase: SelectDeckUseCase;
-  let selectRevolutionUseCase: SelectRevolutionUseCase;
-  let playCardUseCase: PlayCardUseCase;
-  let passTurnUseCase: PassTurnUseCase;
 
   beforeAll(async () => {
     // 실제 MongoDB 연결
@@ -46,16 +42,16 @@ describe('Full Game Flow E2E Tests', () => {
     const joinGameUseCase = new JoinGameUseCase(repository);
     const leaveGameUseCase = new LeaveGameUseCase(repository);
     const readyGameUseCase = new ReadyGameUseCase(repository);
-    startGameUseCase = new StartGameUseCase(repository);
-    selectRoleUseCase = new SelectRoleUseCase(repository);
-    selectDeckUseCase = new SelectDeckUseCase(repository);
-    selectRevolutionUseCase = new SelectRevolutionUseCase(repository);
-    playCardUseCase = new PlayCardUseCase(repository);
-    passTurnUseCase = new PassTurnUseCase(repository);
+    const startGameUseCase = new StartGameUseCase(repository);
+    const selectRoleUseCase = new SelectRoleUseCase(repository);
+    const selectDeckUseCase = new SelectDeckUseCase(repository);
+    const selectRevolutionUseCase = new SelectRevolutionUseCase(repository);
+    const playCardUseCase = new PlayCardUseCase(repository);
+    const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
     const deleteGameUseCase = new DeleteGameUseCase(repository);
 
-    // Application Service 생성
+    // GameCommandService 생성 (E2E 테스트는 Service 계층을 통해 호출)
     service = new GameCommandService(
       createGameUseCase,
       joinGameUseCase,
@@ -99,22 +95,9 @@ describe('Full Game Flow E2E Tests', () => {
       const roomId = createResult.success ? createResult.data.roomId : '';
 
       // 1-2. 3명 추가 참가 (총 4명)
-      const joinUseCase = new JoinGameUseCase(repository);
-      const join2 = await joinUseCase.execute({
-        roomId,
-        playerId: 'player2',
-        nickname: 'Bob',
-      });
-      const join3 = await joinUseCase.execute({
-        roomId,
-        playerId: 'player3',
-        nickname: 'Charlie',
-      });
-      const join4 = await joinUseCase.execute({
-        roomId,
-        playerId: 'player4',
-        nickname: 'David',
-      });
+      const join2 = await service.joinGame(roomId, 'player2', 'Bob');
+      const join3 = await service.joinGame(roomId, 'player3', 'Charlie');
+      const join4 = await service.joinGame(roomId, 'player4', 'David');
 
       expect(join2.success).toBe(true);
       expect(join3.success).toBe(true);
@@ -132,7 +115,7 @@ describe('Full Game Flow E2E Tests', () => {
       }
 
       // 1-4. 게임 시작
-      const startResult = await startGameUseCase.execute({ roomId });
+      const startResult = await service.startGame(roomId);
       expect(startResult.success).toBe(true);
       if (startResult.success) {
         expect(startResult.data.phase).toBe('roleSelection');
@@ -150,26 +133,10 @@ describe('Full Game Flow E2E Tests', () => {
       // ==================== Phase 2: 역할 선택 (Role Selection) ====================
 
       // 2-1. 각 플레이어가 역할 카드 선택 (1-4번 카드 선택)
-      const role1 = await selectRoleUseCase.execute({
-        roomId,
-        playerId: 'player1',
-        roleNumber: 1,
-      });
-      const role2 = await selectRoleUseCase.execute({
-        roomId,
-        playerId: 'player2',
-        roleNumber: 2,
-      });
-      const role3 = await selectRoleUseCase.execute({
-        roomId,
-        playerId: 'player3',
-        roleNumber: 3,
-      });
-      const role4 = await selectRoleUseCase.execute({
-        roomId,
-        playerId: 'player4',
-        roleNumber: 4,
-      });
+      const role1 = await service.selectRole(roomId, 'player1', 1);
+      const role2 = await service.selectRole(roomId, 'player2', 2);
+      const role3 = await service.selectRole(roomId, 'player3', 3);
+      const role4 = await service.selectRole(roomId, 'player4', 4);
 
       expect(role1.success).toBe(true);
       expect(role2.success).toBe(true);
@@ -197,41 +164,25 @@ describe('Full Game Flow E2E Tests', () => {
       // Player 1 덱 선택
       game = await repository.findById(RoomId.from(roomId));
       const deck1Index = findAvailableDeckIndex(game!.selectableDecks!);
-      const deck1 = await selectDeckUseCase.execute({
-        roomId,
-        playerId: 'player1',
-        deckIndex: deck1Index,
-      });
+      const deck1 = await service.selectDeck(roomId, 'player1', deck1Index);
       expect(deck1.success).toBe(true);
 
       // Player 2 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
       game = await repository.findById(RoomId.from(roomId));
       const deck2Index = findAvailableDeckIndex(game!.selectableDecks!);
-      const deck2 = await selectDeckUseCase.execute({
-        roomId,
-        playerId: 'player2',
-        deckIndex: deck2Index,
-      });
+      const deck2 = await service.selectDeck(roomId, 'player2', deck2Index);
       expect(deck2.success).toBe(true);
 
       // Player 3 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
       game = await repository.findById(RoomId.from(roomId));
       const deck3Index = findAvailableDeckIndex(game!.selectableDecks!);
-      const deck3 = await selectDeckUseCase.execute({
-        roomId,
-        playerId: 'player3',
-        deckIndex: deck3Index,
-      });
+      const deck3 = await service.selectDeck(roomId, 'player3', deck3Index);
       expect(deck3.success).toBe(true);
 
       // Player 4 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
       game = await repository.findById(RoomId.from(roomId));
       const deck4Index = findAvailableDeckIndex(game!.selectableDecks!);
-      const deck4 = await selectDeckUseCase.execute({
-        roomId,
-        playerId: 'player4',
-        deckIndex: deck4Index,
-      });
+      const deck4 = await service.selectDeck(roomId, 'player4', deck4Index);
       expect(deck4.success).toBe(true);
 
       // 3-2. 덱 선택 완료 후 상태 확인
@@ -254,11 +205,11 @@ describe('Full Game Flow E2E Tests', () => {
         expect(game!.phase).toBe('revolution');
 
         // 혁명 거부 (세금 교환으로 진행)
-        const revolutionResult = await selectRevolutionUseCase.execute({
+        const revolutionResult = await service.selectRevolution(
           roomId,
-          playerId: doubleJokerPlayer.id.value,
-          wantRevolution: false,
-        });
+          doubleJokerPlayer.id.value,
+          false
+        );
 
         expect(revolutionResult.success).toBe(true);
         if (revolutionResult.success) {
@@ -302,40 +253,29 @@ describe('Full Game Flow E2E Tests', () => {
       const createResult = await service.createAndJoinGame('player1', 'Alice');
       const roomId = createResult.success ? createResult.data.roomId : '';
 
-      const joinUseCase = new JoinGameUseCase(repository);
-      await joinUseCase.execute({ roomId, playerId: 'player2', nickname: 'Bob' });
-      await joinUseCase.execute({ roomId, playerId: 'player3', nickname: 'Charlie' });
-      await joinUseCase.execute({ roomId, playerId: 'player4', nickname: 'David' });
+      await service.joinGame(roomId, 'player2', 'Bob');
+      await service.joinGame(roomId, 'player3', 'Charlie');
+      await service.joinGame(roomId, 'player4', 'David');
 
       // 2. 모든 플레이어 준비 및 게임 시작
       await service.toggleReadyAndCheckStart(roomId, 'player1');
       await service.toggleReadyAndCheckStart(roomId, 'player2');
       await service.toggleReadyAndCheckStart(roomId, 'player3');
       await service.toggleReadyAndCheckStart(roomId, 'player4');
-      await startGameUseCase.execute({ roomId });
+      await service.startGame(roomId);
 
       // 3. 역할 선택 (player4를 꼴찌로 만들기 위해 13번 선택)
-      await selectRoleUseCase.execute({ roomId, playerId: 'player1', roleNumber: 1 });
-      await selectRoleUseCase.execute({ roomId, playerId: 'player2', roleNumber: 2 });
-      await selectRoleUseCase.execute({ roomId, playerId: 'player3', roleNumber: 3 });
-      await selectRoleUseCase.execute({ roomId, playerId: 'player4', roleNumber: 13 });
+      // SelectRoleUseCase가 자동으로 rank를 할당함
+      await service.selectRole(roomId, 'player1', 1);
+      await service.selectRole(roomId, 'player2', 2);
+      await service.selectRole(roomId, 'player3', 3);
+      await service.selectRole(roomId, 'player4', 13);
 
-      // 4. DB에서 게임 가져와서 rank 할당
+      // 4. DB에서 게임 가져와서 rank 확인
       let game = await repository.findById(RoomId.from(roomId));
       expect(game).not.toBeNull();
 
-      // 역할에 따라 rank 할당
-      const sortedPlayersForRev = game!.players
-        .slice()
-        .sort((a, b) => (a.role ?? 0) - (b.role ?? 0));
-      sortedPlayersForRev.forEach((player, index) => {
-        player.assignRank(index + 1);
-      });
-
-      await repository.update(RoomId.from(roomId), game!);
-
       // player4가 rank 4 (꼴찌)인지 확인
-      game = await repository.findById(RoomId.from(roomId));
       const player4 = game!.players.find((p) => p.id.value === 'player4');
       expect(player4).toBeDefined();
       expect(player4!.rank).toBe(4);
@@ -363,11 +303,7 @@ describe('Full Game Flow E2E Tests', () => {
       await repository.update(RoomId.from(roomId), game!);
 
       // 5. 혁명 승인 (대혁명)
-      const revolutionResult = await selectRevolutionUseCase.execute({
-        roomId,
-        playerId: 'player4',
-        wantRevolution: true,
-      });
+      const revolutionResult = await service.selectRevolution(roomId, 'player4', true);
 
       expect(revolutionResult.success).toBe(true);
       if (revolutionResult.success) {
