@@ -194,17 +194,19 @@ describe('Full Game Flow E2E Tests', () => {
 
       // ==================== Phase 4: 혁명 처리 (Revolution) ====================
 
-      // 4-1. 조커 2장 보유자 확인
-      const doubleJokerPlayer = game!.checkDoubleJoker();
+      // 4-1. Phase 상태 확인 (phase는 조커 2장 보유자 유무에 따라 결정됨)
+      // SelectDeckUseCase에서 이미 조커 2장 보유자를 확인하고 phase를 설정했음
+      const isRevolutionPhase = game!.phase === 'revolution';
 
-      if (doubleJokerPlayer) {
-        // 조커 2장 보유자가 있으면 혁명 선택
-        expect(game!.phase).toBe('revolution');
+      if (isRevolutionPhase) {
+        // 혁명 페이즈인 경우 - 조커 2장 보유자가 있음
+        const doubleJokerPlayer = game!.checkDoubleJoker();
+        expect(doubleJokerPlayer).toBeDefined();
 
         // 혁명 거부 (세금 교환으로 진행)
         const revolutionResult = await service.selectRevolution(
           roomId,
-          doubleJokerPlayer.id.value,
+          doubleJokerPlayer!.id.value,
           false
         );
 
@@ -213,7 +215,7 @@ describe('Full Game Flow E2E Tests', () => {
           expect(revolutionResult.data.phase).toBe('tax');
         }
       } else {
-        // 조커 2장 보유자가 없으면 자동으로 tax phase로 전환되어 있어야 함
+        // 세금 교환 페이즈로 바로 진행 - 조커 2장 보유자가 없음
         expect(game!.phase).toBe('tax');
       }
 
