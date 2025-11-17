@@ -49,15 +49,15 @@ describe('SelectRoleUseCase', () => {
     game.changePhase(phase);
 
     // 역할 선택 카드 설정 (1-13)
-    const roleSelectionCards = [];
+    const roleSelectionDeck = [];
     for (let i = 1; i <= 13; i++) {
-      roleSelectionCards.push({
+      roleSelectionDeck.push({
         number: i,
         isSelected: false,
         selectedBy: undefined,
       });
     }
-    game.setRoleSelectionCards(roleSelectionCards);
+    game.setRoleSelectionDeck(roleSelectionDeck);
 
     return game;
   };
@@ -108,18 +108,18 @@ describe('SelectRoleUseCase', () => {
       // 3명의 플레이어가 이미 역할을 선택한 상태
       const player1 = game.getPlayer(PlayerId.create('player1'))!;
       player1.assignRole(1);
-      game.roleSelectionCards![0].isSelected = true;
-      game.roleSelectionCards![0].selectedBy = 'player1';
+      game.roleSelectionDeck![0].isSelected = true;
+      game.roleSelectionDeck![0].selectedBy = 'player1';
 
       const player2 = game.getPlayer(PlayerId.create('player2'))!;
       player2.assignRole(2);
-      game.roleSelectionCards![1].isSelected = true;
-      game.roleSelectionCards![1].selectedBy = 'player2';
+      game.roleSelectionDeck![1].isSelected = true;
+      game.roleSelectionDeck![1].selectedBy = 'player2';
 
       const player3 = game.getPlayer(PlayerId.create('player3'))!;
       player3.assignRole(3);
-      game.roleSelectionCards![2].isSelected = true;
-      game.roleSelectionCards![2].selectedBy = 'player3';
+      game.roleSelectionDeck![2].isSelected = true;
+      game.roleSelectionDeck![2].selectedBy = 'player3';
 
       mockRepository.findById.mockResolvedValue(game);
 
@@ -194,8 +194,8 @@ describe('SelectRoleUseCase', () => {
       const game = createTestGame('ROOM04', 4);
 
       // 역할 5를 이미 선택된 상태로 설정
-      game.roleSelectionCards![4].isSelected = true;
-      game.roleSelectionCards![4].selectedBy = 'player2';
+      game.roleSelectionDeck![4].isSelected = true;
+      game.roleSelectionDeck![4].selectedBy = 'player2';
 
       mockRepository.findById.mockResolvedValue(game);
 
@@ -224,8 +224,8 @@ describe('SelectRoleUseCase', () => {
       // player1이 이미 역할을 선택한 상태
       const player1 = game.getPlayer(PlayerId.create('player1'))!;
       player1.assignRole(3);
-      game.roleSelectionCards![2].isSelected = true;
-      game.roleSelectionCards![2].selectedBy = 'player1';
+      game.roleSelectionDeck![2].isSelected = true;
+      game.roleSelectionDeck![2].selectedBy = 'player1';
 
       mockRepository.findById.mockResolvedValue(game);
 

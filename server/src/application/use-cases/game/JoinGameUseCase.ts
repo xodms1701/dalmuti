@@ -90,6 +90,11 @@ export class JoinGameUseCase
         );
       }
 
+      // 5-1. 방장이면 자동으로 ready 상태로 설정
+      if (game.ownerId.equals(playerId)) {
+        player.ready();
+      }
+
       // 6. Repository를 통해 영속화
       await this.gameRepository.update(game.roomId, game);
 

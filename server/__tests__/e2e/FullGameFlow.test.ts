@@ -104,7 +104,7 @@ describe('Full Game Flow E2E Tests', () => {
       expect(join4.success).toBe(true);
 
       // 1-3. 모든 플레이어 준비
-      await service.toggleReadyAndCheckStart(roomId, 'player1');
+      // 방장(player1)은 자동으로 ready 상태이므로 건너뜀
       await service.toggleReadyAndCheckStart(roomId, 'player2');
       await service.toggleReadyAndCheckStart(roomId, 'player3');
       const ready4 = await service.toggleReadyAndCheckStart(roomId, 'player4');
@@ -127,8 +127,8 @@ describe('Full Game Flow E2E Tests', () => {
       expect(game!.phase).toBe('roleSelection');
       expect(game!.deck).toBeDefined();
       expect(game!.deck?.length).toBe(54); // 52 + 2 jokers
-      expect(game!.roleSelectionCards).toBeDefined();
-      expect(game!.roleSelectionCards?.length).toBe(13);
+      expect(game!.roleSelectionDeck).toBeDefined();
+      expect(game!.roleSelectionDeck?.length).toBe(13);
 
       // ==================== Phase 2: 역할 선택 (Role Selection) ====================
 
@@ -257,7 +257,7 @@ describe('Full Game Flow E2E Tests', () => {
       await service.joinGame(roomId, 'player4', 'David');
 
       // 2. 모든 플레이어 준비 및 게임 시작
-      await service.toggleReadyAndCheckStart(roomId, 'player1');
+      // 방장(player1)은 자동으로 ready 상태이므로 건너뜀
       await service.toggleReadyAndCheckStart(roomId, 'player2');
       await service.toggleReadyAndCheckStart(roomId, 'player3');
       await service.toggleReadyAndCheckStart(roomId, 'player4');

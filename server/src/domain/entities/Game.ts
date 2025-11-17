@@ -3,7 +3,14 @@ import { Player } from './Player';
 import { Card } from './Card';
 import { RoomId } from '../value-objects/RoomId';
 import { PlayerId } from '../value-objects/PlayerId';
-import { SelectableDeck, RoleSelectionCard, TaxExchange } from '../types/GameTypes';
+import {
+  SelectableDeck,
+  RoleSelectionCard,
+  TaxExchange,
+  GameHistory,
+  PlayerStats,
+  RoundPlay,
+} from '../types/GameTypes';
 
 /**
  * Game Entity
@@ -32,9 +39,13 @@ export class Game {
 
   private _selectableDecks?: SelectableDeck[];
 
-  private _roleSelectionCards?: RoleSelectionCard[];
+  private _roleSelectionDeck?: RoleSelectionCard[]; // 레거시 호환을 위해 roleSelectionCards에서 변경
 
-  private _votes: Map<string, boolean>; // playerId → vote (true: 찬성, false: 반대)
+  private _votes: Map<string, boolean>; // playerId → vote (현재 게임 내 투표)
+
+  private _nextGameVotes: Map<string, boolean>; // playerId → vote (다음 게임 시작 투표)
+
+  private _isVoting: boolean; // 투표 진행 중 여부
 
   private _revolutionStatus?: {
     isRevolution: boolean;
@@ -43,6 +54,16 @@ export class Game {
   }; // 혁명 상태
 
   private _taxExchanges?: TaxExchange[]; // 세금 교환 정보
+
+  private _gameNumber: number; // 연속 게임 번호 (1, 2, 3...)
+
+  private _gameHistories: GameHistory[]; // 과거 게임 기록
+
+  private _currentGameStartedAt?: Date; // 현재 게임 시작 시간
+
+  private _playerStats: Map<string, PlayerStats>; // playerId → 플레이어 통계
+
+  private _roundPlays: RoundPlay[]; // 라운드별 플레이 기록
 
   /**
    * Private constructor - factory method를 통해서만 생성 가능
@@ -58,14 +79,21 @@ export class Game {
     round: number = 0,
     finishedPlayers: PlayerId[] = [],
     selectableDecks?: SelectableDeck[],
-    roleSelectionCards?: RoleSelectionCard[],
+    roleSelectionDeck?: RoleSelectionCard[],
     votes: Map<string, boolean> = new Map(),
+    nextGameVotes: Map<string, boolean> = new Map(),
+    isVoting: boolean = false,
     revolutionStatus?: {
       isRevolution: boolean;
       isGreatRevolution: boolean;
       revolutionPlayerId: string;
     },
-    taxExchanges?: TaxExchange[]
+    taxExchanges?: TaxExchange[],
+    gameNumber: number = 1,
+    gameHistories: GameHistory[] = [],
+    currentGameStartedAt?: Date,
+    playerStats: Map<string, PlayerStats> = new Map(),
+    roundPlays: RoundPlay[] = []
   ) {
     this.roomId = roomId;
     this._ownerId = ownerId;
@@ -77,10 +105,17 @@ export class Game {
     this._round = round;
     this._finishedPlayers = finishedPlayers;
     this._selectableDecks = selectableDecks;
-    this._roleSelectionCards = roleSelectionCards;
+    this._roleSelectionDeck = roleSelectionDeck;
     this._votes = votes;
+    this._nextGameVotes = nextGameVotes;
+    this._isVoting = isVoting;
     this._revolutionStatus = revolutionStatus;
     this._taxExchanges = taxExchanges;
+    this._gameNumber = gameNumber;
+    this._gameHistories = gameHistories;
+    this._currentGameStartedAt = currentGameStartedAt;
+    this._playerStats = playerStats;
+    this._roundPlays = roundPlays;
   }
 
   /**
@@ -130,8 +165,20 @@ export class Game {
     return this._selectableDecks ? [...this._selectableDecks] : undefined;
   }
 
-  get roleSelectionCards(): RoleSelectionCard[] | undefined {
-    return this._roleSelectionCards ? [...this._roleSelectionCards] : undefined;
+  get roleSelectionDeck(): RoleSelectionCard[] | undefined {
+    return this._roleSelectionDeck ? [...this._roleSelectionDeck] : undefined;
+  }
+
+  get votes(): Map<string, boolean> {
+    return new Map(this._votes);
+  }
+
+  get nextGameVotes(): Map<string, boolean> {
+    return new Map(this._nextGameVotes);
+  }
+
+  get isVoting(): boolean {
+    return this._isVoting;
   }
 
   get revolutionStatus():
@@ -146,6 +193,26 @@ export class Game {
 
   get taxExchanges(): TaxExchange[] | undefined {
     return this._taxExchanges ? [...this._taxExchanges] : undefined;
+  }
+
+  get gameNumber(): number {
+    return this._gameNumber;
+  }
+
+  get gameHistories(): GameHistory[] {
+    return [...this._gameHistories];
+  }
+
+  get currentGameStartedAt(): Date | undefined {
+    return this._currentGameStartedAt;
+  }
+
+  get playerStats(): Map<string, PlayerStats> {
+    return new Map(this._playerStats);
+  }
+
+  get roundPlays(): RoundPlay[] {
+    return [...this._roundPlays];
   }
 
   /**
@@ -377,8 +444,8 @@ export class Game {
    * 역할 선택 카드 설정
    * @param cards 역할 선택 카드들
    */
-  setRoleSelectionCards(cards: RoleSelectionCard[]): void {
-    this._roleSelectionCards = [...cards];
+  setRoleSelectionDeck(cards: RoleSelectionCard[]): void {
+    this._roleSelectionDeck = [...cards];
   }
 
   /**
@@ -415,12 +482,12 @@ export class Game {
     }
 
     // 역할 선택 카드가 있는지 확인
-    if (!this._roleSelectionCards || this._roleSelectionCards.length === 0) {
+    if (!this._roleSelectionDeck || this._roleSelectionDeck.length === 0) {
       throw new Error('No role selection cards available');
     }
 
     // 선택한 역할 카드 찾기
-    const roleCard = this._roleSelectionCards.find((card) => card.number === roleNumber);
+    const roleCard = this._roleSelectionDeck.find((card) => card.number === roleNumber);
     if (!roleCard) {
       throw new Error(`Role card with number ${roleNumber} not found`);
     }
@@ -704,17 +771,26 @@ export class Game {
       isSelected: boolean;
       selectedBy?: string;
     }>;
-    roleSelectionCards?: RoleSelectionCard[];
+    roleSelectionDeck?: RoleSelectionCard[];
     votes: Record<string, boolean>;
+    nextGameVotes: Record<string, boolean>;
+    isVoting: boolean;
     revolutionStatus?: {
       isRevolution: boolean;
       isGreatRevolution: boolean;
       revolutionPlayerId: string;
     };
     taxExchanges?: TaxExchange[];
+    gameNumber: number;
+    gameHistories: GameHistory[];
+    currentGameStartedAt?: Date;
+    playerStats: Record<string, PlayerStats>;
+    roundPlays: RoundPlay[];
   } {
     // Map을 Record로 변환
     const votesRecord: Record<string, boolean> = Object.fromEntries(this._votes);
+    const nextGameVotesRecord: Record<string, boolean> = Object.fromEntries(this._nextGameVotes);
+    const playerStatsRecord: Record<string, PlayerStats> = Object.fromEntries(this._playerStats);
 
     return {
       roomId: this.roomId.value, // RoomId를 string으로 변환
@@ -738,10 +814,17 @@ export class Game {
             selectedBy: deck.selectedBy,
           }))
         : undefined,
-      roleSelectionCards: this._roleSelectionCards,
+      roleSelectionDeck: this._roleSelectionDeck,
       votes: votesRecord,
+      nextGameVotes: nextGameVotesRecord,
+      isVoting: this._isVoting,
       revolutionStatus: this._revolutionStatus,
       taxExchanges: this._taxExchanges,
+      gameNumber: this._gameNumber,
+      gameHistories: this._gameHistories,
+      currentGameStartedAt: this._currentGameStartedAt,
+      playerStats: playerStatsRecord,
+      roundPlays: this._roundPlays,
     };
   }
 
@@ -763,14 +846,21 @@ export class Game {
       isSelected: boolean;
       selectedBy?: string;
     }>;
-    roleSelectionCards?: RoleSelectionCard[];
+    roleSelectionDeck?: RoleSelectionCard[];
     votes?: Record<string, boolean>;
+    nextGameVotes?: Record<string, boolean>;
+    isVoting?: boolean;
     revolutionStatus?: {
       isRevolution: boolean;
       isGreatRevolution: boolean;
       revolutionPlayerId: string;
     };
     taxExchanges?: TaxExchange[];
+    gameNumber?: number;
+    gameHistories?: GameHistory[];
+    currentGameStartedAt?: Date;
+    playerStats?: Record<string, PlayerStats>;
+    roundPlays?: RoundPlay[];
   }): Game {
     const players = obj.players ? obj.players.map((p) => Player.fromPlainObject(p)) : [];
 
@@ -799,6 +889,8 @@ export class Game {
 
     // Record를 Map으로 변환
     const votes = new Map<string, boolean>(Object.entries(obj.votes ?? {}));
+    const nextGameVotes = new Map<string, boolean>(Object.entries(obj.nextGameVotes ?? {}));
+    const playerStats = new Map<string, PlayerStats>(Object.entries(obj.playerStats ?? {}));
 
     return new Game(
       roomId,
@@ -811,10 +903,17 @@ export class Game {
       obj.round || 0,
       finishedPlayers,
       selectableDecks,
-      obj.roleSelectionCards,
+      obj.roleSelectionDeck,
       votes,
+      nextGameVotes,
+      obj.isVoting || false,
       obj.revolutionStatus,
-      obj.taxExchanges
+      obj.taxExchanges,
+      obj.gameNumber || 1,
+      obj.gameHistories || [],
+      obj.currentGameStartedAt,
+      playerStats,
+      obj.roundPlays || []
     );
   }
 }

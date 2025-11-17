@@ -549,10 +549,10 @@ describe('Game', () => {
       const cards = [{ number: 1, isSelected: false }];
 
       // Act
-      game.setRoleSelectionCards(cards);
+      game.setRoleSelectionDeck(cards);
 
       // Assert
-      expect(game.roleSelectionCards).toEqual(cards);
+      expect(game.roleSelectionDeck).toEqual(cards);
     });
   });
 

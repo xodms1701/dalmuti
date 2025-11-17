@@ -94,14 +94,14 @@ describe('GameMapper', () => {
       // Arrange
       const game = Game.create(RoomId.from('ROOM05'), PlayerId.create('owner1'));
       game.setSelectableDecks([{ cards: [Card.create(1, false)], isSelected: false }]);
-      game.setRoleSelectionCards([{ number: 1, isSelected: false }]);
+      game.setRoleSelectionDeck([{ number: 1, isSelected: false }]);
 
       // Act
       const document = GameMapper.toDocument(game);
 
       // Assert
       expect(document.selectableDecks).toBeDefined();
-      expect(document.roleSelectionCards).toBeDefined();
+      expect(document.roleSelectionDeck).toBeDefined();
     });
   });
 
@@ -214,7 +214,7 @@ describe('GameMapper', () => {
 
       // Assert
       expect(game.selectableDecks).toBeUndefined();
-      expect(game.roleSelectionCards).toBeUndefined();
+      expect(game.roleSelectionDeck).toBeUndefined();
       expect(game.lastPlay).toBeUndefined();
     });
 
@@ -234,7 +234,7 @@ describe('GameMapper', () => {
         round: 2,
         finishedPlayers: ['p2'],
         selectableDecks: [{ cards: [], isSelected: true, selectedBy: 'p1' }],
-        roleSelectionCards: [{ number: 1, isSelected: true, selectedBy: 'p1' }],
+        roleSelectionDeck: [{ number: 1, isSelected: true, selectedBy: 'p1' }],
       };
 
       // Act
@@ -244,7 +244,7 @@ describe('GameMapper', () => {
       expect(game.lastPlay?.playerId.value).toBe('p1');
       expect(game.lastPlay?.cards).toEqual([{ rank: 5, isJoker: false }]);
       expect(game.selectableDecks).toBeDefined();
-      expect(game.roleSelectionCards).toBeDefined();
+      expect(game.roleSelectionDeck).toBeDefined();
       expect(game.finishedPlayers.map((p) => p.value)).toEqual(['p2']);
     });
   });
@@ -360,7 +360,7 @@ describe('GameMapper', () => {
         round: 3,
         finishedPlayers: [PlayerId.create('p1'), PlayerId.create('p2')],
         selectableDecks: [{ cards: [], isSelected: true }],
-        roleSelectionCards: [{ number: 1, isSelected: true }],
+        roleSelectionDeck: [{ number: 1, isSelected: true }],
         players: [player1],
       };
 
@@ -375,7 +375,7 @@ describe('GameMapper', () => {
       expect(updateDoc.round).toBe(3);
       expect(updateDoc.finishedPlayers).toEqual(['p1', 'p2']);
       expect(updateDoc.selectableDecks).toBeDefined();
-      expect(updateDoc.roleSelectionCards).toBeDefined();
+      expect(updateDoc.roleSelectionDeck).toBeDefined();
       expect(updateDoc.players).toBeDefined();
       expect(updateDoc.players).toEqual([
         {

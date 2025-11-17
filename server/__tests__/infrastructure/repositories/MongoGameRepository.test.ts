@@ -379,7 +379,7 @@ describe('MongoGameRepository Integration Tests', () => {
       // Assert
       expect(found).not.toBeNull();
       expect(found!.selectableDecks).toBeUndefined();
-      expect(found!.roleSelectionCards).toBeUndefined();
+      expect(found!.roleSelectionDeck).toBeUndefined();
       // MongoDB에서 undefined는 null로 반환될 수 있음
       expect(found!.lastPlay).toBeFalsy();
     });
@@ -390,7 +390,7 @@ describe('MongoGameRepository Integration Tests', () => {
       const playerId = PlayerId.create('p1');
       const game = Game.create(roomId, PlayerId.create('owner1'));
       game.setSelectableDecks([{ cards: [Card.create(1, false)], isSelected: false }]);
-      game.setRoleSelectionCards([{ number: 1, isSelected: false }]);
+      game.setRoleSelectionDeck([{ number: 1, isSelected: false }]);
       game.setLastPlay({
         playerId,
         cards: [Card.create(3, false)],
@@ -403,7 +403,7 @@ describe('MongoGameRepository Integration Tests', () => {
       // Assert
       expect(found).not.toBeNull();
       expect(found!.selectableDecks).toBeDefined();
-      expect(found!.roleSelectionCards).toBeDefined();
+      expect(found!.roleSelectionDeck).toBeDefined();
       expect(found!.lastPlay).toBeDefined();
     });
 

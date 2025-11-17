@@ -72,8 +72,8 @@ describe('StartGameUseCase', () => {
       expect(game.phase).toBe('roleSelection');
       expect(game.deck).toBeDefined();
       expect(game.deck?.length).toBe(54); // 표준 덱: 52장 + 조커 2장
-      expect(game.roleSelectionCards).toBeDefined();
-      expect(game.roleSelectionCards?.length).toBe(13); // 1-13 역할 카드
+      expect(game.roleSelectionDeck).toBeDefined();
+      expect(game.roleSelectionDeck?.length).toBe(13); // 1-13 역할 카드
     });
 
     it('8명 플레이어로 게임을 시작해야 함', async () => {
@@ -144,12 +144,12 @@ describe('StartGameUseCase', () => {
       await useCase.execute(request);
 
       // Assert
-      expect(game.roleSelectionCards).toBeDefined();
-      expect(game.roleSelectionCards?.length).toBe(13);
+      expect(game.roleSelectionDeck).toBeDefined();
+      expect(game.roleSelectionDeck?.length).toBe(13);
 
       // 1-13 숫자 카드 확인
       for (let i = 1; i <= 13; i++) {
-        const card = game.roleSelectionCards?.find((c) => c.number === i);
+        const card = game.roleSelectionDeck?.find((c) => c.number === i);
         expect(card).toBeDefined();
         expect(card?.isSelected).toBe(false);
         expect(card?.selectedBy).toBeUndefined();

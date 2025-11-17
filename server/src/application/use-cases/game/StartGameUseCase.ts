@@ -79,6 +79,15 @@ export class StartGameUseCase
         );
       }
 
+      // 4-1. 모든 플레이어 준비 상태 검증
+      const allPlayersReady = game.players.every((player) => player.isReady);
+      if (!allPlayersReady) {
+        const notReadyPlayers = game.players.filter((p) => !p.isReady);
+        throw new BusinessRuleError(
+          `모든 플레이어가 준비해야 게임을 시작할 수 있습니다. 준비하지 않은 플레이어: ${notReadyPlayers.map((p) => p.nickname).join(', ')}`
+        );
+      }
+
       // 5. phase 검증 (waiting 단계에서만 시작 가능)
       if (game.phase !== 'waiting') {
         throw new BusinessRuleError(
@@ -99,7 +108,7 @@ export class StartGameUseCase
 
       // 7. 역할 선택 카드 초기화
       const roleSelectionCards = DeckService.createRoleSelectionDeck();
-      game.setRoleSelectionCards(roleSelectionCards);
+      game.setRoleSelectionDeck(roleSelectionCards);
 
       // 8. phase를 'roleSelection'으로 변경
       game.changePhase('roleSelection');
