@@ -15,8 +15,8 @@
  */
 
 import { Socket } from 'socket.io';
-import { SocketEvent } from '../../../../socket/events';
 import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
+import { SocketEvent } from '../../../../socket/events';
 
 /**
  * GameEventAdapter
@@ -139,9 +139,9 @@ export class GameEventAdapter extends BaseEventAdapter {
 
         await this.handleSocketEvent(result, callback, roomId);
 
-        // 모든 플레이어가 준비되었으면 allPlayersReady 브로드캐스트
+        // 모든 플레이어가 준비되었으면 ALL_PLAYERS_READY 브로드캐스트
         if (result.success && result.data.allPlayersReady) {
-          this.io.to(roomId).emit('allPlayersReady');
+          this.io.to(roomId).emit(SocketEvent.ALL_PLAYERS_READY);
         }
       }
     );

@@ -20,6 +20,7 @@ import { GameCommandService } from '../../../../application/services/GameCommand
 import { GameQueryService } from '../../../../application/services/GameQueryService';
 import { UseCaseResponse } from '../../../../application/dto/common/BaseResponse';
 import { ISocketEventPort } from '../../ports/ISocketEventPort';
+import { SocketEvent } from '../../../../../socket/events';
 
 /**
  * Socket.IO 응답 타입
@@ -133,7 +134,7 @@ export abstract class BaseEventAdapter implements ISocketEventPort {
       const gameState = await this.queryService.getGameState(roomId);
       if (gameState) {
         // Legacy 클라이언트 호환성을 위해 gameState를 직접 전송
-        this.io.to(roomId).emit('gameStateUpdated', gameState);
+        this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, gameState);
       }
     } catch (error) {
       console.error('Failed to emit game state:', error);

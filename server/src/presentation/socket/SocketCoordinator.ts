@@ -21,6 +21,7 @@ import { GameEventAdapter } from './adapters/GameEventAdapter';
 import { CardEventAdapter } from './adapters/CardEventAdapter';
 import { RoleSelectionEventAdapter } from './adapters/RoleSelectionEventAdapter';
 import { ISocketEventPort } from './ports/ISocketEventPort';
+import { SocketEvent } from '../../../socket/events';
 
 /**
  * SocketCoordinator
@@ -97,7 +98,7 @@ export class SocketCoordinator {
           // 게임 상태 브로드캐스트
           const gameState = await this.queryService.getGameState(roomId);
           if (gameState) {
-            this.io.to(roomId).emit('gameStateUpdated', gameState);
+            this.io.to(roomId).emit(SocketEvent.GAME_STATE_UPDATED, gameState);
           }
 
           // eslint-disable-next-line no-console
