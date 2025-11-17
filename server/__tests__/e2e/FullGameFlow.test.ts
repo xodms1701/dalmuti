@@ -20,8 +20,7 @@ import { VoteNextGameUseCase } from '../../src/application/use-cases/game/VoteNe
 import { DeleteGameUseCase } from '../../src/application/use-cases/game/DeleteGameUseCase';
 import { RoomId } from '../../src/domain/value-objects/RoomId';
 import { Card } from '../../src/domain/entities/Card';
-import { DeckService } from '../../src/domain/services/DeckService';
-import { SelectableDeck } from '../../src/domain/entities/Game';
+import { SelectableDeck } from '../../src/domain/types/GameTypes';
 
 // 환경 변수 또는 기본값 사용
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
@@ -177,34 +176,16 @@ describe('Full Game Flow E2E Tests', () => {
       expect(role3.success).toBe(true);
       expect(role4.success).toBe(true);
 
-      // 2-2. 역할 선택 완료 후 rank 할당 및 덱 생성
-      game = await repository.findById(RoomId.from(roomId));
-      expect(game).not.toBeNull();
-
-      // 역할에 따라 rank 할당 (role이 작을수록 rank도 작음 = 높은 순위)
-      const sortedPlayers = game!.players.slice().sort((a, b) => (a.role ?? 0) - (b.role ?? 0));
-      sortedPlayers.forEach((player, index) => {
-        player.assignRank(index + 1);
-      });
-
-      // 덱 분할 및 선택 가능한 덱 생성
-      const selectableDecks = DeckService.createSelectableDecks(game!.deck!, game!.players.length);
-      game!.setSelectableDecks(selectableDecks);
-
-      // Phase를 cardSelection으로 변경
-      game!.changePhase('cardSelection');
-
-      // 첫 번째 플레이어(rank 1)의 턴으로 설정
-      game!.setCurrentTurn(sortedPlayers[0].id);
-
-      await repository.update(RoomId.from(roomId), game!);
-
-      // 상태 확인
+      // 2-2. 역할 선택 완료 후 자동으로 cardSelection 페이즈로 전환됨
+      // SelectRoleUseCase가 자동으로 처리: 덱 생성, 페이즈 전환, 턴 설정
       game = await repository.findById(RoomId.from(roomId));
       expect(game).not.toBeNull();
       expect(game!.phase).toBe('cardSelection');
       expect(game!.selectableDecks).toBeDefined();
       expect(game!.selectableDecks?.length).toBe(4); // 4명이므로 4개 덱
+
+      // 역할에 따라 정렬된 플레이어 목록 (테스트 검증용)
+      const sortedPlayers = game!.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
 
       // ==================== Phase 3: 덱 선택 (Deck Selection) ====================
 
@@ -223,11 +204,7 @@ describe('Full Game Flow E2E Tests', () => {
       });
       expect(deck1.success).toBe(true);
 
-      // Player 2 턴 설정 및 덱 선택
-      game = await repository.findById(RoomId.from(roomId));
-      game!.setCurrentTurn(sortedPlayers[1].id);
-      await repository.update(RoomId.from(roomId), game!);
-
+      // Player 2 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
       game = await repository.findById(RoomId.from(roomId));
       const deck2Index = findAvailableDeckIndex(game!.selectableDecks!);
       const deck2 = await selectDeckUseCase.execute({
@@ -237,11 +214,7 @@ describe('Full Game Flow E2E Tests', () => {
       });
       expect(deck2.success).toBe(true);
 
-      // Player 3 턴 설정 및 덱 선택
-      game = await repository.findById(RoomId.from(roomId));
-      game!.setCurrentTurn(sortedPlayers[2].id);
-      await repository.update(RoomId.from(roomId), game!);
-
+      // Player 3 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
       game = await repository.findById(RoomId.from(roomId));
       const deck3Index = findAvailableDeckIndex(game!.selectableDecks!);
       const deck3 = await selectDeckUseCase.execute({
@@ -251,11 +224,7 @@ describe('Full Game Flow E2E Tests', () => {
       });
       expect(deck3.success).toBe(true);
 
-      // Player 4 턴 설정 및 덱 선택
-      game = await repository.findById(RoomId.from(roomId));
-      game!.setCurrentTurn(sortedPlayers[3].id);
-      await repository.update(RoomId.from(roomId), game!);
-
+      // Player 4 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
       game = await repository.findById(RoomId.from(roomId));
       const deck4Index = findAvailableDeckIndex(game!.selectableDecks!);
       const deck4 = await selectDeckUseCase.execute({

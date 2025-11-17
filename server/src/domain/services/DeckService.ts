@@ -9,16 +9,7 @@
 
 import { Card } from '../entities/Card';
 import * as DeckHelper from '../../../game/helpers/DeckHelper';
-
-/**
- * 선택 가능한 덱 인터페이스
- * Card VO를 직접 사용
- */
-export interface SelectableDeck {
-  cards: ReturnType<Card['toPlainObject']>[];
-  isSelected: boolean;
-  selectedBy?: string;
-}
+import { SelectableDeck } from '../types/GameTypes';
 
 /**
  * 표준 덱을 초기화합니다.
@@ -52,16 +43,28 @@ export function shuffleDeck(
  * - 남은 카드는 순서대로 배분
  * - 각 덱의 카드를 정렬
  *
- * @param deck - 배분할 전체 카드 배열
+ * @param deck - 배분할 전체 카드 배열 (Card[] 또는 plain object[])
  * @param playerCount - 플레이어 수
  * @returns 선택 가능한 덱 배열
  */
 export function createSelectableDecks(
-  deck: ReturnType<Card['toPlainObject']>[],
+  deck: Card[] | ReturnType<Card['toPlainObject']>[],
   playerCount: number
 ): SelectableDeck[] {
-  // 기존 헬퍼 함수 사용
-  return DeckHelper.createSelectableDecks(deck, playerCount);
+  // Card[] 인 경우 plain object로 변환
+  const plainDeck = Array.isArray(deck) && deck.length > 0 && typeof (deck[0] as any).toPlainObject === 'function'
+    ? (deck as Card[]).map(c => c.toPlainObject())
+    : (deck as ReturnType<Card['toPlainObject']>[]);
+
+  // 기존 헬퍼 함수 사용 (plain object 형태의 SelectableDeck 반환)
+  const plainDecks = DeckHelper.createSelectableDecks(plainDeck, playerCount);
+
+  // Card 엔티티를 사용하는 SelectableDeck으로 변환
+  return plainDecks.map(deck => ({
+    cards: deck.cards.map(cardData => Card.fromPlainObject(cardData)),
+    isSelected: deck.isSelected,
+    selectedBy: deck.selectedBy,
+  }));
 }
 
 /**

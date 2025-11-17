@@ -26,6 +26,7 @@ import {
   BusinessRuleError,
   ResourceNotFoundError,
 } from '../../errors/ApplicationError';
+import * as DeckService from '../../../domain/services/DeckService';
 
 /**
  * SelectRoleUseCase
@@ -88,7 +89,29 @@ export class SelectRoleUseCase
         );
       }
 
-      // 4. Repository를 통해 업데이트
+      // 4. 모든 역할 선택 완료 시 자동으로 다음 단계 진행
+      if (allRolesSelected) {
+        // 4-1. 역할에 따라 rank 할당 (role이 작을수록 rank도 작음 = 높은 순위)
+        const sortedPlayers = game.players.slice().sort((a, b) => (a.role ?? 0) - (b.role ?? 0));
+        sortedPlayers.forEach((player, index) => {
+          player.assignRank(index + 1);
+        });
+
+        // 4-2. 덱 분할 및 선택 가능한 덱 생성
+        const selectableDecks = DeckService.createSelectableDecks(
+          game.deck!,
+          game.players.length
+        );
+        game.setSelectableDecks(selectableDecks);
+
+        // 4-3. Phase를 cardSelection으로 변경
+        game.changePhase('cardSelection');
+
+        // 4-4. 첫 번째 플레이어(rank 1)의 턴으로 설정
+        game.setCurrentTurn(sortedPlayers[0].id);
+      }
+
+      // 5. Repository를 통해 업데이트
       try {
         await this.gameRepository.update(roomId, game);
       } catch {

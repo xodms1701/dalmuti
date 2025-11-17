@@ -110,6 +110,16 @@ export class SelectDeckUseCase
           );
           game.incrementRound();
         }
+      } else {
+        // 아직 모든 덱이 선택되지 않았다면 다음 플레이어에게 턴을 넘김
+        const sortedPlayers = game.players.slice().sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+        const nextPlayer = sortedPlayers.find(
+          (p) => !game.selectableDecks?.some((d) => d.selectedBy === p.id.value)
+        );
+
+        if (nextPlayer) {
+          game.setCurrentTurn(nextPlayer.id);
+        }
       }
 
       // 5. 변경사항 영속화
