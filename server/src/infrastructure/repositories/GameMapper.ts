@@ -207,6 +207,12 @@ export class GameMapper {
     if ('players' in updates && updates.players !== undefined) {
       updateDoc.players = updates.players.map((p) => p.toPlainObject());
     }
+    if ('taxExchanges' in updates) {
+      updateDoc.taxExchanges = updates.taxExchanges;
+    }
+    if ('revolutionStatus' in updates) {
+      updateDoc.revolutionStatus = updates.revolutionStatus;
+    }
 
     return updateDoc;
   }
