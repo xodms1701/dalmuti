@@ -104,19 +104,15 @@ export class RoleSelectionEventAdapter extends BaseEventAdapter {
 
         // 혁명 거부 시 세금 교환 페이즈로 전환되면 10초 후 playing 페이즈로 자동 전환
         if (result.success && result.data.phase === 'tax') {
-          setTimeout(async () => {
-            try {
-              // GameCommandService를 통해 phase 전환
-              const transitionResult = await this.commandService.transitionTaxToPlaying(roomId);
+          this.phaseTransitionScheduler.scheduleTaxToPlaying(roomId, async () => {
+            // GameCommandService를 통해 phase 전환
+            const transitionResult = await this.commandService.transitionTaxToPlaying(roomId);
 
-              if (transitionResult.success && transitionResult.data.transitioned) {
-                // 클라이언트에게 업데이트된 게임 상태 전송
-                await this.emitGameState(roomId);
-              }
-            } catch (error) {
-              console.error('Failed to auto-transition from tax to playing phase:', error);
+            if (transitionResult.success && transitionResult.data.transitioned) {
+              // 클라이언트에게 업데이트된 게임 상태 전송
+              await this.emitGameState(roomId);
             }
-          }, 10000); // 10초 후 실행
+          });
         }
       }
     );

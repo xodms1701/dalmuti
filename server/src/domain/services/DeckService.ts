@@ -47,34 +47,17 @@ export function shuffleDeck(
 export function applyTestBackdoor(
   deck: ReturnType<Card['toPlainObject']>[]
 ): ReturnType<Card['toPlainObject']>[] {
-  const newDeck = [...deck];
+  const jokers = deck.filter((card) => card.isJoker);
+  const otherCards = deck.filter((card) => !card.isJoker);
 
-  // 조커 카드의 인덱스 찾기
-  const jokerIndices: number[] = [];
-  newDeck.forEach((card, index) => {
-    if (card.isJoker) {
-      jokerIndices.push(index);
-    }
-  });
-
-  // 조커가 2장 이상 있는 경우에만 적용
-  if (jokerIndices.length >= 2) {
-    // 첫 번째 조커를 0번 위치로 이동
-    if (jokerIndices[0] !== 0) {
-      [newDeck[0], newDeck[jokerIndices[0]]] = [newDeck[jokerIndices[0]], newDeck[0]];
-    }
-
-    // 두 번째 조커를 1번 위치로 이동
-    const secondJokerIndex = jokerIndices[1];
-    if (secondJokerIndex !== 1) {
-      [newDeck[1], newDeck[secondJokerIndex]] = [newDeck[secondJokerIndex], newDeck[1]];
-    }
-
+  // 조커가 2장 이상 있는 경우에만 적용 (달무티 기본 규칙)
+  if (jokers.length >= 2) {
     // eslint-disable-next-line no-console
-    console.log('[TEST BACKDOOR] Jokers placed at positions 0 and 1');
+    console.log('[TEST BACKDOOR] Jokers placed at the front of the deck');
+    return [...jokers, ...otherCards];
   }
 
-  return newDeck;
+  return deck;
 }
 
 /**
