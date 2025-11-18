@@ -293,6 +293,117 @@ describe('SelectDeckUseCase', () => {
     });
   });
 
+  describe('세금 교환 초기화', () => {
+    it('should initialize taxExchanges when all decks selected and no double joker player', async () => {
+      // Arrange: 4명의 플레이어가 있는 게임 생성
+      const game = Game.create(RoomId.from('TAX001'), PlayerId.create('owner'));
+      const players = [
+        Player.create(PlayerId.create('player1'), 'Player 1'),
+        Player.create(PlayerId.create('player2'), 'Player 2'),
+        Player.create(PlayerId.create('player3'), 'Player 3'),
+        Player.create(PlayerId.create('player4'), 'Player 4'),
+      ];
+
+      // 플레이어에게 rank 할당 (1, 2, 3, 4)
+      players[0].assignRank(1);
+      players[1].assignRank(2);
+      players[2].assignRank(3);
+      players[3].assignRank(4);
+
+      players.forEach((p) => game.addPlayer(p));
+      game.changePhase('cardSelection');
+
+      // 4개의 덱 설정 (조커가 분산되어 있어 2장 보유자 없음)
+      const selectableDecks = [
+        {
+          cards: [
+            Card.create(1, false),
+            Card.create(2, false),
+            Card.create(13, true), // 조커 1장
+          ],
+          isSelected: false,
+          selectedBy: undefined,
+        },
+        {
+          cards: [Card.create(3, false), Card.create(4, false)],
+          isSelected: false,
+          selectedBy: undefined,
+        },
+        {
+          cards: [Card.create(5, false), Card.create(6, false)],
+          isSelected: false,
+          selectedBy: undefined,
+        },
+        {
+          cards: [
+            Card.create(7, false),
+            Card.create(8, false),
+            Card.create(13, true), // 조커 1장 (다른 덱)
+          ],
+          isSelected: false,
+          selectedBy: undefined,
+        },
+      ];
+      game.setSelectableDecks(selectableDecks);
+      game.setCurrentTurn(players[0].id);
+
+      mockRepository.findById.mockResolvedValue(game);
+      mockRepository.update.mockImplementation(async () => null);
+
+      // Act: 플레이어들이 순서대로 덱 선택
+      // Player 1 (rank 1) selects deck 0
+      await useCase.execute({
+        roomId: 'TAX001',
+        playerId: 'player1',
+        deckIndex: 0,
+      });
+
+      // Player 2 (rank 2) selects deck 1
+      await useCase.execute({
+        roomId: 'TAX001',
+        playerId: 'player2',
+        deckIndex: 1,
+      });
+
+      // Player 3 (rank 3) selects deck 2
+      // 이 시점에서 마지막 덱(deck 3)이 자동으로 Player 4에게 할당되고,
+      // 모든 덱 선택이 완료되어 tax phase로 전환됩니다
+      const finalResponse = await useCase.execute({
+        roomId: 'TAX001',
+        playerId: 'player3',
+        deckIndex: 2,
+      });
+
+      // Assert
+      if (!finalResponse.success) {
+        console.error('Final response error code:', finalResponse.error.code);
+        console.error('Final response error message:', finalResponse.error.message);
+        console.error('Final response error details:', JSON.stringify(finalResponse.error.details, null, 2));
+      }
+      expect(finalResponse.success).toBe(true);
+      expect(game.phase).toBe('tax'); // tax phase로 전환되어야 함
+      expect(game.taxExchanges).toBeDefined();
+      expect(game.taxExchanges).not.toBeNull();
+
+      // 4명일 때는 1위↔4위 2장 교환만 있음
+      expect(game.taxExchanges).toHaveLength(2);
+
+      // 4위 → 1위 2장
+      expect(game.taxExchanges?.[0]).toMatchObject({
+        fromPlayerId: 'player4', // rank 4 (꼴찌)
+        toPlayerId: 'player1', // rank 1 (1등)
+        cardCount: 2,
+      });
+
+      // 1위 → 4위 2장
+      expect(game.taxExchanges?.[1]).toMatchObject({
+        fromPlayerId: 'player1', // rank 1 (1등)
+        toPlayerId: 'player4', // rank 4 (꼴찌)
+        cardCount: 2,
+      });
+    });
+  });
+
   describe('Response 구조', () => {
     it('should return response with timestamp', async () => {
       // Arrange

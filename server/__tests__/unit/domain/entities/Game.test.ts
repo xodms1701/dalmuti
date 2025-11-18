@@ -786,6 +786,21 @@ describe('Game', () => {
         game.registerVote(PlayerId.create('player2'), true);
         game.changePhase('voting');
 
+        // 이전 게임의 taxExchanges와 revolutionStatus 설정
+        game['_taxExchanges'] = [
+          {
+            fromPlayerId: 'player1',
+            toPlayerId: 'player2',
+            cardCount: 2,
+            cardsGiven: [],
+          },
+        ];
+        game['_revolutionStatus'] = {
+          isRevolution: true,
+          isGreatRevolution: false,
+          revolutionPlayerId: 'player1',
+        };
+
         // Act
         game.startNextGame();
 
@@ -797,6 +812,10 @@ describe('Game', () => {
         expect(game.finishedPlayers).toEqual([]);
         expect(player1.isReady).toBe(false);
         expect(player2.isReady).toBe(false);
+
+        // 세금 교환 정보 및 혁명 상태 초기화 확인
+        expect(game.taxExchanges).toBeUndefined();
+        expect(game.revolutionStatus).toBeUndefined();
 
         const voteResult = game.getVoteResult();
         expect(voteResult.approvalCount).toBe(0);

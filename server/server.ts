@@ -2,10 +2,6 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import * as dotenv from 'dotenv';
-// Legacy imports - Phase 5-2에서 주석 처리
-// import SocketManager from './socket/SocketManager';
-// import GameManager from './game/GameManager';
-// import MongoDB from './db/MongoDB';
 
 // Phase 4+: New Architecture (DDD + Clean Architecture + CQRS)
 import { SocketCoordinator } from './src/presentation/socket/SocketCoordinator';
@@ -44,17 +40,7 @@ app.get('/api', (_req, res) => {
   res.json({ message: 'dalmuti' });
 });
 
-// ===== Legacy Architecture (Phase 1-3) - DEPRECATED =====
-// Phase 5-2에서 새 아키텍처로 전환됨
-// 호환성 검증 완료 후 주석 처리
-/*
-const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
-const gameManager = new GameManager(db, io);
-new SocketManager(io, gameManager);
-*/
-
-// ===== New Architecture (Phase 4+) - DDD + Clean Architecture + CQRS =====
-// 기본 네임스페이스 (/) 사용 - 클라이언트 수정 없이 전환
+// ===== New Architecture (DDD + Clean Architecture + CQRS) =====
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const gameRepository = new MongoGameRepository(mongoUri, 'dalmuti');
 

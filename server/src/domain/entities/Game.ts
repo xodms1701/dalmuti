@@ -802,6 +802,12 @@ export class Game {
 
     // 라운드 플레이 기록 초기화
     this._roundPlays = [];
+
+    // 세금 교환 정보 초기화
+    this._taxExchanges = undefined;
+
+    // 혁명 상태 초기화
+    this._revolutionStatus = undefined;
   }
 
   /**
