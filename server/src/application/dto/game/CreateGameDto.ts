@@ -13,6 +13,11 @@ export interface CreateGameRequest {
    * 지정하지 않으면 자동으로 6자리 영숫자 코드 생성
    */
   roomId?: string;
+
+  /**
+   * 방장 ID (생성자 플레이어 ID)
+   */
+  ownerId: string;
 }
 
 /**

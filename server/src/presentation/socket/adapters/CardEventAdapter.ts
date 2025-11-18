@@ -17,6 +17,7 @@
 import { Socket } from 'socket.io';
 import { SocketEvent } from '../../../../socket/events';
 import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
+import { PhaseTransitionScheduler } from '../services/PhaseTransitionScheduler';
 
 /**
  * CardEventAdapter
@@ -24,6 +25,12 @@ import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
  * 카드 관련 이벤트를 처리하는 Primary Adapter
  */
 export class CardEventAdapter extends BaseEventAdapter {
+  private readonly phaseTransitionScheduler: PhaseTransitionScheduler;
+
+  constructor(...args: ConstructorParameters<typeof BaseEventAdapter>) {
+    super(...args);
+    this.phaseTransitionScheduler = new PhaseTransitionScheduler();
+  }
   /**
    * ISocketEventPort 구현
    * Socket 연결 시 이벤트 핸들러 등록
@@ -91,6 +98,19 @@ export class CardEventAdapter extends BaseEventAdapter {
         const result = await this.commandService.selectDeck(roomId, socket.id, cardIndex);
 
         await this.handleSocketEvent(result, callback, roomId);
+
+        // 세금 교환 페이즈로 전환된 경우 10초 후 playing 페이즈로 자동 전환
+        if (result.success && result.data.phase === 'tax') {
+          this.phaseTransitionScheduler.scheduleTaxToPlaying(roomId, async () => {
+            // GameCommandService를 통해 phase 전환
+            const transitionResult = await this.commandService.transitionTaxToPlaying(roomId);
+
+            if (transitionResult.success && transitionResult.data.transitioned) {
+              // 클라이언트에게 업데이트된 게임 상태 전송
+              await this.emitGameState(roomId);
+            }
+          });
+        }
       }
     );
   }

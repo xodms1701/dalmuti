@@ -56,22 +56,23 @@ describe('TaxService', () => {
       expect(selected[1].rank).toBe(3);
     });
 
-    it('조커는 rank 13으로 취급하여 선택해야 함', () => {
+    it('조커는 세금으로 줄 수 없으므로 제외하고 선택해야 함', () => {
       // Arrange
       const cards = [
         Card.create(1),
         Card.create(5),
-        Card.create(13, true), // 조커
+        Card.create(13, true), // 조커 (세금으로 줄 수 없음)
         Card.create(10),
       ];
 
-      // Act - 큰 카드 선택
+      // Act - 큰 카드 선택 (조커 제외)
       const selected = TaxService.selectTaxCardsAutomatically(cards, 2, true);
 
       // Assert
       expect(selected).toHaveLength(2);
-      expect(selected[0].isJoker).toBe(true); // 조커가 가장 약한 카드
-      expect(selected[1].rank).toBe(10);
+      expect(selected[0].isJoker).toBe(false); // 조커는 선택되지 않음
+      expect(selected[0].rank).toBe(10); // 가장 큰 일반 카드
+      expect(selected[1].rank).toBe(5);
     });
 
     it('요청된 count만큼만 카드를 선택해야 함', () => {

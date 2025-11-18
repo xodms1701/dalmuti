@@ -33,7 +33,7 @@ describe('JoinGameUseCase', () => {
     it('should join game successfully', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       mockRepository.findById.mockResolvedValue(game);
       mockRepository.update.mockResolvedValue(game);
 
@@ -60,7 +60,7 @@ describe('JoinGameUseCase', () => {
     it('should add player to existing game with players', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM02');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       const existingPlayer = Player.create(PlayerId.create('existing1'), 'ExistingPlayer');
       game.addPlayer(existingPlayer);
 
@@ -86,7 +86,7 @@ describe('JoinGameUseCase', () => {
     it('should call repository.update with updated game', async () => {
       // Arrange
       const roomId = RoomId.from('TEST01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       mockRepository.findById.mockResolvedValue(game);
       mockRepository.update.mockResolvedValue(game);
 
@@ -194,7 +194,7 @@ describe('JoinGameUseCase', () => {
     it('should return error when nickname is empty', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       mockRepository.findById.mockResolvedValue(game);
 
       const request: JoinGameRequest = {
@@ -218,7 +218,7 @@ describe('JoinGameUseCase', () => {
     it('should return error when player already exists in game', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       const existingPlayer = Player.create(PlayerId.create('player123'), 'ExistingPlayer');
       game.addPlayer(existingPlayer);
 
@@ -245,7 +245,7 @@ describe('JoinGameUseCase', () => {
     it('should return error when repository update fails', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       mockRepository.findById.mockResolvedValue(game);
       mockRepository.update.mockRejectedValue(new Error('Database connection failed'));
 
@@ -271,7 +271,7 @@ describe('JoinGameUseCase', () => {
     it('should return response with timestamp', async () => {
       // Arrange
       const roomId = RoomId.from('ROOM01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       mockRepository.findById.mockResolvedValue(game);
       mockRepository.update.mockResolvedValue(game);
 
@@ -295,7 +295,7 @@ describe('JoinGameUseCase', () => {
     it('should include all required fields in success response', async () => {
       // Arrange
       const roomId = RoomId.from('RESP01');
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       mockRepository.findById.mockResolvedValue(game);
       mockRepository.update.mockResolvedValue(game);
 

@@ -29,18 +29,17 @@ export function selectTaxCardsAutomatically(
   count: number,
   selectLargest: boolean
 ): Card[] {
-  // 카드를 복사하여 정렬
-  const sortedCards = cards.slice().sort((a, b) => {
-    // 조커는 rank 13으로 취급 (단독으로 낼 때)
-    const rankA = a.isJoker ? 13 : a.rank;
-    const rankB = b.isJoker ? 13 : b.rank;
+  // 조커가 아닌 카드만 필터링 (조커는 세금으로 줄 수 없음)
+  const nonJokerCards = cards.filter((card) => !card.isJoker);
 
+  // 카드를 복사하여 정렬
+  const sortedCards = nonJokerCards.slice().sort((a, b) => {
     if (selectLargest) {
       // 큰 숫자 카드 우선 (약한 카드)
-      return rankB - rankA;
+      return b.rank - a.rank;
     }
     // 작은 숫자 카드 우선 (강한 카드)
-    return rankA - rankB;
+    return a.rank - b.rank;
   });
 
   // 상위 count개 선택

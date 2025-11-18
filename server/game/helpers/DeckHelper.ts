@@ -108,21 +108,21 @@ export function createSelectableDecks(allCards: Card[], playerCount: number): Se
 }
 
 /**
- * 표준 52장 + 조커 2장 덱을 생성합니다.
- * 각 숫자(1-13)가 4장씩 있고, 조커가 2장 있습니다.
+ * 위대한 달무티 게임용 덱을 생성합니다.
+ * 1번 카드 1장, 2번 카드 2장, ..., 12번 카드 12장, 조커 2장
  *
- * @returns 섞인 카드 덱
+ * @returns 카드 덱 (총 80장)
  *
  * @example
  * const deck = createStandardDeck();
- * // 54장의 카드 (1-13 각 4장 + 조커 2장)
+ * // 80장의 카드 (1번 1장 + 2번 2장 + ... + 12번 12장 + 조커 2장)
  */
 export function createStandardDeck(): Card[] {
   const deck: Card[] = [];
 
-  // 1부터 13까지 각 4장씩
-  for (let rank = 1; rank <= 13; rank++) {
-    for (let i = 0; i < 4; i++) {
+  // 1번부터 12번까지 각 번호만큼의 카드
+  for (let rank = 1; rank <= 12; rank++) {
+    for (let i = 0; i < rank; i++) {
       deck.push({ rank, isJoker: false });
     }
   }

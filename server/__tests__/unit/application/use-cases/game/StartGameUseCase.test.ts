@@ -31,7 +31,7 @@ describe('StartGameUseCase', () => {
 
   // 테스트용 게임 생성 헬퍼
   const createTestGame = (roomId: string, playerCount: number = 4): Game => {
-    const game = Game.create(RoomId.from(roomId));
+    const game = Game.create(RoomId.from(roomId), PlayerId.create('owner1'));
 
     // 플레이어 추가
     for (let i = 1; i <= playerCount; i++) {
@@ -50,6 +50,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM01',
       };
 
@@ -70,9 +71,9 @@ describe('StartGameUseCase', () => {
       // 게임 상태 확인
       expect(game.phase).toBe('roleSelection');
       expect(game.deck).toBeDefined();
-      expect(game.deck?.length).toBe(54); // 표준 덱: 52장 + 조커 2장
-      expect(game.roleSelectionCards).toBeDefined();
-      expect(game.roleSelectionCards?.length).toBe(13); // 1-13 역할 카드
+      expect(game.deck?.length).toBe(80); // 표준 덱: 78장 + 조커 2장
+      expect(game.roleSelectionDeck).toBeDefined();
+      expect(game.roleSelectionDeck?.length).toBe(13); // 1-13 역할 카드
     });
 
     it('8명 플레이어로 게임을 시작해야 함', async () => {
@@ -81,6 +82,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM02',
       };
 
@@ -105,6 +107,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM03',
       };
 
@@ -114,16 +117,16 @@ describe('StartGameUseCase', () => {
       // Assert
       // 덱이 설정되었는지 확인
       expect(game.deck).toBeDefined();
-      expect(game.deck?.length).toBe(54);
+      expect(game.deck?.length).toBe(80);
 
       // 조커 2장 확인
       const jokers = game.deck?.filter((card) => card.isJoker);
       expect(jokers?.length).toBe(2);
 
-      // rank 1-13 카드 각 4장씩 확인
-      for (let rank = 1; rank <= 13; rank++) {
+      // rank 1-12 카드 각 번호만큼 확인 (1번은 1장, 2번은 2장, ..., 12번은 12장)
+      for (let rank = 1; rank <= 12; rank++) {
         const cardsOfRank = game.deck?.filter((card) => card.rank === rank && !card.isJoker);
-        expect(cardsOfRank?.length).toBe(4);
+        expect(cardsOfRank?.length).toBe(rank);
       }
     });
 
@@ -133,6 +136,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM04',
       };
 
@@ -140,12 +144,12 @@ describe('StartGameUseCase', () => {
       await useCase.execute(request);
 
       // Assert
-      expect(game.roleSelectionCards).toBeDefined();
-      expect(game.roleSelectionCards?.length).toBe(13);
+      expect(game.roleSelectionDeck).toBeDefined();
+      expect(game.roleSelectionDeck?.length).toBe(13);
 
       // 1-13 숫자 카드 확인
       for (let i = 1; i <= 13; i++) {
-        const card = game.roleSelectionCards?.find((c) => c.number === i);
+        const card = game.roleSelectionDeck?.find((c) => c.number === i);
         expect(card).toBeDefined();
         expect(card?.isSelected).toBe(false);
         expect(card?.selectedBy).toBeUndefined();
@@ -159,6 +163,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(null);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM99',
       };
 
@@ -176,6 +181,7 @@ describe('StartGameUseCase', () => {
     it('잘못된 roomId 형식이면 실패해야 함', async () => {
       // Arrange
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: '',
       };
 
@@ -196,6 +202,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM05',
       };
 
@@ -217,6 +224,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM06',
       };
 
@@ -239,6 +247,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM07',
       };
 
@@ -262,6 +271,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM08',
       };
 
@@ -281,6 +291,7 @@ describe('StartGameUseCase', () => {
       mockRepository.findById.mockResolvedValue(game);
 
       const request: StartGameRequest = {
+        playerId: 'owner1',
         roomId: 'ROOM09',
       };
 

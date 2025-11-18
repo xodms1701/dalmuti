@@ -8,20 +8,20 @@ import { SelectableDeck } from '../../../../src/domain/types/GameTypes';
 
 describe('DeckService', () => {
   describe('initializeDeck', () => {
-    it('should create a standard deck with 54 cards', () => {
+    it('should create a standard deck with 80 cards', () => {
       // Arrange & Act
       const deck = DeckService.initializeDeck();
 
       // Assert
-      expect(deck).toHaveLength(54);
+      expect(deck).toHaveLength(80); // 78 + 2 jokers
     });
 
-    it('should include cards from rank 1 to 13', () => {
+    it('should include cards from rank 1 to 12', () => {
       // Arrange & Act
       const deck = DeckService.initializeDeck();
 
       // Assert
-      for (let rank = 1; rank <= 13; rank++) {
+      for (let rank = 1; rank <= 12; rank++) {
         const cardsOfRank = deck.filter((c) => c.rank === rank && !c.isJoker);
         expect(cardsOfRank.length).toBeGreaterThan(0);
       }
@@ -36,15 +36,15 @@ describe('DeckService', () => {
       expect(jokers).toHaveLength(2);
     });
 
-    it('should have 4 cards of each rank (standard deck)', () => {
+    it('should have rank cards matching rank number (1번은 1장, 2번은 2장, ..., 12번은 12장)', () => {
       // Arrange & Act
       const deck = DeckService.initializeDeck();
 
       // Assert
-      // Standard deck: 1-13 each appears 4 times
-      for (let rank = 1; rank <= 13; rank++) {
+      // 위대한 달무티 덱: 1번 1장, 2번 2장, ..., 12번 12장
+      for (let rank = 1; rank <= 12; rank++) {
         const cardsOfRank = deck.filter((c) => c.rank === rank && !c.isJoker);
-        expect(cardsOfRank).toHaveLength(4);
+        expect(cardsOfRank).toHaveLength(rank);
       }
     });
 
@@ -68,7 +68,7 @@ describe('DeckService', () => {
       DeckService.shuffleDeck(deck);
 
       // Assert
-      expect(deck).toHaveLength(54);
+      expect(deck).toHaveLength(80);
       // With high probability, first card should change
       // (not 100% guaranteed but very likely)
     });
@@ -81,7 +81,7 @@ describe('DeckService', () => {
       DeckService.shuffleDeck(deck);
 
       // Assert
-      expect(deck).toHaveLength(54);
+      expect(deck).toHaveLength(80);
     });
 
     it('should contain same cards after shuffle', () => {
@@ -120,8 +120,8 @@ describe('DeckService', () => {
           card.rank !== shuffled[index].rank || card.isJoker !== shuffled[index].isJoker
       );
 
-      // 54장 중 40장 이상이 위치 변경되어야 함 (약 75%)
-      expect(changedPositions.length).toBeGreaterThan(40);
+      // 80장 중 60장 이상이 위치 변경되어야 함 (약 75%)
+      expect(changedPositions.length).toBeGreaterThan(60);
     });
   });
 

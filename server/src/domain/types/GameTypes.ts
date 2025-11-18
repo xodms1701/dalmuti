@@ -37,3 +37,46 @@ export interface TaxExchange {
   cardCount: number;
   cardsGiven: ReturnType<Card['toPlainObject']>[];
 }
+
+/**
+ * 라운드별 플레이 기록
+ * 게임 진행 중 각 플레이 기록
+ */
+export interface RoundPlay {
+  round: number;
+  playerId: string;
+  cards: ReturnType<Card['toPlainObject']>[];
+  timestamp: Date;
+}
+
+/**
+ * 플레이어 통계 정보
+ * 게임 종료 시 플레이어별 상세 통계
+ */
+export interface PlayerStats {
+  nickname: string;
+  totalCardsPlayed: number;
+  totalPasses: number;
+  finishedAtRound: number;
+}
+
+/**
+ * 게임 히스토리
+ * 한 세션 내에서 진행된 각 게임의 결과 기록
+ */
+export interface GameHistory {
+  gameNumber: number;
+  players: {
+    playerId: string;
+    nickname: string;
+    rank: number;
+    finishedAtRound: number;
+    totalCardsPlayed: number;
+    totalPasses: number;
+  }[];
+  finishedOrder: string[];
+  totalRounds: number;
+  roundPlays: RoundPlay[];
+  startedAt: Date;
+  endedAt: Date;
+}

@@ -19,6 +19,8 @@ import { PlayCardUseCase } from '../../../src/application/use-cases/game/PlayCar
 import { PassTurnUseCase } from '../../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../../src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../../../src/application/use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from '../../../src/application/use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from '../../../src/application/use-cases/game/TransitionToCardSelectionUseCase';
 import { RoomId } from '../../../src/domain/value-objects/RoomId';
 import { Card } from '../../../src/domain/entities/Card';
 
@@ -48,6 +50,8 @@ describe('GameCommandService Integration Tests', () => {
     const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
     const deleteGameUseCase = new DeleteGameUseCase(repository);
+    const transitionTaxToPlayingUseCase = new TransitionTaxToPlayingUseCase(repository);
+    const transitionToCardSelectionUseCase = new TransitionToCardSelectionUseCase(repository);
 
     // Application Service 생성
     service = new GameCommandService(
@@ -62,7 +66,9 @@ describe('GameCommandService Integration Tests', () => {
       playCardUseCase,
       passTurnUseCase,
       voteNextGameUseCase,
-      deleteGameUseCase
+      deleteGameUseCase,
+      transitionTaxToPlayingUseCase,
+      transitionToCardSelectionUseCase
     );
   });
 
@@ -167,13 +173,12 @@ describe('GameCommandService Integration Tests', () => {
       await joinUseCase.execute({ roomId, playerId: 'p4', nickname: 'David' });
 
       // Act - 모든 플레이어 준비
-      const result1 = await service.toggleReadyAndCheckStart(roomId, 'p1');
+      // 방장(p1)은 자동으로 ready 상태이므로 건너뜀
       const result2 = await service.toggleReadyAndCheckStart(roomId, 'p2');
       const result3 = await service.toggleReadyAndCheckStart(roomId, 'p3');
       const result4 = await service.toggleReadyAndCheckStart(roomId, 'p4');
 
       // Assert
-      expect(result1.success).toBe(true);
       expect(result2.success).toBe(true);
       expect(result3.success).toBe(true);
       expect(result4.success).toBe(true);
@@ -192,7 +197,7 @@ describe('GameCommandService Integration Tests', () => {
       const joinUseCase = new JoinGameUseCase(repository);
       await joinUseCase.execute({ roomId, playerId: 'p2', nickname: 'Bob' });
 
-      // Act - 1명만 준비
+      // Act - 방장(p1)의 준비 취소 (방장은 자동 ready이므로 toggle하면 false)
       const result = await service.toggleReadyAndCheckStart(roomId, 'p1');
 
       // Assert
@@ -207,10 +212,9 @@ describe('GameCommandService Integration Tests', () => {
       // Arrange
       const roomId = RoomId.generate().value;
       await service.createAndJoinGame('p1', 'Alice', roomId);
+      // 방장(p1)은 자동으로 ready 상태
 
-      await service.toggleReadyAndCheckStart(roomId, 'p1');
-
-      // Act - 준비 취소 (toggle이므로 한 번 더 호출)
+      // Act - 준비 취소 (방장은 자동 ready이므로 toggle하면 false)
       const result = await service.toggleReadyAndCheckStart(roomId, 'p1');
 
       // Assert
@@ -317,12 +321,11 @@ describe('GameCommandService Integration Tests', () => {
       expect(join4.success).toBe(true);
 
       // 3. 모든 플레이어 준비
-      const ready1 = await service.toggleReadyAndCheckStart(roomId, 'p1');
+      // 방장(p1)은 자동으로 ready 상태이므로 건너뜀
       const ready2 = await service.toggleReadyAndCheckStart(roomId, 'p2');
       const ready3 = await service.toggleReadyAndCheckStart(roomId, 'p3');
       const ready4 = await service.toggleReadyAndCheckStart(roomId, 'p4');
 
-      expect(ready1.success).toBe(true);
       expect(ready2.success).toBe(true);
       expect(ready3.success).toBe(true);
       expect(ready4.success).toBe(true);

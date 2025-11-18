@@ -15,7 +15,7 @@ describe('GameMapper', () => {
   describe('toDocument', () => {
     it('should convert Game entity to MongoDB document', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM01'));
+      const game = Game.create(RoomId.from('ROOM01'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('player1'), 'Alice');
       const player2 = Player.create(PlayerId.create('player2'), 'Bob');
       game.addPlayer(player1);
@@ -36,7 +36,7 @@ describe('GameMapper', () => {
 
     it('should map roomId to _id', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM02'));
+      const game = Game.create(RoomId.from('ROOM02'), PlayerId.create('owner1'));
 
       // Act
       const document = GameMapper.toDocument(game);
@@ -48,7 +48,7 @@ describe('GameMapper', () => {
 
     it('should convert players using toPlainObject', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM03'));
+      const game = Game.create(RoomId.from('ROOM03'), PlayerId.create('owner1'));
       const player = Player.create(PlayerId.create('p1'), 'TestPlayer');
       player.assignRole(5);
       player.assignRank(2);
@@ -75,7 +75,7 @@ describe('GameMapper', () => {
 
     it('should handle game with lastPlay', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM04'));
+      const game = Game.create(RoomId.from('ROOM04'), PlayerId.create('owner1'));
       game.setLastPlay({
         playerId: PlayerId.create('player1'),
         cards: [Card.create(5, false)],
@@ -92,16 +92,16 @@ describe('GameMapper', () => {
 
     it('should handle optional fields', () => {
       // Arrange
-      const game = Game.create(RoomId.from('ROOM05'));
+      const game = Game.create(RoomId.from('ROOM05'), PlayerId.create('owner1'));
       game.setSelectableDecks([{ cards: [Card.create(1, false)], isSelected: false }]);
-      game.setRoleSelectionCards([{ number: 1, isSelected: false }]);
+      game.setRoleSelectionDeck([{ number: 1, isSelected: false }]);
 
       // Act
       const document = GameMapper.toDocument(game);
 
       // Assert
       expect(document.selectableDecks).toBeDefined();
-      expect(document.roleSelectionCards).toBeDefined();
+      expect(document.roleSelectionDeck).toBeDefined();
     });
   });
 
@@ -109,6 +109,7 @@ describe('GameMapper', () => {
     it('should convert MongoDB document to Game entity', () => {
       // Arrange
       const document: GameDocument = {
+        ownerId: 'owner1',
         _id: 'ROOM06',
         players: [
           {
@@ -141,6 +142,7 @@ describe('GameMapper', () => {
     it('should map _id to roomId', () => {
       // Arrange
       const document: GameDocument = {
+        ownerId: 'owner1',
         _id: 'ROOM07',
         players: [],
         phase: 'waiting',
@@ -160,6 +162,7 @@ describe('GameMapper', () => {
     it('should reconstruct Player entities', () => {
       // Arrange
       const document: GameDocument = {
+        ownerId: 'owner1',
         _id: 'ROOM08',
         players: [
           {
@@ -196,6 +199,7 @@ describe('GameMapper', () => {
     it('should handle missing optional fields', () => {
       // Arrange
       const document: GameDocument = {
+        ownerId: 'owner1',
         _id: 'ROOM09',
         players: [],
         phase: 'waiting',
@@ -210,13 +214,14 @@ describe('GameMapper', () => {
 
       // Assert
       expect(game.selectableDecks).toBeUndefined();
-      expect(game.roleSelectionCards).toBeUndefined();
+      expect(game.roleSelectionDeck).toBeUndefined();
       expect(game.lastPlay).toBeUndefined();
     });
 
     it('should handle all optional fields present', () => {
       // Arrange
       const document: GameDocument = {
+        ownerId: 'owner1',
         _id: 'ROOM10',
         players: [],
         phase: 'playing',
@@ -229,7 +234,7 @@ describe('GameMapper', () => {
         round: 2,
         finishedPlayers: ['p2'],
         selectableDecks: [{ cards: [], isSelected: true, selectedBy: 'p1' }],
-        roleSelectionCards: [{ number: 1, isSelected: true, selectedBy: 'p1' }],
+        roleSelectionDeck: [{ number: 1, isSelected: true, selectedBy: 'p1' }],
       };
 
       // Act
@@ -239,7 +244,7 @@ describe('GameMapper', () => {
       expect(game.lastPlay?.playerId.value).toBe('p1');
       expect(game.lastPlay?.cards).toEqual([{ rank: 5, isJoker: false }]);
       expect(game.selectableDecks).toBeDefined();
-      expect(game.roleSelectionCards).toBeDefined();
+      expect(game.roleSelectionDeck).toBeDefined();
       expect(game.finishedPlayers.map((p) => p.value)).toEqual(['p2']);
     });
   });
@@ -247,7 +252,7 @@ describe('GameMapper', () => {
   describe('Round-trip conversion', () => {
     it('should preserve game state through round-trip conversion', () => {
       // Arrange
-      const originalGame = Game.create(RoomId.from('ROOM11'));
+      const originalGame = Game.create(RoomId.from('ROOM11'), PlayerId.create('owner1'));
       const player1 = Player.create(PlayerId.create('p1'), 'Alice');
       const player2 = Player.create(PlayerId.create('p2'), 'Bob');
 
@@ -355,7 +360,7 @@ describe('GameMapper', () => {
         round: 3,
         finishedPlayers: [PlayerId.create('p1'), PlayerId.create('p2')],
         selectableDecks: [{ cards: [], isSelected: true }],
-        roleSelectionCards: [{ number: 1, isSelected: true }],
+        roleSelectionDeck: [{ number: 1, isSelected: true }],
         players: [player1],
       };
 
@@ -370,7 +375,7 @@ describe('GameMapper', () => {
       expect(updateDoc.round).toBe(3);
       expect(updateDoc.finishedPlayers).toEqual(['p1', 'p2']);
       expect(updateDoc.selectableDecks).toBeDefined();
-      expect(updateDoc.roleSelectionCards).toBeDefined();
+      expect(updateDoc.roleSelectionDeck).toBeDefined();
       expect(updateDoc.players).toBeDefined();
       expect(updateDoc.players).toEqual([
         {

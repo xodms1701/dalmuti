@@ -42,4 +42,9 @@ export interface SelectDeckResponse {
    * 선택된 카드들
    */
   selectedCards: Array<{ rank: number; isJoker: boolean }>;
+
+  /**
+   * 현재 게임 페이즈 (세금 교환 페이즈 전환 확인용)
+   */
+  phase: string;
 }

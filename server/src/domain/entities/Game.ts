@@ -3,7 +3,14 @@ import { Player } from './Player';
 import { Card } from './Card';
 import { RoomId } from '../value-objects/RoomId';
 import { PlayerId } from '../value-objects/PlayerId';
-import { SelectableDeck, RoleSelectionCard, TaxExchange } from '../types/GameTypes';
+import {
+  SelectableDeck,
+  RoleSelectionCard,
+  TaxExchange,
+  GameHistory,
+  PlayerStats,
+  RoundPlay,
+} from '../types/GameTypes';
 
 /**
  * Game Entity
@@ -13,6 +20,8 @@ import { SelectableDeck, RoleSelectionCard, TaxExchange } from '../types/GameTyp
  */
 export class Game {
   readonly roomId: RoomId;
+
+  private _ownerId: PlayerId; // 방장 ID
 
   private _players: Player[];
 
@@ -30,9 +39,13 @@ export class Game {
 
   private _selectableDecks?: SelectableDeck[];
 
-  private _roleSelectionCards?: RoleSelectionCard[];
+  private _roleSelectionDeck?: RoleSelectionCard[]; // 레거시 호환을 위해 roleSelectionCards에서 변경
 
-  private _votes: Map<string, boolean>; // playerId → vote (true: 찬성, false: 반대)
+  private _votes: Map<string, boolean>; // playerId → vote (현재 게임 내 투표)
+
+  private _nextGameVotes: Map<string, boolean>; // playerId → vote (다음 게임 시작 투표)
+
+  private _isVoting: boolean; // 투표 진행 중 여부
 
   private _revolutionStatus?: {
     isRevolution: boolean;
@@ -42,11 +55,22 @@ export class Game {
 
   private _taxExchanges?: TaxExchange[]; // 세금 교환 정보
 
+  private _gameNumber: number; // 연속 게임 번호 (1, 2, 3...)
+
+  private _gameHistories: GameHistory[]; // 과거 게임 기록
+
+  private _currentGameStartedAt?: Date; // 현재 게임 시작 시간
+
+  private _playerStats: Map<string, PlayerStats>; // playerId → 플레이어 통계
+
+  private _roundPlays: RoundPlay[]; // 라운드별 플레이 기록
+
   /**
    * Private constructor - factory method를 통해서만 생성 가능
    */
   private constructor(
     roomId: RoomId,
+    ownerId: PlayerId,
     players: Player[] = [],
     phase: string = 'waiting',
     currentTurn: PlayerId | null = null,
@@ -55,16 +79,24 @@ export class Game {
     round: number = 0,
     finishedPlayers: PlayerId[] = [],
     selectableDecks?: SelectableDeck[],
-    roleSelectionCards?: RoleSelectionCard[],
+    roleSelectionDeck?: RoleSelectionCard[],
     votes: Map<string, boolean> = new Map(),
+    nextGameVotes: Map<string, boolean> = new Map(),
+    isVoting: boolean = false,
     revolutionStatus?: {
       isRevolution: boolean;
       isGreatRevolution: boolean;
       revolutionPlayerId: string;
     },
-    taxExchanges?: TaxExchange[]
+    taxExchanges?: TaxExchange[],
+    gameNumber: number = 1,
+    gameHistories: GameHistory[] = [],
+    currentGameStartedAt?: Date,
+    playerStats: Map<string, PlayerStats> = new Map(),
+    roundPlays: RoundPlay[] = []
   ) {
     this.roomId = roomId;
+    this._ownerId = ownerId;
     this._players = players;
     this._phase = phase;
     this._currentTurn = currentTurn;
@@ -73,22 +105,34 @@ export class Game {
     this._round = round;
     this._finishedPlayers = finishedPlayers;
     this._selectableDecks = selectableDecks;
-    this._roleSelectionCards = roleSelectionCards;
+    this._roleSelectionDeck = roleSelectionDeck;
     this._votes = votes;
+    this._nextGameVotes = nextGameVotes;
+    this._isVoting = isVoting;
     this._revolutionStatus = revolutionStatus;
     this._taxExchanges = taxExchanges;
+    this._gameNumber = gameNumber;
+    this._gameHistories = gameHistories;
+    this._currentGameStartedAt = currentGameStartedAt;
+    this._playerStats = playerStats;
+    this._roundPlays = roundPlays;
   }
 
   /**
    * Factory method - Game 인스턴스 생성
    * @param roomId 방 ID (RoomId Value Object)
+   * @param ownerId 방장 ID (첫 플레이어 ID)
    * @returns Game 인스턴스
    */
-  static create(roomId: RoomId): Game {
-    return new Game(roomId);
+  static create(roomId: RoomId, ownerId: PlayerId): Game {
+    return new Game(roomId, ownerId);
   }
 
   // Getters
+  get ownerId(): PlayerId {
+    return this._ownerId;
+  }
+
   get players(): Player[] {
     return [...this._players]; // 불변성 보장을 위해 복사본 반환
   }
@@ -121,8 +165,20 @@ export class Game {
     return this._selectableDecks ? [...this._selectableDecks] : undefined;
   }
 
-  get roleSelectionCards(): RoleSelectionCard[] | undefined {
-    return this._roleSelectionCards ? [...this._roleSelectionCards] : undefined;
+  get roleSelectionDeck(): RoleSelectionCard[] | undefined {
+    return this._roleSelectionDeck ? [...this._roleSelectionDeck] : undefined;
+  }
+
+  get votes(): Map<string, boolean> {
+    return new Map(this._votes);
+  }
+
+  get nextGameVotes(): Map<string, boolean> {
+    return new Map(this._nextGameVotes);
+  }
+
+  get isVoting(): boolean {
+    return this._isVoting;
   }
 
   get revolutionStatus():
@@ -137,6 +193,26 @@ export class Game {
 
   get taxExchanges(): TaxExchange[] | undefined {
     return this._taxExchanges ? [...this._taxExchanges] : undefined;
+  }
+
+  get gameNumber(): number {
+    return this._gameNumber;
+  }
+
+  get gameHistories(): GameHistory[] {
+    return [...this._gameHistories];
+  }
+
+  get currentGameStartedAt(): Date | undefined {
+    return this._currentGameStartedAt;
+  }
+
+  get playerStats(): Map<string, PlayerStats> {
+    return new Map(this._playerStats);
+  }
+
+  get roundPlays(): RoundPlay[] {
+    return [...this._roundPlays];
   }
 
   /**
@@ -291,6 +367,11 @@ export class Game {
       throw new Error('Player not found');
     }
     this._players.splice(index, 1);
+
+    // 방장이 나가면 첫 번째 플레이어를 방장으로 설정
+    if (this._ownerId.equals(playerId) && this._players.length > 0) {
+      this._ownerId = this._players[0].id;
+    }
   }
 
   /**
@@ -363,8 +444,8 @@ export class Game {
    * 역할 선택 카드 설정
    * @param cards 역할 선택 카드들
    */
-  setRoleSelectionCards(cards: RoleSelectionCard[]): void {
-    this._roleSelectionCards = [...cards];
+  setRoleSelectionDeck(cards: RoleSelectionCard[]): void {
+    this._roleSelectionDeck = [...cards];
   }
 
   /**
@@ -401,12 +482,12 @@ export class Game {
     }
 
     // 역할 선택 카드가 있는지 확인
-    if (!this._roleSelectionCards || this._roleSelectionCards.length === 0) {
+    if (!this._roleSelectionDeck || this._roleSelectionDeck.length === 0) {
       throw new Error('No role selection cards available');
     }
 
     // 선택한 역할 카드 찾기
-    const roleCard = this._roleSelectionCards.find((card) => card.number === roleNumber);
+    const roleCard = this._roleSelectionDeck.find((card) => card.number === roleNumber);
     if (!roleCard) {
       throw new Error(`Role card with number ${roleNumber} not found`);
     }
@@ -644,25 +725,107 @@ export class Game {
    * 라운드 증가, 페이즈 변경, 플레이어 및 투표 상태 초기화
    */
   startNextGame(): void {
-    // 라운드 증가
-    this._round++;
+    this._archiveCurrentGame();
+    this._reassignRanksForNextGame();
+    this._resetGameForNextRound();
+    this._resetPlayersForNextGame();
+  }
 
-    // 페이즈 변경
-    this._phase = 'roleSelection';
+  /**
+   * 현재 게임을 히스토리에 저장
+   * @private
+   */
+  private _archiveCurrentGame(): void {
+    const gameHistory: GameHistory = {
+      gameNumber: this._gameNumber,
+      players: this._finishedPlayers.map((playerId, index) => {
+        const playerIdStr = playerId.value;
+        const player = this._players.find((p) => p.id.value === playerIdStr);
+        const stats = this._playerStats.get(playerIdStr) || {
+          nickname: player?.nickname || '',
+          totalCardsPlayed: 0,
+          totalPasses: 0,
+          finishedAtRound: 0,
+        };
+        return {
+          playerId: playerIdStr,
+          nickname: stats.nickname,
+          rank: index + 1,
+          finishedAtRound: stats.finishedAtRound,
+          totalCardsPlayed: stats.totalCardsPlayed,
+          totalPasses: stats.totalPasses,
+        };
+      }),
+      finishedOrder: this._finishedPlayers.map((pid) => pid.value),
+      totalRounds: this._round,
+      roundPlays: [...this._roundPlays],
+      startedAt: this._currentGameStartedAt || new Date(),
+      endedAt: new Date(),
+    };
+    this._gameHistories.push(gameHistory);
+  }
 
-    // 플레이어 상태 초기화
-    for (const player of this._players) {
-      player.unready();
-      player.resetPass();
-    }
+  /**
+   * 다음 게임을 위해 순위 재배정
+   * @private
+   */
+  private _reassignRanksForNextGame(): void {
+    this._finishedPlayers.forEach((playerId, index) => {
+      const player = this._players.find((p) => p.id.equals(playerId));
+      if (player) {
+        player.assignRank(index + 1);
+      }
+    });
+  }
+
+  /**
+   * 게임 상태 초기화 (라운드, 페이즈, 턴 등)
+   * @private
+   */
+  private _resetGameForNextRound(): void {
+    // 게임 번호 증가
+    this._gameNumber++;
+
+    // 라운드 초기화 (새 게임 시작이므로 1로 리셋)
+    this._round = 1;
+
+    // 페이즈 변경 - 먼저 순위 확인 화면으로 전환 (5초 후 Adapter에서 cardSelection으로 전환)
+    this._phase = 'roleSelectionComplete';
 
     // 투표 초기화
     this._votes.clear();
 
-    // 게임 상태 초기화 (필요시 추가)
+    // 게임 상태 초기화
     this._currentTurn = null;
     this._lastPlay = undefined;
     this._finishedPlayers = [];
+
+    // 라운드 플레이 기록 초기화
+    this._roundPlays = [];
+  }
+
+  /**
+   * 플레이어 상태 초기화 (카드, 준비 상태 등)
+   * @private
+   */
+  private _resetPlayersForNextGame(): void {
+    // 플레이어 상태 초기화
+    for (const player of this._players) {
+      player.unready();
+      player.resetPass();
+      player.clearCards();
+    }
+
+    // 플레이어 통계 초기화
+    this._playerStats.clear();
+    for (const player of this._players) {
+      this._playerStats.set(player.id.value, {
+        nickname: player.nickname,
+        totalCardsPlayed: 0,
+        totalPasses: 0,
+        finishedAtRound: 0,
+      });
+    }
   }
 
   /**
@@ -677,6 +840,7 @@ export class Game {
    */
   toPlainObject(): {
     roomId: string;
+    ownerId: string;
     players: ReturnType<Player['toPlainObject']>[];
     phase: string;
     currentTurn: string | null;
@@ -689,20 +853,30 @@ export class Game {
       isSelected: boolean;
       selectedBy?: string;
     }>;
-    roleSelectionCards?: RoleSelectionCard[];
+    roleSelectionDeck?: RoleSelectionCard[];
     votes: Record<string, boolean>;
+    nextGameVotes: Record<string, boolean>;
+    isVoting: boolean;
     revolutionStatus?: {
       isRevolution: boolean;
       isGreatRevolution: boolean;
       revolutionPlayerId: string;
     };
     taxExchanges?: TaxExchange[];
+    gameNumber: number;
+    gameHistories: GameHistory[];
+    currentGameStartedAt?: Date;
+    playerStats: Record<string, PlayerStats>;
+    roundPlays: RoundPlay[];
   } {
     // Map을 Record로 변환
     const votesRecord: Record<string, boolean> = Object.fromEntries(this._votes);
+    const nextGameVotesRecord: Record<string, boolean> = Object.fromEntries(this._nextGameVotes);
+    const playerStatsRecord: Record<string, PlayerStats> = Object.fromEntries(this._playerStats);
 
     return {
       roomId: this.roomId.value, // RoomId를 string으로 변환
+      ownerId: this._ownerId.value, // PlayerId를 string으로 변환
       players: this._players.map((p) => p.toPlainObject()),
       phase: this._phase,
       currentTurn: this._currentTurn ? this._currentTurn.value : null, // PlayerId를 string으로 변환
@@ -722,10 +896,17 @@ export class Game {
             selectedBy: deck.selectedBy,
           }))
         : undefined,
-      roleSelectionCards: this._roleSelectionCards,
+      roleSelectionDeck: this._roleSelectionDeck,
       votes: votesRecord,
+      nextGameVotes: nextGameVotesRecord,
+      isVoting: this._isVoting,
       revolutionStatus: this._revolutionStatus,
       taxExchanges: this._taxExchanges,
+      gameNumber: this._gameNumber,
+      gameHistories: this._gameHistories,
+      currentGameStartedAt: this._currentGameStartedAt,
+      playerStats: playerStatsRecord,
+      roundPlays: this._roundPlays,
     };
   }
 
@@ -734,6 +915,7 @@ export class Game {
    */
   static fromPlainObject(obj: {
     roomId: string;
+    ownerId: string;
     players?: ReturnType<Player['toPlainObject']>[];
     phase?: string;
     currentTurn?: string | null;
@@ -746,18 +928,26 @@ export class Game {
       isSelected: boolean;
       selectedBy?: string;
     }>;
-    roleSelectionCards?: RoleSelectionCard[];
+    roleSelectionDeck?: RoleSelectionCard[];
     votes?: Record<string, boolean>;
+    nextGameVotes?: Record<string, boolean>;
+    isVoting?: boolean;
     revolutionStatus?: {
       isRevolution: boolean;
       isGreatRevolution: boolean;
       revolutionPlayerId: string;
     };
     taxExchanges?: TaxExchange[];
+    gameNumber?: number;
+    gameHistories?: GameHistory[];
+    currentGameStartedAt?: Date;
+    playerStats?: Record<string, PlayerStats>;
+    roundPlays?: RoundPlay[];
   }): Game {
     const players = obj.players ? obj.players.map((p) => Player.fromPlainObject(p)) : [];
 
     const roomId = RoomId.from(obj.roomId); // string을 RoomId로 변환
+    const ownerId = PlayerId.create(obj.ownerId); // string을 PlayerId로 변환
     const currentTurn = obj.currentTurn ? PlayerId.create(obj.currentTurn) : null; // string을 PlayerId로 변환
     const lastPlay = obj.lastPlay
       ? {
@@ -781,9 +971,12 @@ export class Game {
 
     // Record를 Map으로 변환
     const votes = new Map<string, boolean>(Object.entries(obj.votes ?? {}));
+    const nextGameVotes = new Map<string, boolean>(Object.entries(obj.nextGameVotes ?? {}));
+    const playerStats = new Map<string, PlayerStats>(Object.entries(obj.playerStats ?? {}));
 
     return new Game(
       roomId,
+      ownerId,
       players,
       obj.phase || 'waiting',
       currentTurn,
@@ -792,10 +985,17 @@ export class Game {
       obj.round || 0,
       finishedPlayers,
       selectableDecks,
-      obj.roleSelectionCards,
+      obj.roleSelectionDeck,
       votes,
+      nextGameVotes,
+      obj.isVoting || false,
       obj.revolutionStatus,
-      obj.taxExchanges
+      obj.taxExchanges,
+      obj.gameNumber || 1,
+      obj.gameHistories || [],
+      obj.currentGameStartedAt,
+      playerStats,
+      obj.roundPlays || []
     );
   }
 }

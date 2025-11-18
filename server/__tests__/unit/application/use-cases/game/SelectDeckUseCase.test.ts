@@ -34,7 +34,7 @@ describe('SelectDeckUseCase', () => {
    * 테스트용 게임 생성 헬퍼
    */
   const createTestGame = (roomId: string = 'ROOM01'): Game => {
-    const game = Game.create(RoomId.from(roomId));
+    const game = Game.create(RoomId.from(roomId), PlayerId.create('owner1'));
 
     // 플레이어 추가
     const player1 = Player.create(PlayerId.create('player1'), 'Player 1');

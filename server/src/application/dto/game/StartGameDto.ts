@@ -9,6 +9,7 @@
  */
 export interface StartGameRequest {
   roomId: string;
+  playerId: string; // 게임 시작을 요청한 플레이어 ID (방장만 가능)
 }
 
 /**

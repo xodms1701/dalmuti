@@ -14,6 +14,7 @@ import { IUseCase } from '../base/IUseCase';
 import { IGameRepository } from '../../ports/IGameRepository';
 import { Game } from '../../../domain/entities/Game';
 import { RoomId } from '../../../domain/value-objects/RoomId';
+import { PlayerId } from '../../../domain/value-objects/PlayerId';
 import { CreateGameRequest, CreateGameResponse } from '../../dto/game/CreateGameDto';
 import {
   UseCaseResponse,
@@ -53,8 +54,11 @@ export class CreateGameUseCase
         roomId = RoomId.generate();
       }
 
+      // 1-2. OwnerId 생성
+      const ownerId = PlayerId.create(request.ownerId);
+
       // 2. Domain Entity 생성
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, ownerId);
 
       // 3. Repository를 통해 영속화
       try {

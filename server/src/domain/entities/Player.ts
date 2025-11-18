@@ -211,6 +211,13 @@ export class Player {
   }
 
   /**
+   * 모든 카드 제거
+   */
+  clearCards(): void {
+    this._cards = [];
+  }
+
+  /**
    * 카드 제거
    * @param card 제거할 카드
    * @throws Error 카드를 찾을 수 없는 경우

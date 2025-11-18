@@ -12,10 +12,10 @@ import * as DeckHelper from '../../../game/helpers/DeckHelper';
 import { SelectableDeck } from '../types/GameTypes';
 
 /**
- * 표준 덱을 초기화합니다.
- * - 1-13 각 숫자당 4장씩 (총 52장)
+ * 위대한 달무티 게임용 덱을 초기화합니다.
+ * - 1번 카드 1장, 2번 카드 2장, ..., 12번 카드 12장
  * - 조커 2장
- * - 총 54장
+ * - 총 80장 (1+2+3+...+12 + 2 = 78 + 2 = 80)
  *
  * @returns 초기화된 카드 덱 (plain object 형태)
  */
@@ -35,6 +35,29 @@ export function shuffleDeck(
 ): ReturnType<Card['toPlainObject']>[] {
   // 기존 헬퍼가 새 배열을 반환하므로, 불변성을 유지하여 결과 반환
   return DeckHelper.shuffleDeck(deck);
+}
+
+/**
+ * 개발 환경에서 테스트를 위한 백도어: 조커 2장을 덱의 맨 앞으로 이동합니다.
+ * 이렇게 하면 첫 번째 플레이어가 조커 2장을 받아서 혁명 기능을 쉽게 테스트할 수 있습니다.
+ *
+ * @param deck - 수정할 덱
+ * @returns 조커 2장이 맨 앞에 있는 새로운 덱
+ */
+export function applyTestBackdoor(
+  deck: ReturnType<Card['toPlainObject']>[]
+): ReturnType<Card['toPlainObject']>[] {
+  const jokers = deck.filter((card) => card.isJoker);
+  const otherCards = deck.filter((card) => !card.isJoker);
+
+  // 조커가 2장 이상 있는 경우에만 적용 (달무티 기본 규칙)
+  if (jokers.length >= 2) {
+    // eslint-disable-next-line no-console
+    console.log('[TEST BACKDOOR] Jokers placed at the front of the deck');
+    return [...jokers, ...otherCards];
+  }
+
+  return deck;
 }
 
 /**

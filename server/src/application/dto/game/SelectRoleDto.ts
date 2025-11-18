@@ -47,4 +47,9 @@ export interface SelectRoleResponse {
    * 모든 플레이어가 역할을 선택했는지 여부
    */
   allRolesSelected: boolean;
+
+  /**
+   * 현재 게임 페이즈
+   */
+  phase: string;
 }

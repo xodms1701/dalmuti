@@ -15,6 +15,7 @@ import { RoleSelectionCard } from '../../domain/types/GameTypes';
  */
 export interface GameDocument {
   _id: string; // MongoDB의 _id를 roomId로 사용
+  ownerId: string; // 방장 ID
   players: ReturnType<Player['toPlainObject']>[];
   phase: string;
   currentTurn: string | null;
@@ -27,7 +28,59 @@ export interface GameDocument {
     isSelected: boolean;
     selectedBy?: string;
   }>;
-  roleSelectionCards?: RoleSelectionCard[];
+  roleSelectionDeck?: RoleSelectionCard[]; // 레거시 호환을 위해 roleSelectionCards에서 변경
+  votes?: Record<string, boolean>;
+  nextGameVotes?: Record<string, boolean>;
+  isVoting?: boolean;
+  revolutionStatus?: {
+    isRevolution: boolean;
+    isGreatRevolution: boolean;
+    revolutionPlayerId: string;
+  };
+  taxExchanges?: Array<{
+    fromPlayerId: string;
+    toPlayerId: string;
+    cardCount: number;
+    cardsGiven: ReturnType<Card['toPlainObject']>[];
+  }>;
+  gameNumber?: number;
+  gameHistories?: Array<{
+    gameNumber: number;
+    players: Array<{
+      playerId: string;
+      nickname: string;
+      rank: number;
+      finishedAtRound: number;
+      totalCardsPlayed: number;
+      totalPasses: number;
+    }>;
+    finishedOrder: string[];
+    totalRounds: number;
+    roundPlays: Array<{
+      round: number;
+      playerId: string;
+      cards: ReturnType<Card['toPlainObject']>[];
+      timestamp: Date;
+    }>;
+    startedAt: Date;
+    endedAt: Date;
+  }>;
+  currentGameStartedAt?: Date;
+  playerStats?: Record<
+    string,
+    {
+      nickname: string;
+      totalCardsPlayed: number;
+      totalPasses: number;
+      finishedAtRound: number;
+    }
+  >;
+  roundPlays?: Array<{
+    round: number;
+    playerId: string;
+    cards: ReturnType<Card['toPlainObject']>[];
+    timestamp: Date;
+  }>;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -49,6 +102,7 @@ export class GameMapper {
 
     return {
       _id: plainGame.roomId,
+      ownerId: plainGame.ownerId,
       players: plainGame.players, // Player.toPlainObject()로 이미 변환됨
       phase: plainGame.phase,
       currentTurn: plainGame.currentTurn,
@@ -57,7 +111,17 @@ export class GameMapper {
       round: plainGame.round,
       finishedPlayers: plainGame.finishedPlayers,
       selectableDecks: plainGame.selectableDecks,
-      roleSelectionCards: plainGame.roleSelectionCards,
+      roleSelectionDeck: plainGame.roleSelectionDeck,
+      votes: plainGame.votes,
+      nextGameVotes: plainGame.nextGameVotes,
+      isVoting: plainGame.isVoting,
+      revolutionStatus: plainGame.revolutionStatus,
+      taxExchanges: plainGame.taxExchanges,
+      gameNumber: plainGame.gameNumber,
+      gameHistories: plainGame.gameHistories,
+      currentGameStartedAt: plainGame.currentGameStartedAt,
+      playerStats: plainGame.playerStats,
+      roundPlays: plainGame.roundPlays,
       updatedAt: new Date(),
     };
   }
@@ -72,6 +136,7 @@ export class GameMapper {
     // MongoDB의 _id를 roomId로 매핑
     const game = Game.fromPlainObject({
       roomId: document._id,
+      ownerId: document.ownerId,
       players: document.players || [],
       phase: document.phase,
       currentTurn: document.currentTurn,
@@ -80,7 +145,17 @@ export class GameMapper {
       round: document.round || 0,
       finishedPlayers: document.finishedPlayers || [],
       selectableDecks: document.selectableDecks,
-      roleSelectionCards: document.roleSelectionCards,
+      roleSelectionDeck: document.roleSelectionDeck,
+      votes: document.votes,
+      nextGameVotes: document.nextGameVotes,
+      isVoting: document.isVoting,
+      revolutionStatus: document.revolutionStatus,
+      taxExchanges: document.taxExchanges,
+      gameNumber: document.gameNumber,
+      gameHistories: document.gameHistories,
+      currentGameStartedAt: document.currentGameStartedAt,
+      playerStats: document.playerStats,
+      roundPlays: document.roundPlays,
     });
 
     return game;
@@ -126,8 +201,8 @@ export class GameMapper {
     if ('selectableDecks' in updates) {
       updateDoc.selectableDecks = updates.selectableDecks;
     }
-    if ('roleSelectionCards' in updates) {
-      updateDoc.roleSelectionCards = updates.roleSelectionCards;
+    if ('roleSelectionDeck' in updates) {
+      updateDoc.roleSelectionDeck = updates.roleSelectionDeck;
     }
     if ('players' in updates && updates.players !== undefined) {
       updateDoc.players = updates.players.map((p) => p.toPlainObject());

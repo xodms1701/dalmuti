@@ -22,6 +22,8 @@ import { PlayCardUseCase } from '../use-cases/game/PlayCardUseCase';
 import { PassTurnUseCase } from '../use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from '../use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from '../use-cases/game/TransitionToCardSelectionUseCase';
 import {
   UseCaseResponse,
   createSuccessResponse,
@@ -47,7 +49,9 @@ export class GameCommandService {
     private readonly playCardUseCase: PlayCardUseCase,
     private readonly passTurnUseCase: PassTurnUseCase,
     private readonly voteNextGameUseCase: VoteNextGameUseCase,
-    private readonly deleteGameUseCase: DeleteGameUseCase
+    private readonly deleteGameUseCase: DeleteGameUseCase,
+    private readonly transitionTaxToPlayingUseCase: TransitionTaxToPlayingUseCase,
+    private readonly transitionToCardSelectionUseCase: TransitionToCardSelectionUseCase
   ) {}
 
   /**
@@ -72,8 +76,11 @@ export class GameCommandService {
     }>
   > {
     try {
-      // 1. 게임 생성
-      const createResult = await this.createGameUseCase.execute({ roomId });
+      // 1. 게임 생성 (생성자를 방장으로 설정)
+      const createResult = await this.createGameUseCase.execute({
+        roomId,
+        ownerId: creatorId,
+      });
 
       if (!createResult.success) {
         return createResult;
@@ -283,16 +290,19 @@ export class GameCommandService {
    * 게임 시작
    *
    * 대기 중인 게임을 시작하여 역할 선택 단계로 진입합니다.
+   * 방장만 게임을 시작할 수 있습니다.
    * - 플레이어 수 검증 (4-8명)
    * - 덱 및 역할 선택 카드 초기화
    * - phase를 'roleSelection'으로 변경
    *
    * @param roomId - 방 ID
+   * @param playerId - 게임 시작을 요청한 플레이어 ID (방장)
    * @returns 게임 시작 결과
    */
-  async startGame(roomId: string) {
+  async startGame(roomId: string, playerId: string) {
     return this.startGameUseCase.execute({
       roomId,
+      playerId,
     });
   }
 
@@ -367,6 +377,37 @@ export class GameCommandService {
       roomId,
       playerId,
       vote,
+    });
+  }
+
+  /**
+   * 세금 교환 페이즈에서 플레이 페이즈로 자동 전환
+   *
+   * 세금 교환이 완료된 후 10초 타이머가 만료되면 자동으로 호출됩니다.
+   * 현재 페이즈가 'tax'인 경우에만 'playing'으로 전환합니다.
+   *
+   * @param roomId - 방 ID
+   * @returns 전환 결과
+   */
+  async transitionTaxToPlaying(roomId: string) {
+    return this.transitionTaxToPlayingUseCase.execute({
+      roomId,
+    });
+  }
+
+  /**
+   * 역할 선택 완료 후 카드 선택 페이즈로 자동 전환
+   *
+   * 역할 선택이 완료된 후 5초 타이머가 만료되면 자동으로 호출됩니다.
+   * 현재 페이즈가 'roleSelectionComplete'인 경우에만 'cardSelection'으로 전환합니다.
+   * 이 과정에서 덱 초기화, 셔플, 선택 가능한 덱 생성이 이루어집니다.
+   *
+   * @param roomId - 방 ID
+   * @returns 전환 결과
+   */
+  async transitionToCardSelection(roomId: string) {
+    return this.transitionToCardSelectionUseCase.execute({
+      roomId,
     });
   }
 }

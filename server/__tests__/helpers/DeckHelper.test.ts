@@ -143,18 +143,18 @@ describe('DeckHelper', () => {
   });
 
   describe('createStandardDeck', () => {
-    it('54장의 카드를 생성해야 함', () => {
+    it('80장의 카드를 생성해야 함', () => {
       const deck = createStandardDeck();
 
-      expect(deck.length).toBe(54); // 52 + 2 조커
+      expect(deck.length).toBe(80); // 78 + 2 조커 (1+2+...+12 = 78)
     });
 
-    it('각 숫자가 4장씩 있어야 함', () => {
+    it('1번부터 12번까지 각 번호만큼의 카드가 있어야 함', () => {
       const deck = createStandardDeck();
 
-      for (let rank = 1; rank <= 13; rank++) {
+      for (let rank = 1; rank <= 12; rank++) {
         const count = deck.filter((c) => c.rank === rank && !c.isJoker).length;
-        expect(count).toBe(4);
+        expect(count).toBe(rank); // 1번은 1장, 2번은 2장, ..., 12번은 12장
       }
     });
 

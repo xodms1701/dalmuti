@@ -2,11 +2,12 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import * as dotenv from 'dotenv';
-import SocketManager from './socket/SocketManager';
-import GameManager from './game/GameManager';
-import MongoDB from './db/MongoDB';
+// Legacy imports - Phase 5-2에서 주석 처리
+// import SocketManager from './socket/SocketManager';
+// import GameManager from './game/GameManager';
+// import MongoDB from './db/MongoDB';
 
-// Phase 4: New Architecture (DDD + Clean Architecture + CQRS)
+// Phase 4+: New Architecture (DDD + Clean Architecture + CQRS)
 import { SocketCoordinator } from './src/presentation/socket/SocketCoordinator';
 import { MongoGameRepository } from './src/infrastructure/repositories/MongoGameRepository';
 import { GameCommandService } from './src/application/services/GameCommandService';
@@ -23,6 +24,8 @@ import { PlayCardUseCase } from './src/application/use-cases/game/PlayCardUseCas
 import { PassTurnUseCase } from './src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from './src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from './src/application/use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from './src/application/use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from './src/application/use-cases/game/TransitionToCardSelectionUseCase';
 
 dotenv.config();
 
@@ -41,14 +44,17 @@ app.get('/api', (_req, res) => {
   res.json({ message: 'dalmuti' });
 });
 
-// ===== Legacy Architecture (Phase 1-3) =====
-// 기본 네임스페이스 (/) 사용 - 기존 클라이언트와의 호환성 유지
+// ===== Legacy Architecture (Phase 1-3) - DEPRECATED =====
+// Phase 5-2에서 새 아키텍처로 전환됨
+// 호환성 검증 완료 후 주석 처리
+/*
 const db = new MongoDB(process.env.MONGODB_URI || '', 'dalmuti');
 const gameManager = new GameManager(db, io);
 new SocketManager(io, gameManager);
+*/
 
 // ===== New Architecture (Phase 4+) - DDD + Clean Architecture + CQRS =====
-// /v2 네임스페이스 사용 - 신규 아키텍처 전용
+// 기본 네임스페이스 (/) 사용 - 클라이언트 수정 없이 전환
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const gameRepository = new MongoGameRepository(mongoUri, 'dalmuti');
 
@@ -65,6 +71,8 @@ const playCardUseCase = new PlayCardUseCase(gameRepository);
 const passTurnUseCase = new PassTurnUseCase(gameRepository);
 const voteNextGameUseCase = new VoteNextGameUseCase(gameRepository);
 const deleteGameUseCase = new DeleteGameUseCase(gameRepository);
+const transitionTaxToPlayingUseCase = new TransitionTaxToPlayingUseCase(gameRepository);
+const transitionToCardSelectionUseCase = new TransitionToCardSelectionUseCase(gameRepository);
 
 // CQRS: Command Service (상태 변경)
 // Repository를 직접 받지 않고 Use Cases만 조합
@@ -80,7 +88,9 @@ const gameCommandService = new GameCommandService(
   playCardUseCase,
   passTurnUseCase,
   voteNextGameUseCase,
-  deleteGameUseCase
+  deleteGameUseCase,
+  transitionTaxToPlayingUseCase,
+  transitionToCardSelectionUseCase
 );
 
 // CQRS: Query Service (조회)
@@ -88,10 +98,9 @@ const gameQueryService = new GameQueryService(gameRepository);
 
 // SocketCoordinator 인스턴스 생성 (Presentation Layer)
 // CQRS 패턴: Command와 Query를 분리하여 주입
-// /v2 네임스페이스 사용 - Legacy와 충돌 방지
+// 기본 네임스페이스 (/) 사용 - Phase 5-2에서 Legacy 대체
 // Primary Adapter 패턴: GameEvent, CardEvent, RoleSelectionEvent Adapter 조율
-const ioV2 = io.of('/v2');
-new SocketCoordinator(ioV2, gameCommandService, gameQueryService);
+new SocketCoordinator(io, gameCommandService, gameQueryService);
 
 // MongoDB 연결
 gameRepository.connect().catch((error) => {

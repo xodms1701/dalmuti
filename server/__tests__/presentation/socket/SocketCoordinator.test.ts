@@ -134,7 +134,7 @@ describe('SocketCoordinator', () => {
 
       expect(mockCommandService.leaveGame).toHaveBeenCalledWith('room-123', 'socket-123');
       expect(mockIo.to).toHaveBeenCalledWith('room-123');
-      expect(mockIo.emit).toHaveBeenCalledWith('GAME_STATE_UPDATED', { game: mockGameState });
+      expect(mockIo.emit).toHaveBeenCalledWith('gameStateUpdated', mockGameState);
     });
 
     it('게임 상태가 없으면 브로드캐스트하지 않아야 한다', async () => {

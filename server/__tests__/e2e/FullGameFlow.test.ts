@@ -20,6 +20,8 @@ import { PlayCardUseCase } from '../../src/application/use-cases/game/PlayCardUs
 import { PassTurnUseCase } from '../../src/application/use-cases/game/PassTurnUseCase';
 import { VoteNextGameUseCase } from '../../src/application/use-cases/game/VoteNextGameUseCase';
 import { DeleteGameUseCase } from '../../src/application/use-cases/game/DeleteGameUseCase';
+import { TransitionTaxToPlayingUseCase } from '../../src/application/use-cases/game/TransitionTaxToPlayingUseCase';
+import { TransitionToCardSelectionUseCase } from '../../src/application/use-cases/game/TransitionToCardSelectionUseCase';
 import { RoomId } from '../../src/domain/value-objects/RoomId';
 import { Card } from '../../src/domain/entities/Card';
 import { SelectableDeck } from '../../src/domain/types/GameTypes';
@@ -50,6 +52,8 @@ describe('Full Game Flow E2E Tests', () => {
     const passTurnUseCase = new PassTurnUseCase(repository);
     const voteNextGameUseCase = new VoteNextGameUseCase(repository);
     const deleteGameUseCase = new DeleteGameUseCase(repository);
+    const transitionTaxToPlayingUseCase = new TransitionTaxToPlayingUseCase(repository);
+    const transitionToCardSelectionUseCase = new TransitionToCardSelectionUseCase(repository);
 
     // GameCommandService 생성 (E2E 테스트는 Service 계층을 통해 호출)
     service = new GameCommandService(
@@ -64,7 +68,9 @@ describe('Full Game Flow E2E Tests', () => {
       playCardUseCase,
       passTurnUseCase,
       voteNextGameUseCase,
-      deleteGameUseCase
+      deleteGameUseCase,
+      transitionTaxToPlayingUseCase,
+      transitionToCardSelectionUseCase
     );
   });
 
@@ -104,7 +110,7 @@ describe('Full Game Flow E2E Tests', () => {
       expect(join4.success).toBe(true);
 
       // 1-3. 모든 플레이어 준비
-      await service.toggleReadyAndCheckStart(roomId, 'player1');
+      // 방장(player1)은 자동으로 ready 상태이므로 건너뜀
       await service.toggleReadyAndCheckStart(roomId, 'player2');
       await service.toggleReadyAndCheckStart(roomId, 'player3');
       const ready4 = await service.toggleReadyAndCheckStart(roomId, 'player4');
@@ -115,7 +121,7 @@ describe('Full Game Flow E2E Tests', () => {
       }
 
       // 1-4. 게임 시작
-      const startResult = await service.startGame(roomId);
+      const startResult = await service.startGame(roomId, 'player1');
       expect(startResult.success).toBe(true);
       if (startResult.success) {
         expect(startResult.data.phase).toBe('roleSelection');
@@ -126,9 +132,9 @@ describe('Full Game Flow E2E Tests', () => {
       expect(game).not.toBeNull();
       expect(game!.phase).toBe('roleSelection');
       expect(game!.deck).toBeDefined();
-      expect(game!.deck?.length).toBe(54); // 52 + 2 jokers
-      expect(game!.roleSelectionCards).toBeDefined();
-      expect(game!.roleSelectionCards?.length).toBe(13);
+      expect(game!.deck?.length).toBe(80); // 78 + 2 jokers
+      expect(game!.roleSelectionDeck).toBeDefined();
+      expect(game!.roleSelectionDeck?.length).toBe(13);
 
       // ==================== Phase 2: 역할 선택 (Role Selection) ====================
 
@@ -143,8 +149,17 @@ describe('Full Game Flow E2E Tests', () => {
       expect(role3.success).toBe(true);
       expect(role4.success).toBe(true);
 
-      // 2-2. 역할 선택 완료 후 자동으로 cardSelection 페이즈로 전환됨
-      // SelectRoleUseCase가 자동으로 처리: 덱 생성, 페이즈 전환, 턴 설정
+      // 2-2. 역할 선택 완료 후 roleSelectionComplete 페이즈로 전환됨
+      game = await repository.findById(RoomId.from(roomId));
+      expect(game).not.toBeNull();
+      expect(game!.phase).toBe('roleSelectionComplete');
+
+      // 2-3. 5초 타이머 대신 수동으로 cardSelection 페이즈로 전환
+      // (E2E 테스트에서는 setTimeout이 실행되지 않으므로)
+      const transitionResult = await service.transitionToCardSelection(roomId);
+      expect(transitionResult.success).toBe(true);
+
+      // 2-4. cardSelection 페이즈로 전환 확인
       game = await repository.findById(RoomId.from(roomId));
       expect(game).not.toBeNull();
       expect(game!.phase).toBe('cardSelection');
@@ -170,17 +185,14 @@ describe('Full Game Flow E2E Tests', () => {
       const deck2 = await service.selectDeck(roomId, 'player2', deck2Index);
       expect(deck2.success).toBe(true);
 
-      // Player 3 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
+      // Player 3 덱 선택 (SelectDeckUseCase가 자동으로 마지막 덱을 Player 4에게 할당)
       game = await repository.findById(RoomId.from(roomId));
       const deck3Index = findAvailableDeckIndex(game!.selectableDecks!);
       const deck3 = await service.selectDeck(roomId, 'player3', deck3Index);
       expect(deck3.success).toBe(true);
 
-      // Player 4 덱 선택 (SelectDeckUseCase가 자동으로 턴을 넘김)
-      game = await repository.findById(RoomId.from(roomId));
-      const deck4Index = findAvailableDeckIndex(game!.selectableDecks!);
-      const deck4 = await service.selectDeck(roomId, 'player4', deck4Index);
-      expect(deck4.success).toBe(true);
+      // Player 4는 자동으로 마지막 덱이 할당되므로 선택할 필요 없음
+      // (Player 3이 선택할 때 남은 덱이 1개면 Player 4에게 자동 할당됨)
 
       // 3-2. 덱 선택 완료 후 상태 확인
       game = await repository.findById(RoomId.from(roomId));
@@ -194,17 +206,19 @@ describe('Full Game Flow E2E Tests', () => {
 
       // ==================== Phase 4: 혁명 처리 (Revolution) ====================
 
-      // 4-1. 조커 2장 보유자 확인
-      const doubleJokerPlayer = game!.checkDoubleJoker();
+      // 4-1. Phase 상태 확인 (phase는 조커 2장 보유자 유무에 따라 결정됨)
+      // SelectDeckUseCase에서 이미 조커 2장 보유자를 확인하고 phase를 설정했음
+      const isRevolutionPhase = game!.phase === 'revolution';
 
-      if (doubleJokerPlayer) {
-        // 조커 2장 보유자가 있으면 혁명 선택
-        expect(game!.phase).toBe('revolution');
+      if (isRevolutionPhase) {
+        // 혁명 페이즈인 경우 - 조커 2장 보유자가 있음
+        const doubleJokerPlayer = game!.checkDoubleJoker();
+        expect(doubleJokerPlayer).toBeDefined();
 
         // 혁명 거부 (세금 교환으로 진행)
         const revolutionResult = await service.selectRevolution(
           roomId,
-          doubleJokerPlayer.id.value,
+          doubleJokerPlayer!.id.value,
           false
         );
 
@@ -213,7 +227,7 @@ describe('Full Game Flow E2E Tests', () => {
           expect(revolutionResult.data.phase).toBe('tax');
         }
       } else {
-        // 조커 2장 보유자가 없으면 자동으로 tax phase로 전환되어 있어야 함
+        // 세금 교환 페이즈로 바로 진행 - 조커 2장 보유자가 없음
         expect(game!.phase).toBe('tax');
       }
 
@@ -255,11 +269,11 @@ describe('Full Game Flow E2E Tests', () => {
       await service.joinGame(roomId, 'player4', 'David');
 
       // 2. 모든 플레이어 준비 및 게임 시작
-      await service.toggleReadyAndCheckStart(roomId, 'player1');
+      // 방장(player1)은 자동으로 ready 상태이므로 건너뜀
       await service.toggleReadyAndCheckStart(roomId, 'player2');
       await service.toggleReadyAndCheckStart(roomId, 'player3');
       await service.toggleReadyAndCheckStart(roomId, 'player4');
-      await service.startGame(roomId);
+      await service.startGame(roomId, 'player1');
 
       // 3. 역할 선택 (player4를 꼴찌로 만들기 위해 13번 선택)
       // SelectRoleUseCase가 자동으로 rank를 할당함

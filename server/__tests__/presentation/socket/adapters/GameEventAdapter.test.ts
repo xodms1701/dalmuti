@@ -32,6 +32,10 @@ describe('GameEventAdapter', () => {
       leaveGame: jest.fn(),
       toggleReadyAndCheckStart: jest.fn(),
       voteNextGame: jest.fn(),
+      transitionToCardSelection: jest.fn().mockResolvedValue({
+        success: true,
+        data: { transitioned: true },
+      }),
     } as any;
 
     // Mock QueryService
@@ -97,7 +101,7 @@ describe('GameEventAdapter', () => {
         data: { roomId: 'room-123', gameState: mockGameState },
       });
       expect(mockIo.to).toHaveBeenCalledWith('room-123');
-      expect(mockIo.emit).toHaveBeenCalledWith('GAME_STATE_UPDATED', mockGameState);
+      expect(mockIo.emit).toHaveBeenCalledWith('gameStateUpdated', mockGameState);
     });
 
     it('실패 시 에러를 반환해야 한다', async () => {

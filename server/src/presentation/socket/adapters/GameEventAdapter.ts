@@ -15,8 +15,9 @@
  */
 
 import { Socket } from 'socket.io';
-import { SocketEvent } from '../../../../socket/events';
 import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
+import { SocketEvent } from '../../../../socket/events';
+import { PhaseTransitionScheduler } from '../services/PhaseTransitionScheduler';
 
 /**
  * GameEventAdapter
@@ -24,6 +25,12 @@ import { BaseEventAdapter, SocketCallback } from './base/BaseEventAdapter';
  * 게임 생명주기 관련 이벤트를 처리하는 Primary Adapter
  */
 export class GameEventAdapter extends BaseEventAdapter {
+  private readonly phaseTransitionScheduler: PhaseTransitionScheduler;
+
+  constructor(...args: ConstructorParameters<typeof BaseEventAdapter>) {
+    super(...args);
+    this.phaseTransitionScheduler = new PhaseTransitionScheduler();
+  }
   /**
    * ISocketEventPort 구현
    * Socket 연결 시 이벤트 핸들러 등록
@@ -141,7 +148,7 @@ export class GameEventAdapter extends BaseEventAdapter {
 
         // 모든 플레이어가 준비되었으면 ALL_PLAYERS_READY 브로드캐스트
         if (result.success && result.data.allPlayersReady) {
-          this.io.to(roomId).emit('ALL_PLAYERS_READY');
+          this.io.to(roomId).emit(SocketEvent.ALL_PLAYERS_READY);
         }
       }
     );
@@ -151,13 +158,14 @@ export class GameEventAdapter extends BaseEventAdapter {
    * START_GAME 이벤트 핸들러
    *
    * 대기 중인 게임을 시작하여 역할 선택 단계로 진입합니다.
+   * 방장만 게임을 시작할 수 있습니다.
    */
   private handleStartGame(socket: Socket): void {
     socket.on(
       SocketEvent.START_GAME,
       async ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
-        // Command: 게임 시작
-        const result = await this.commandService.startGame(roomId);
+        // Command: 게임 시작 (방장 권한 필요)
+        const result = await this.commandService.startGame(roomId, socket.id);
 
         await this.handleSocketEvent(result, callback, roomId);
       }
@@ -177,6 +185,23 @@ export class GameEventAdapter extends BaseEventAdapter {
         const result = await this.commandService.voteNextGame(roomId, socket.id, vote);
 
         await this.handleSocketEvent(result, callback, roomId);
+
+        // 투표 통과 시 순위 확인 화면(roleSelectionComplete)으로 전환되면
+        // 5초 후 카드 선택 페이즈(cardSelection)로 자동 전환
+        if (result.success && result.data.phase === 'roleSelectionComplete') {
+          this.phaseTransitionScheduler.scheduleRoleSelectionCompleteToCardSelection(
+            roomId,
+            async () => {
+              // GameCommandService를 통해 phase 전환 (덱 셔플 및 분배 포함)
+              const transitionResult = await this.commandService.transitionToCardSelection(roomId);
+
+              if (transitionResult.success && transitionResult.data.transitioned) {
+                // 클라이언트에게 업데이트된 게임 상태 전송
+                await this.emitGameState(roomId);
+              }
+            }
+          );
+        }
       }
     );
   }

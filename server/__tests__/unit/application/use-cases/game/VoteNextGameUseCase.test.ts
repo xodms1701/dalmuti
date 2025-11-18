@@ -40,7 +40,7 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -77,7 +77,7 @@ describe('VoteNextGameUseCase', () => {
       const player2 = Player.create(playerId2, 'Player 2');
       const player3 = Player.create(playerId3, 'Player 3');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
       game.addPlayer(player3);
@@ -102,12 +102,13 @@ describe('VoteNextGameUseCase', () => {
       if (response.success) {
         expect(response.data.votePassed).toBe(true);
         expect(response.data.nextGameStarted).toBe(true);
+        expect(response.data.phase).toBe('roleSelectionComplete'); // 순위 확인 화면으로 먼저 전환
       }
       expect(mockRepository.update).toHaveBeenCalledTimes(1);
 
       // 게임 상태 확인
       const updatedGame = mockRepository.update.mock.calls[0][1] as Game;
-      expect(updatedGame.phase).toBe('roleSelection');
+      expect(updatedGame.phase).toBe('roleSelectionComplete'); // 순위 확인 화면으로 먼저 전환
       expect(updatedGame.round).toBeGreaterThan(0);
     });
 
@@ -120,7 +121,7 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -160,7 +161,7 @@ describe('VoteNextGameUseCase', () => {
       const player1 = Player.create(playerId1, 'Player 1');
       const player2 = Player.create(playerId2, 'Player 2');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
       game.addPlayer(player2);
 
@@ -224,7 +225,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -273,7 +274,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -304,7 +305,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
@@ -333,7 +334,7 @@ describe('VoteNextGameUseCase', () => {
       const playerId1 = PlayerId.create('player1');
       const player1 = Player.create(playerId1, 'Player 1');
 
-      const game = Game.create(roomId);
+      const game = Game.create(roomId, PlayerId.create('owner1'));
       game.addPlayer(player1);
 
       mockRepository.findById.mockResolvedValue(game);
